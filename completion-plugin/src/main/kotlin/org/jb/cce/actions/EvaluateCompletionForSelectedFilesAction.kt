@@ -31,9 +31,12 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         for (javaFile in containingFiles) {
             val lexer = Java8Lexer(CharStreams.fromFileName(javaFile.path))
             val parser = Java8Parser(BufferedTokenStream(lexer))
-            val tree = JavaVisitor().buildUnifiedAst(javaFile.path, parser)
-            generatedActions.add(generateActions(tree))
+            println("Start building tree")
+            val tree = JavaVisitor().buildUnifiedAst(parser)
+            println("Start generating actions")
+            generatedActions.add(generateActions(javaFile.path, tree))
         }
+        println("Start interpreting")
         val completionInvoker = CompletionInvokerImpl(e.project!!)
         val interpretator = Interpretator(completionInvoker)
         val actions = generatedActions.stream()
