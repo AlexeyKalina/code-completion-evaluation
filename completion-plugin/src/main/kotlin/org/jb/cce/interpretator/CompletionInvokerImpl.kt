@@ -24,7 +24,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
 
     override fun callCompletion(): List<String> {
         LookupManager.getInstance(project).hideActiveLookup()
-        CodeCompletionHandlerBase(CompletionType.SMART, false, false, true).invokeCompletion(project, editor)
+        CodeCompletionHandlerBase(CompletionType.BASIC, false, false, true).invokeCompletion(project, editor)
         if (LookupManager.getActiveLookup(editor) == null) {
             return ArrayList()
         }
