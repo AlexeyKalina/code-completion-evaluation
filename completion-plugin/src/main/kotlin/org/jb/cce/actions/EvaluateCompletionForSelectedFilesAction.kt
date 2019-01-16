@@ -16,10 +16,8 @@ import org.jb.cce.Java8Lexer
 import org.jb.cce.Java8Parser
 import org.jb.cce.JavaVisitor
 import org.jb.cce.interpretator.CompletionInvokerImpl
-import org.jb.cce.metrics.FMeasureMetricsEvaluator
-import org.jb.cce.metrics.MeanReciprocalRankMetricsEvaluator
-import org.jb.cce.metrics.PrecisionMetricsEvaluator
-import org.jb.cce.metrics.RecallMetricsEvaluator
+import org.jb.cce.metrics.*
+import java.io.File
 import java.util.stream.Collectors
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
@@ -31,12 +29,9 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         for (javaFile in containingFiles) {
             val lexer = Java8Lexer(CharStreams.fromFileName(javaFile.path))
             val parser = Java8Parser(BufferedTokenStream(lexer))
-            println("Start building tree")
             val tree = JavaVisitor().buildUnifiedAst(parser)
-            println("Start generating actions")
-            generatedActions.add(generateActions(javaFile.path, tree))
+            generatedActions.add(generateActions(javaFile.path, File(javaFile.path).readText(), tree))
         }
-        println("Start interpreting")
         val completionInvoker = CompletionInvokerImpl(e.project!!)
         val interpretator = Interpretator(completionInvoker)
         val actions = generatedActions.stream()
@@ -48,6 +43,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         println("Recall Metric value = " + RecallMetricsEvaluator.evaluate(completions))
         println("FMeasure Metric value = " + FMeasureMetricsEvaluator.evaluate(completions))
         println("Mean Reciprocal Rank Metric value = " + MeanReciprocalRankMetricsEvaluator.evaluate(completions))
+        println("eSaved Metric value = " + ESavedMetricsEvaluator.evaluate(completions))
     }
 
     private fun getFiles(project: Project, e: AnActionEvent): Collection<VirtualFile> {

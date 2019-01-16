@@ -57,19 +57,21 @@ class CallCompletionsVisitor(private val text: String) : UnifiedAstVisitor {
             actions += PrintText(text.substring(IntRange(previousTextStart, node.getOffset() - 1)))
             previousTextStart = node.getOffset() + node.getLength()
         }
-        actions += CallCompletion(node.getText())
+        for (symbol in node.getText()) {
+            actions += CallCompletion(node.getText())
+            actions += PrintText(symbol.toString())
+        }
         actions += CancelSession()
-        actions += PrintText(node.getText())
     }
 }
 
 
-fun generateActions(fileText: String, tree: FileNode): List<Action> {
+fun generateActions(filePath: String, fileText: String, tree: FileNode): List<Action> {
 
     val deletionVisitor = DeleteMethodBodiesVisitor()
     deletionVisitor.visit(tree)
     val completionVisitor = CallCompletionsVisitor(fileText)
     completionVisitor.visit(tree)
 
-    return deletionVisitor.getActions().reversed() + completionVisitor.getActions()
+    return listOf(OpenFile(filePath)) + deletionVisitor.getActions().reversed() + completionVisitor.getActions()
 }
