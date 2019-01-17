@@ -7,10 +7,10 @@ class RecallMetricsEvaluator {
     companion object {
         fun evaluate(sessions: List<Session>): Double {
             val listOfCompletions = sessions.stream()
-                    .flatMap { compl -> compl.lookups.stream() }
+                    .flatMap { compl -> compl.completions.zip(compl.lookups).stream() }
                     .collect(Collectors.toList())
             val recommendationsMadeCount = listOfCompletions.stream()
-                    .filter { l -> !l.isEmpty() }
+                    .filter { (completion, lookup) -> lookup.contains(completion) }
                     .count()
             return recommendationsMadeCount.toDouble() / listOfCompletions.size
         }
