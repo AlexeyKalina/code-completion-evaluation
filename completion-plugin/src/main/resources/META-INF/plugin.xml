@@ -19,14 +19,10 @@
     </extensions>
 
     <actions>
-        <!-- Add your actions here -->
-        <action id="org.jb.cce.CalculateCompletionForSelectedFileAction" class="org.jb.cce.CalculateCompletionForSelectedFileAction" text="Calculate metrics"
-                description="Calculate metrics">
-            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
-        </action>
-        <action id="org.jb.cce.CaclucateCompletionForAllProjectFilesAction" class="org.jb.cce.CaclucateCompletionForAllProjectFilesAction"
-                text="Calculate metrics for all project"
-                description="Calculate completion quality over all project files">
+        <action id="org.jb.cce.actions.EvaluateCompletionForSelectedFilesAction"
+                class="org.jb.cce.actions.EvaluateCompletionForSelectedFilesAction"
+                text="Evaluate Completion For Selected Files"
+                description="Evaluate completion quality over selected files">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
         </action>
     </actions>
