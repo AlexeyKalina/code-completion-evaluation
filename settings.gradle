@@ -1,4 +1,3 @@
-rootProject.name = 'code-completion-evaluation'
+rootProject.name = 'completion-evaluation'
 
-include ':antlr-parser'
-include ':interpretator'
+include 'antlr-parser', 'completion-plugin', 'interpretator', 'metrics-evaluator'

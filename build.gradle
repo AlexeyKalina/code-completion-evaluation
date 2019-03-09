@@ -2,7 +2,7 @@ plugins {
     id 'java'
 }
 
-group 'org.jb.cce'
+group 'com.intellij.completion.evaluation'
 version '1.0-SNAPSHOT'
 
 repositories {
@@ -11,5 +11,6 @@ repositories {
 
 dependencies {
     compile project(':antlr-parser')
+    compile project(':completion-plugin')
     compile project(':interpretator')
 }
