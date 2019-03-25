@@ -6,6 +6,7 @@ import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.statements.declarations.ClassDeclarationNode
 import org.jb.cce.uast.statements.declarations.MethodDeclarationNode
+import org.jb.cce.uast.statements.declarations.MethodHeaderNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 
 open class BabelFishUnifiedVisitor {
@@ -36,7 +37,8 @@ open class BabelFishUnifiedVisitor {
     protected open fun visitChild(json: JsonObject, parentNode: UnifiedAstNode) {
         when {
             typeEquals(json, "uast:FunctionGroup") -> visitFunctionDeclaration(json, parentNode)
-            typeEquals(json, "uast:Function") -> visitFunctionBody(json, parentNode as MethodDeclarationNode)
+            typeEquals(json, "uast:Function") && parentNode is MethodDeclarationNode -> visitFunctionBody(json, parentNode)
+            typeEquals(json, "uast:Alias") && parentNode is MethodDeclarationNode -> visitFunctionHeader(json, parentNode)
             else -> visitChildren(json, parentNode)
         }
     }
@@ -53,9 +55,17 @@ open class BabelFishUnifiedVisitor {
         }
     }
 
+    protected open fun visitFunctionHeader(json: JsonObject, parentNode: MethodDeclarationNode) {
+        val nameObj = json["Name"].asJsonObject
+        val header = MethodHeaderNode(visitIdentifier(nameObj), getOffset(nameObj), getLength(nameObj))
+        parentNode.setHeader(header)
+        visitChildren(json, parentNode)
+    }
+
     protected open fun visitFunctionBody(json: JsonObject, parentNode: MethodDeclarationNode) {
-        val body = MethodBodyNode(getOffset(json), getLength(json))
-        visitChildren(json, body)
+        val bodyNode = json["Body"].asJsonObject
+        val body = MethodBodyNode(getOffset(bodyNode), getLength(bodyNode))
+        visitChildren(bodyNode, body)
         parentNode.setBody(body)
     }
 
