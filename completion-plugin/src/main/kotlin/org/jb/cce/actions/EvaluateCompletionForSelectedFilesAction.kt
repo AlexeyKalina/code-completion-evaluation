@@ -38,12 +38,9 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
                 .flatMap { l -> l.stream() }
                 .collect(Collectors.toList())
         val completions = interpretator.interpret(actions)
-        println("Completion quality evaluation for project files in selected directory")
-        println("Precision Metric value = " + PrecisionMetricsEvaluator.evaluate(completions))
-        println("Recall Metric value = " + RecallMetricsEvaluator.evaluate(completions))
-        println("FMeasure Metric value = " + FMeasureMetricsEvaluator.evaluate(completions))
-        println("Mean Reciprocal Rank Metric value = " + MeanReciprocalRankMetricsEvaluator.evaluate(completions))
-        println("eSaved Metric value = " + ESavedMetricsEvaluator.evaluate(completions))
+        val metricsEvaluator = MetricsEvaluator()
+        metricsEvaluator.registerDefaultMetrics()
+        metricsEvaluator.evaluate(completions, System.out)
     }
 
     private fun getFiles(project: Project, e: AnActionEvent): Collection<VirtualFile> {
