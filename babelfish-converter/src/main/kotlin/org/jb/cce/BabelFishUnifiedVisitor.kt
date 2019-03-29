@@ -2,6 +2,7 @@ package org.jb.cce
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
+import org.jb.cce.uast.CompletableNode
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.statements.declarations.ClassDeclarationNode
@@ -11,7 +12,7 @@ import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 
 open class BabelFishUnifiedVisitor {
 
-    fun getUast(json: JsonObject): UnifiedAstNode {
+    fun getUast(json: JsonObject): FileNode {
         return visitFileNode(json)
     }
 
@@ -76,6 +77,12 @@ open class BabelFishUnifiedVisitor {
     }
 
     protected open fun visitVariableDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {
+    }
+
+    protected fun visitQualifiedIdentifier(json: JsonObject): CompletableNode {
+        val names = json["Names"].asJsonArray
+        val lastName = names.last().asJsonObject
+        return CompletableNode(visitIdentifier(lastName), getOffset(lastName), getLength(lastName))
     }
 
     protected fun visitIdentifier(json: JsonObject): String {

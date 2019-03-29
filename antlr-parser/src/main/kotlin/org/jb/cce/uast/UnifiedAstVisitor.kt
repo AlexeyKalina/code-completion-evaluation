@@ -8,7 +8,7 @@ import org.jb.cce.uast.statements.expressions.references.*
 
 interface UnifiedAstVisitor {
 
-    fun visitChildren(node: UnifiedAstNode) = node.getChildren().forEach { visit(it) }
+    fun visitChildren(node: UnifiedAstNode) = node.getChildren().sortedBy { it.getOffset() }.forEach { visit(it) }
 
     fun visit(node: UnifiedAstNode) {
         when (node) {

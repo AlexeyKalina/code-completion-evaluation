@@ -24,11 +24,30 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
             typeEquals(json, "java:TypeDeclaration") -> visitTypeDeclaration(json, parentNode)
             typeEquals(json, "java:MethodInvocation") -> visitMethodCall(json, parentNode)
             typeEquals(json, "java:ExpressionMethodReference") -> visitMethodCall(json, parentNode)
+            typeEquals(json, "java:ClassInstanceCreation") -> visitInstanceCreation(json, parentNode)
             typeEquals(json, "java:VariableDeclarationFragment") -> visitVariableDeclaration(json, parentNode)
             (roleExists(json, "Expression") || roleExists(json, "Argument") || roleExists(json, "Assignment"))
-                    && typeEquals(json, "uast:Identifier") -> visitFieldAccess(json, parentNode)
+                && (typeEquals(json, "uast:Identifier") ||
+                    typeEquals(json, "uast:QualifiedIdentifier")) -> visitFieldAccess(json, parentNode)
             typeEquals(json, "java:FieldAccess") -> visitFieldAccess(json, parentNode)
             else -> super.visitChild(json, parentNode)
+        }
+    }
+
+    private fun visitInstanceCreation(json: JsonObject, parentNode: UnifiedAstNode) {
+        val typeObj = json["type"].asJsonObject
+        if (typeEquals(typeObj, "java:SimpleType")) {
+            val nameObj = typeObj["name"].asJsonObject
+            val methodCall = MethodCallNode(
+                    CompletableNode(visitIdentifier(nameObj), getOffset(nameObj), getLength(nameObj)),
+                    getOffset(json), getLength(json))
+
+            visitChildren(json, methodCall)
+
+            when (parentNode) {
+                is BlockNode -> parentNode.addStatement(methodCall)
+                is MethodCallNode -> parentNode.addArgument(methodCall)
+            }
         }
     }
 
@@ -41,10 +60,12 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
     }
 
     override fun visitFieldAccess(json: JsonObject, parentNode: UnifiedAstNode) {
-        val name = if (json.has("name"))
-            CompletableNode(visitIdentifier(json["name"].asJsonObject), getOffset(json["name"].asJsonObject), getLength(json["name"].asJsonObject))
-        else
-            CompletableNode(visitIdentifier(json), getOffset(json), getLength(json))
+        val name = when {
+            typeEquals(json, "uast:QualifiedIdentifier") -> visitQualifiedIdentifier(json)
+            json.has("name") -> CompletableNode(visitIdentifier(json["name"].asJsonObject),
+                    getOffset(json["name"].asJsonObject), getLength(json["name"].asJsonObject))
+            else -> CompletableNode(visitIdentifier(json), getOffset(json), getLength(json))
+        }
 
         val variableAccess = VariableAccessNode(name, getOffset(json), getLength(json))
 

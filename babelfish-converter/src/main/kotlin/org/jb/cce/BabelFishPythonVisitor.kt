@@ -53,12 +53,12 @@ class BabelFishPythonVisitor: BabelFishUnifiedVisitor() {
     private fun visitQualifier(json: JsonObject): CompletableNode {
         return when {
             typeEquals(json, "python:BoxedName") -> visitBoxedName(json)
-            typeEquals(json, "python:QualifiedIdentifier") -> visitQualifiedIdentifier(json)
+            typeEquals(json, "python:QualifiedIdentifier") -> visitPythonQualifiedIdentifier(json)
             else -> CompletableNode("", -1, -1)
         }
     }
 
-    private fun visitQualifiedIdentifier(json: JsonObject): CompletableNode {
+    private fun visitPythonQualifiedIdentifier(json: JsonObject): CompletableNode {
         val identifiers = json["identifiers"].asJsonArray
         return visitBoxedName(identifiers.last().asJsonObject)
     }

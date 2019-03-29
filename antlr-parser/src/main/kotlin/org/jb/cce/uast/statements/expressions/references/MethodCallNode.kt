@@ -13,5 +13,7 @@ class MethodCallNode(private val name: CompletableNode,
         arguments += argument
     }
 
+    fun getMethodName() = name
+
     override fun getChildren() = prefixReference?.let { listOf(it) + name + arguments} ?: listOf(name) + arguments
 }

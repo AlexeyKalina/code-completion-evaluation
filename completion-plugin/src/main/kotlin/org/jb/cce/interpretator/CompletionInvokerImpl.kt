@@ -22,9 +22,13 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         editor!!.caretModel.moveToOffset(offset)
     }
 
-    override fun callCompletion(): List<String> {
+    override fun callCompletion(type: org.jb.cce.actions.CompletionType): List<String> {
         LookupManager.getInstance(project).hideActiveLookup()
-        CodeCompletionHandlerBase(CompletionType.BASIC, false, false, true).invokeCompletion(project, editor)
+        val completionType = when (type) {
+            org.jb.cce.actions.CompletionType.BASIC -> CompletionType.BASIC
+            org.jb.cce.actions.CompletionType.SMART -> CompletionType.SMART
+        }
+        CodeCompletionHandlerBase(completionType, false, false, true).invokeCompletion(project, editor)
         if (LookupManager.getActiveLookup(editor) == null) {
             return ArrayList()
         }

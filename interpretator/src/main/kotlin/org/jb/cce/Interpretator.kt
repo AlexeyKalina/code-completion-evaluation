@@ -24,7 +24,7 @@ class Interpretator(private val invoker: CompletionInvoker) {
                         currentSession = Session()
                     }
                     currentSession.completions.add(action.text)
-                    currentSession.lookups.add(invoker.callCompletion())
+                    currentSession.lookups.add(invoker.callCompletion(action.completionType))
                 }
                 is CancelSession -> {
                     if (currentSession == null) {
