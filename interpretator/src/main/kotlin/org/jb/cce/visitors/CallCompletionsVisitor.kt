@@ -1,12 +1,16 @@
-package org.jb.cce.actions
+package org.jb.cce.visitors
 
+import org.jb.cce.actions.*
 import org.jb.cce.uast.CompletableNode
 import org.jb.cce.uast.UnifiedAstVisitor
+import org.jb.cce.uast.statements.declarations.DeclarationNode
 import org.jb.cce.uast.statements.declarations.blocks.BlockNode
 import org.jb.cce.uast.statements.declarations.blocks.ClassInitializerNode
 import org.jb.cce.uast.statements.declarations.blocks.GlobalNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
+import org.jb.cce.uast.statements.expressions.references.ArrayAccessNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
+import org.jb.cce.uast.statements.expressions.references.VariableAccessNode
 
 abstract class CallCompletionsVisitor(protected open val text: String,
                                       private val strategy: CompletionStrategy) : UnifiedAstVisitor {
@@ -74,33 +78,5 @@ abstract class CallCompletionsVisitor(protected open val text: String,
             actions += PrintText(text.substring(IntRange(previousTextStart, node.getOffset() - 1)))
             previousTextStart = node.getOffset() + node.getLength()
         }
-    }
-}
-
-class CompletableNodesVisitor(override val text: String, strategy: CompletionStrategy): CallCompletionsVisitor(text, strategy) {
-
-    override fun visitCompletableNode(node: CompletableNode) {
-        visitToComplete(node)
-    }
-}
-
-class MethodCallsVisitor(override val text: String, strategy: CompletionStrategy): CallCompletionsVisitor(text, strategy) {
-
-    override fun visitMethodCallNode(node: MethodCallNode) {
-        TODO()
-    }
-}
-
-class MethodArgumentsVisitor(override val text: String, strategy: CompletionStrategy): CallCompletionsVisitor(text, strategy) {
-
-    override fun visitMethodCallNode(node: MethodCallNode) {
-        TODO()
-    }
-}
-
-class VariableAccessVisitor(override val text: String, strategy: CompletionStrategy): CallCompletionsVisitor(text, strategy) {
-
-    override fun visitMethodCallNode(node: MethodCallNode) {
-        TODO()
     }
 }

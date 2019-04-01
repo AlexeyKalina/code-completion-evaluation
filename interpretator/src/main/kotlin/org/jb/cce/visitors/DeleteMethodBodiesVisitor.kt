@@ -1,5 +1,6 @@
-package org.jb.cce.actions
+package org.jb.cce.visitors
 
+import org.jb.cce.actions.DeleteRange
 import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.statements.declarations.blocks.ClassInitializerNode
 import org.jb.cce.uast.statements.declarations.blocks.GlobalNode

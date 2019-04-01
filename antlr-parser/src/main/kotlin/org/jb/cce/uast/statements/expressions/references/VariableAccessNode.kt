@@ -6,5 +6,6 @@ class VariableAccessNode(private val name: CompletableNode,
                          offset: Int,
                          length: Int) : ReferenceNode(name.getText(), offset, length) {
 
+    fun getVariableName() = name
     override fun getChildren() = prefixReference?.let { listOf(it, name) } ?: listOf(name)
 }

@@ -1,6 +1,7 @@
 package org.jb.cce.actions
 
 import org.jb.cce.uast.*
+import org.jb.cce.visitors.*
 
 fun generateActions(filePath: String, fileText: String, tree: FileNode, strategy: CompletionStrategy): List<Action> {
 
