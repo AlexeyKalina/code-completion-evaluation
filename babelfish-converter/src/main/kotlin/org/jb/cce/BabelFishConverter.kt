@@ -9,6 +9,7 @@ class BabelFishConverter {
         val json = JsonParser().parse(babelFishAst).asJsonObject!!
         return when (language) {
             Language.JAVA -> BabelFishJavaVisitor().getUast(json)
+            Language.CSHARP -> BabelFishCSharpVisitor().getUast(json)
             Language.PYTHON -> BabelFishPythonVisitor().getUast(json)
             Language.ANOTHER -> BabelFishUnifiedVisitor().getUast(json)
         }
