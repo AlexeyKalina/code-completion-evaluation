@@ -6,6 +6,9 @@ import java.awt.GridLayout
 import java.awt.event.ItemEvent
 import javax.swing.*
 import javax.swing.JPanel
+import javax.swing.JSpinner
+import javax.swing.SpinnerNumberModel
+
 
 class CompletionSettingsDialogWrapper : DialogWrapper(true) {
     init {
@@ -21,6 +24,15 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
     override fun createCenterPanel(): JComponent? {
         val dialogPanel = JPanel(GridLayout(4,1))
 
+        dialogPanel.add(createTypePanel())
+        dialogPanel.add(createContextPanel())
+        dialogPanel.add(createPrefixPanel())
+        dialogPanel.add(createStatementPanel())
+
+        return dialogPanel
+    }
+
+    private fun createTypePanel(): JPanel {
         val typeLabel = JLabel("Completion type:")
         val completionTypePanel = JPanel(FlowLayout(FlowLayout.LEFT))
         val basicCompletionButton =  JRadioButton("Basic")
@@ -43,8 +55,10 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
         completionTypePanel.add(basicCompletionButton)
         completionTypePanel.add(smartCompletionButton)
 
-        dialogPanel.add(completionTypePanel)
+        return completionTypePanel
+    }
 
+    private fun createContextPanel(): JPanel {
         val contextLabel = JLabel("Context for completion:")
         val contextTypePanel = JPanel(FlowLayout(FlowLayout.LEFT))
         val allContextButton =  JRadioButton("All context")
@@ -67,21 +81,38 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
         contextTypePanel.add(allContextButton)
         contextTypePanel.add(previousContextButton)
 
-        dialogPanel.add(contextTypePanel)
+        return contextTypePanel
+    }
 
+    private fun createPrefixPanel(): JPanel {
         val prefixLabel = JLabel("Completion prefix:")
         val prefixPanel = JPanel(FlowLayout(FlowLayout.LEFT))
         val noPrefixButton =  JRadioButton("No prefix")
+        val model = SpinnerNumberModel(2, 1, 5, 1)
+        val simplePrefixSpinner = JSpinner(model)
         noPrefixButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED) completionPrefix = CompletionPrefix.NoPrefix()
+            if (event.stateChange == ItemEvent.SELECTED) {
+                completionPrefix = CompletionPrefix.NoPrefix()
+                simplePrefixSpinner.isEnabled = false
+            }
         }
         val simplePrefixButton =  JRadioButton("Simple prefix")
+        simplePrefixSpinner.isEnabled = false
         simplePrefixButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED) completionPrefix = CompletionPrefix.SimplePrefix(2)
+            if (event.stateChange == ItemEvent.SELECTED) {
+                completionPrefix = CompletionPrefix.SimplePrefix(simplePrefixSpinner.value as Int)
+                simplePrefixSpinner.isEnabled = true
+            }
+        }
+        simplePrefixSpinner.addChangeListener { event ->
+            completionPrefix = CompletionPrefix.SimplePrefix(simplePrefixSpinner.value as Int)
         }
         val capitalizePrefixButton =  JRadioButton("Capitalize prefix")
         capitalizePrefixButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED) completionPrefix = CompletionPrefix.CapitalizePrefix()
+            if (event.stateChange == ItemEvent.SELECTED) {
+                completionPrefix = CompletionPrefix.CapitalizePrefix()
+                simplePrefixSpinner.isEnabled = false
+            }
         }
 
         noPrefixButton.isSelected = true
@@ -95,10 +126,13 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
         prefixPanel.add(prefixLabel)
         prefixPanel.add(noPrefixButton)
         prefixPanel.add(simplePrefixButton)
+        prefixPanel.add(simplePrefixSpinner)
         prefixPanel.add(capitalizePrefixButton)
 
-        dialogPanel.add(prefixPanel)
+        return prefixPanel
+    }
 
+    private fun createStatementPanel(): JPanel {
         val statementLabel = JLabel("What complete:")
         val statementPanel = JPanel(FlowLayout(FlowLayout.LEFT))
         val methodsButton =  JRadioButton("Method calls")
@@ -133,9 +167,7 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
         statementPanel.add(variablesButton)
         statementPanel.add(allStatementsButton)
 
-        dialogPanel.add(statementPanel)
-
-        return dialogPanel
+        return statementPanel
     }
 }
 

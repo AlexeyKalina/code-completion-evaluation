@@ -12,7 +12,7 @@ class NoPrefixCreator: CompletionPrefixCreator() {
 
 class SimplePrefixCreator(private val n: Int): CompletionPrefixCreator() {
     override fun getPrefix(text: String): String {
-        return text.substring(0, n)
+        return if (text.length < n) return text else text.substring(0, n)
     }
 }
 
