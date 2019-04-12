@@ -3,9 +3,9 @@ package org.jb.cce.uast.statements.expressions.references
 import org.jb.cce.uast.CompletableNode
 import org.jb.cce.uast.statements.expressions.ExpressionNode
 
-class MethodCallNode(private val name: CompletableNode,
+class MethodCallNode(name: String,
                      offset: Int,
-                     length: Int) : ReferenceNode(name.getText(), offset, length) {
+                     length: Int) : CompletableNode(name, offset, length) {
 
     private val arguments = mutableListOf<ExpressionNode>()
 
@@ -13,5 +13,5 @@ class MethodCallNode(private val name: CompletableNode,
         arguments += argument
     }
 
-    override fun getChildren() = prefixReference?.let { listOf(it) + name + arguments} ?: listOf(name) + arguments
+    override fun getChildren() = arguments
 }

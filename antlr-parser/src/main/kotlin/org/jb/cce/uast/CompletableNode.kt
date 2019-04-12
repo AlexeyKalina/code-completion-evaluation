@@ -1,8 +1,10 @@
 package org.jb.cce.uast
 
-class CompletableNode(private val text: String,
+import org.jb.cce.uast.statements.expressions.ExpressionNode
+
+open class CompletableNode(private val text: String,
                       offset: Int,
-                      length: Int) : UnifiedAstNode(offset, length) {
+                      length: Int): ExpressionNode(offset, length) {
 
     fun getText() = text
 

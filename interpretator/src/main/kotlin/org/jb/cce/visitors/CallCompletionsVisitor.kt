@@ -77,6 +77,7 @@ abstract class CallCompletionsVisitor(protected open val text: String,
             actions += MoveCaret(previousTextStart)
             actions += PrintText(text.substring(IntRange(previousTextStart, node.getOffset() - 1)))
             previousTextStart = node.getOffset() + node.getLength()
+            actions += MoveCaret(node.getOffset())
         }
     }
 }

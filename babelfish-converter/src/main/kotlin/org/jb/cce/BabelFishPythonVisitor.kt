@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import org.jb.cce.uast.CompletableNode
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
+import org.jb.cce.uast.exceptions.UnifiedAstException
 import org.jb.cce.uast.statements.AssignmentNode
 import org.jb.cce.uast.statements.declarations.blocks.BlockNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
@@ -21,50 +22,65 @@ class BabelFishPythonVisitor: BabelFishUnifiedVisitor() {
         when {
             typeEquals(json, "python:Call") -> visitMethodCall(json, parentNode)
             (typeEquals(json, "python:BoxedValue") || typeEquals(json, "python:QualifiedIdentifier")) ||
-                    roleExists(json, "Argument") -> visitFieldAccess(json, parentNode)
+                    roleExists(json, "Argument") -> visitVariableAccess(json, parentNode)
             else -> super.visitChild(json, parentNode)
         }
     }
 
-    override fun visitFieldAccess(json: JsonObject, parentNode: UnifiedAstNode) {
-        val variableAccess = VariableAccessNode(visitQualifier(json), getOffset(json), getLength(json))
-
-        when (parentNode) {
-            is BlockNode -> parentNode.addStatement(variableAccess)
-            is AssignmentNode -> parentNode.setAssigned(variableAccess)
-            is MethodCallNode -> parentNode.addArgument(variableAccess)
-            is FileNode -> parentNode.addStatement(variableAccess)
+    override fun visitVariableAccess(json: JsonObject, parentNode: UnifiedAstNode) {
+        val variableAccessNodes = visitCompletableNodes(json) { name, offset, length -> VariableAccessNode(name, offset, length) }
+        for (node in variableAccessNodes) {
+            when (parentNode) {
+                is BlockNode -> parentNode.addStatement(node)
+                is AssignmentNode -> parentNode.setAssigned(node)
+                is MethodCallNode -> parentNode.addArgument(node)
+                is FileNode -> parentNode.addStatement(node)
+                else -> throw UnifiedAstException("Unexpected parent for variable access node")
+            }
         }
     }
 
     override fun visitMethodCall(json: JsonObject, parentNode: UnifiedAstNode) {
         val funcObj = json["func"].asJsonObject
-        val methodCall = MethodCallNode(visitQualifier(funcObj), getOffset(json), getLength(json))
-
-        visitChildren(json, methodCall)
-
-        when (parentNode) {
-            is BlockNode -> parentNode.addStatement(methodCall)
-            is MethodCallNode -> parentNode.addArgument(methodCall)
-            is FileNode -> parentNode.addStatement(methodCall)
+        val methodCallNodes = visitCompletableNodes(funcObj) { name, offset, length -> MethodCallNode(name, offset, length) }
+        for (node in methodCallNodes) {
+            when (parentNode) {
+                is BlockNode -> parentNode.addStatement(node)
+                is AssignmentNode -> parentNode.setAssigned(node)
+                is MethodCallNode -> parentNode.addArgument(node)
+                is FileNode -> parentNode.addStatement(node)
+                else -> throw UnifiedAstException("Unexpected parent for method call node")
+            }
         }
+        val lastNode = methodCallNodes.last()
+
+        visitChildren(json, lastNode)
     }
 
-    private fun visitQualifier(json: JsonObject): CompletableNode {
-        return when {
-            typeEquals(json, "python:BoxedName") -> visitBoxedName(json)
-            typeEquals(json, "python:QualifiedIdentifier") -> visitPythonQualifiedIdentifier(json)
-            else -> CompletableNode("", -1, -1)
+    override fun <T: CompletableNode> visitCompletableNodes (json: JsonObject, factory : (String, Int, Int) -> T): List<CompletableNode> {
+        val nodes = mutableListOf<T>()
+        when {
+            typeEquals(json, "python:QualifiedIdentifier") -> return visitPythonQualifiedIdentifier(json, factory)
+            typeEquals(json, "python:BoxedName") -> nodes.add(visitBoxedName(json, factory))
+            else -> throw UnifiedAstException("Unexpected completable node")
         }
+        return nodes
     }
 
-    private fun visitPythonQualifiedIdentifier(json: JsonObject): CompletableNode {
-        val identifiers = json["identifiers"].asJsonArray
-        return visitBoxedName(identifiers.last().asJsonObject)
+    private fun <T: CompletableNode> visitPythonQualifiedIdentifier(json: JsonObject, factory : (String, Int, Int) -> T): List<CompletableNode> {
+        val nodes = mutableListOf<CompletableNode>()
+        val names = json["identifiers"].asJsonArray
+        for (i in 0..names.size()-2) {
+            nodes.add(visitBoxedName(names[i].asJsonObject) { name, offset, length -> VariableAccessNode(name, offset, length) })
+        }
+        val lastName = names.last().asJsonObject
+        nodes.add(visitBoxedName(lastName, factory))
+        return nodes
+
     }
 
-    private fun visitBoxedName(json: JsonObject): CompletableNode {
+    private fun <T: CompletableNode> visitBoxedName(json: JsonObject, factory : (String, Int, Int) -> T): T {
         val boxedValue = json["boxed_value"].asJsonObject
-        return CompletableNode(visitIdentifier(boxedValue), getOffset(boxedValue), getLength(boxedValue))
+        return factory(visitIdentifier(boxedValue), getOffset(boxedValue), getLength(boxedValue))
     }
 }

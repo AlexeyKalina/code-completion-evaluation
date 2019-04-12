@@ -34,31 +34,33 @@ class BabelFishCSharpVisitor: BabelFishUnifiedVisitor() {
         if (typeEquals(typeObj, "csharp:GenericName")) {
             typeObj = typeObj["Identifier"].asJsonObject
         }
-        val methodCall = MethodCallNode(
-                CompletableNode(visitIdentifier(typeObj), getOffset(typeObj), getLength(typeObj)),
-                getOffset(typeObj), getLength(typeObj))
 
-        visitChildren(json, methodCall)
-
-        when (parentNode) {
-            is BlockNode -> parentNode.addStatement(methodCall)
-            is MethodCallNode -> parentNode.addArgument(methodCall)
+        val methodCallNodes = visitCompletableNodes(typeObj) { name, offset, length -> MethodCallNode(name, offset, length) }
+        for (node in methodCallNodes) {
+            when (parentNode) {
+                is BlockNode -> parentNode.addStatement(node)
+                is AssignmentNode -> parentNode.setAssigned(node)
+                is MethodCallNode -> parentNode.addArgument(node)
+            }
         }
+        val lastNode = methodCallNodes.last()
+
+        visitChildren(json, lastNode)
     }
 
     private fun visitAssignment(json: JsonObject, parentNode: UnifiedAstNode) {
         if (json.has("Left") && typeEquals(json["Left"].asJsonObject, "uast:Identifier")) {
-            visitFieldAccess(json["Left"].asJsonObject, parentNode)
+            visitVariableAccess(json["Left"].asJsonObject, parentNode)
         }
         if (json.has("Right") && typeEquals(json["Right"].asJsonObject, "uast:Identifier")) {
-            visitFieldAccess(json["Right"].asJsonObject, parentNode)
+            visitVariableAccess(json["Right"].asJsonObject, parentNode)
         }
         visitChildren(json, parentNode)
     }
 
     private fun visitArgument(json: JsonObject, parentNode: UnifiedAstNode) {
         if (json.has("Expression") && typeEquals(json["Expression"].asJsonObject, "uast:Identifier")) {
-            visitFieldAccess(json["Expression"].asJsonObject, parentNode)
+            visitVariableAccess(json["Expression"].asJsonObject, parentNode)
         } else {
             visitChildren(json, parentNode)
         }
@@ -66,18 +68,18 @@ class BabelFishCSharpVisitor: BabelFishUnifiedVisitor() {
 
     private fun visitMemberAccess(json: JsonObject, parentNode: UnifiedAstNode) {
         visitChildren(json["Expression"].asJsonObject, parentNode)
-        visitFieldAccess(json["Name"].asJsonObject, parentNode)
+        visitVariableAccess(json["Name"].asJsonObject, parentNode)
     }
 
-    override fun visitFieldAccess(json: JsonObject, parentNode: UnifiedAstNode) {
+    override fun visitVariableAccess(json: JsonObject, parentNode: UnifiedAstNode) {
         val nameObj = if (typeEquals(json, "csharp:GenericName")) json["Identifier"].asJsonObject else json
-        val name = CompletableNode(visitIdentifier(nameObj), getOffset(nameObj), getLength(nameObj))
-        val variableAccess = VariableAccessNode(name, getOffset(json), getLength(json))
-
-        when (parentNode) {
-            is BlockNode -> parentNode.addStatement(variableAccess)
-            is AssignmentNode -> parentNode.setAssigned(variableAccess)
-            is MethodCallNode -> parentNode.addArgument(variableAccess)
+        val variableAccessNodes = visitCompletableNodes(nameObj) { name, offset, length -> VariableAccessNode(name, offset, length) }
+        for (node in variableAccessNodes) {
+            when (parentNode) {
+                is BlockNode -> parentNode.addStatement(node)
+                is AssignmentNode -> parentNode.setAssigned(node)
+                is MethodCallNode -> parentNode.addArgument(node)
+            }
         }
     }
 
@@ -91,16 +93,17 @@ class BabelFishCSharpVisitor: BabelFishUnifiedVisitor() {
             nameObj = nameObj["Identifier"].asJsonObject
         }
 
-        val methodCall = MethodCallNode(
-                CompletableNode(visitIdentifier(nameObj), getOffset(nameObj), getLength(nameObj)),
-                getOffset(nameObj), getLength(nameObj))
-
-        visitChildren(json, methodCall)
-
-        when (parentNode) {
-            is BlockNode -> parentNode.addStatement(methodCall)
-            is MethodCallNode -> parentNode.addArgument(methodCall)
+        val methodCallNodes = visitCompletableNodes(nameObj) { name, offset, length -> MethodCallNode(name, offset, length) }
+        for (node in methodCallNodes) {
+            when (parentNode) {
+                is BlockNode -> parentNode.addStatement(node)
+                is AssignmentNode -> parentNode.setAssigned(node)
+                is MethodCallNode -> parentNode.addArgument(node)
+            }
         }
+        val lastNode = methodCallNodes.last()
+
+        visitChildren(json, lastNode)
     }
 
     override fun visitTypeDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {

@@ -26,7 +26,7 @@ class MethodArgumentsVisitor(override val text: String, strategy: CompletionStra
 
     override fun visitVariableAccessNode(node: VariableAccessNode) {
         if (insideMethodCall) {
-            visitToComplete(node.getVariableName())
+            visitToComplete(node)
         }
     }
 

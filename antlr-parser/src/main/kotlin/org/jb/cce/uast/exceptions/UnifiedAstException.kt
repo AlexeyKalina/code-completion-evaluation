@@ -1,3 +1,5 @@
 package org.jb.cce.uast.exceptions
 
-class UnifiedAstException : Exception()
+class UnifiedAstException(message: String) : Exception(message) {
+    constructor(): this("")
+}

@@ -48,6 +48,7 @@ interface UnifiedAstVisitor {
 
     fun visitExpressionNode(node: ExpressionNode) {
         when (node) {
+            is CompletableNode -> visitCompletableNode(node)
             is ReferenceNode -> visitReferenceNode(node)
         }
     }
@@ -55,6 +56,11 @@ interface UnifiedAstVisitor {
     fun visitReferenceNode(node: ReferenceNode) {
         when (node) {
             is ArrayAccessNode -> visitArrayAccessNode(node)
+        }
+    }
+
+    fun visitCompletableNode(node: CompletableNode) {
+        when (node) {
             is MethodCallNode -> visitMethodCallNode(node)
             is VariableAccessNode -> visitVariableAccessNode(node)
         }
@@ -78,5 +84,4 @@ interface UnifiedAstVisitor {
     fun visitAssignmentNode(node: AssignmentNode) = visitChildren(node)
 
     fun visitFileNode(node: FileNode) = visitChildren(node)
-    fun visitCompletableNode(node: CompletableNode) = visitChildren(node)
 }
