@@ -14,7 +14,6 @@ interface UnifiedAstVisitor {
         when (node) {
             is FileNode -> visitFileNode(node)
             is StatementNode -> visitStatementNode(node)
-            is CompletableNode -> visitCompletableNode(node)
         }
     }
 
@@ -48,21 +47,16 @@ interface UnifiedAstVisitor {
 
     fun visitExpressionNode(node: ExpressionNode) {
         when (node) {
-            is CompletableNode -> visitCompletableNode(node)
             is ReferenceNode -> visitReferenceNode(node)
+            is VariableAccessNode -> visitVariableAccessNode(node)
         }
     }
 
     fun visitReferenceNode(node: ReferenceNode) {
         when (node) {
             is ArrayAccessNode -> visitArrayAccessNode(node)
-        }
-    }
-
-    fun visitCompletableNode(node: CompletableNode) {
-        when (node) {
             is MethodCallNode -> visitMethodCallNode(node)
-            is VariableAccessNode -> visitVariableAccessNode(node)
+            is FieldAccessNode -> visitFieldAccessNode(node)
         }
     }
 
@@ -78,10 +72,20 @@ interface UnifiedAstVisitor {
     fun visitVariableDeclarationNode(node: VariableDeclarationNode) = visitChildren(node)
 
     fun visitArrayAccessNode(node: ArrayAccessNode) = visitChildren(node)
-    fun visitMethodCallNode(node: MethodCallNode) = visitChildren(node)
-    fun visitVariableAccessNode(node: VariableAccessNode) = visitChildren(node)
+    fun visitMethodCallNode(node: MethodCallNode) {
+        if (node.prefix != null) visit(node.prefix!!)
+        visitCompletable(node)
+        visitChildren(node)
+    }
+    fun visitFieldAccessNode(node: FieldAccessNode) {
+        if (node.prefix != null) visit(node.prefix!!)
+        visitCompletable(node)
+        visitChildren(node)
+    }
 
     fun visitAssignmentNode(node: AssignmentNode) = visitChildren(node)
+    fun visitVariableAccessNode(node: VariableAccessNode) = visitCompletable(node)
 
     fun visitFileNode(node: FileNode) = visitChildren(node)
+    fun visitCompletable(node: Completable) = visitChildren(node as UnifiedAstNode)
 }

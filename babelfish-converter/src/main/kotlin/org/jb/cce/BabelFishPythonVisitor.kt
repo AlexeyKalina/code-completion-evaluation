@@ -1,14 +1,12 @@
 package org.jb.cce
 
 import com.google.gson.JsonObject
-import org.jb.cce.uast.CompletableNode
+import org.jb.cce.uast.Completable
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.exceptions.UnifiedAstException
-import org.jb.cce.uast.statements.AssignmentNode
-import org.jb.cce.uast.statements.declarations.blocks.BlockNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
-import org.jb.cce.uast.statements.expressions.references.VariableAccessNode
+import org.jb.cce.uast.statements.expressions.VariableAccessNode
 
 class BabelFishPythonVisitor: BabelFishUnifiedVisitor() {
 
@@ -30,13 +28,7 @@ class BabelFishPythonVisitor: BabelFishUnifiedVisitor() {
     override fun visitVariableAccess(json: JsonObject, parentNode: UnifiedAstNode) {
         val variableAccessNodes = visitCompletableNodes(json) { name, offset, length -> VariableAccessNode(name, offset, length) }
         for (node in variableAccessNodes) {
-            when (parentNode) {
-                is BlockNode -> parentNode.addStatement(node)
-                is AssignmentNode -> parentNode.setAssigned(node)
-                is MethodCallNode -> parentNode.addArgument(node)
-                is FileNode -> parentNode.addStatement(node)
-                else -> throw UnifiedAstException("Unexpected parent for variable access node")
-            }
+            addToParent(node as UnifiedAstNode, parentNode)
         }
     }
 
@@ -44,20 +36,14 @@ class BabelFishPythonVisitor: BabelFishUnifiedVisitor() {
         val funcObj = json["func"].asJsonObject
         val methodCallNodes = visitCompletableNodes(funcObj) { name, offset, length -> MethodCallNode(name, offset, length) }
         for (node in methodCallNodes) {
-            when (parentNode) {
-                is BlockNode -> parentNode.addStatement(node)
-                is AssignmentNode -> parentNode.setAssigned(node)
-                is MethodCallNode -> parentNode.addArgument(node)
-                is FileNode -> parentNode.addStatement(node)
-                else -> throw UnifiedAstException("Unexpected parent for method call node")
-            }
+            addToParent(node as UnifiedAstNode, parentNode)
         }
         val lastNode = methodCallNodes.last()
 
-        visitChildren(json, lastNode)
+        visitChildren(json, lastNode as UnifiedAstNode)
     }
 
-    override fun <T: CompletableNode> visitCompletableNodes (json: JsonObject, factory : (String, Int, Int) -> T): List<CompletableNode> {
+    override fun <T: Completable> visitCompletableNodes (json: JsonObject, factory : (String, Int, Int) -> T): List<Completable> {
         val nodes = mutableListOf<T>()
         when {
             typeEquals(json, "python:QualifiedIdentifier") -> return visitPythonQualifiedIdentifier(json, factory)
@@ -67,10 +53,10 @@ class BabelFishPythonVisitor: BabelFishUnifiedVisitor() {
         return nodes
     }
 
-    private fun <T: CompletableNode> visitPythonQualifiedIdentifier(json: JsonObject, factory : (String, Int, Int) -> T): List<CompletableNode> {
-        val nodes = mutableListOf<CompletableNode>()
+    private fun <T: Completable> visitPythonQualifiedIdentifier(json: JsonObject, factory : (String, Int, Int) -> T): List<Completable> {
+        val nodes = mutableListOf<Completable>()
         val names = json["identifiers"].asJsonArray
-        for (i in 0..names.size()-2) {
+        for (i in 0 until (names.size() - 1)) {
             nodes.add(visitBoxedName(names[i].asJsonObject) { name, offset, length -> VariableAccessNode(name, offset, length) })
         }
         val lastName = names.last().asJsonObject
@@ -79,7 +65,7 @@ class BabelFishPythonVisitor: BabelFishUnifiedVisitor() {
 
     }
 
-    private fun <T: CompletableNode> visitBoxedName(json: JsonObject, factory : (String, Int, Int) -> T): T {
+    private fun <T: Completable> visitBoxedName(json: JsonObject, factory : (String, Int, Int) -> T): T {
         val boxedValue = json["boxed_value"].asJsonObject
         return factory(visitIdentifier(boxedValue), getOffset(boxedValue), getLength(boxedValue))
     }

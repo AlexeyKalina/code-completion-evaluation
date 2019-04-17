@@ -4,7 +4,7 @@ import org.jb.cce.actions.CompletionStrategy
 import org.jb.cce.uast.statements.declarations.DeclarationNode
 import org.jb.cce.uast.statements.expressions.references.ArrayAccessNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
-import org.jb.cce.uast.statements.expressions.references.VariableAccessNode
+import org.jb.cce.uast.statements.expressions.VariableAccessNode
 
 class MethodArgumentsVisitor(override val text: String, strategy: CompletionStrategy): CallCompletionsVisitor(text, strategy) {
 

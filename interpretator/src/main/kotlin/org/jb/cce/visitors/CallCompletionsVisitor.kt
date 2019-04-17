@@ -1,16 +1,12 @@
 package org.jb.cce.visitors
 
 import org.jb.cce.actions.*
-import org.jb.cce.uast.CompletableNode
+import org.jb.cce.uast.Completable
 import org.jb.cce.uast.UnifiedAstVisitor
-import org.jb.cce.uast.statements.declarations.DeclarationNode
 import org.jb.cce.uast.statements.declarations.blocks.BlockNode
 import org.jb.cce.uast.statements.declarations.blocks.ClassInitializerNode
 import org.jb.cce.uast.statements.declarations.blocks.GlobalNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
-import org.jb.cce.uast.statements.expressions.references.ArrayAccessNode
-import org.jb.cce.uast.statements.expressions.references.MethodCallNode
-import org.jb.cce.uast.statements.expressions.references.VariableAccessNode
 
 abstract class CallCompletionsVisitor(protected open val text: String,
                                       private val strategy: CompletionStrategy) : UnifiedAstVisitor {
@@ -52,27 +48,29 @@ abstract class CallCompletionsVisitor(protected open val text: String,
         }
     }
 
-    protected fun visitToComplete(node: CompletableNode) {
+    protected fun visitToComplete(node: Completable) {
         when (strategy.context) {
             CompletionContext.ALL -> prepareAllContext(node)
             CompletionContext.PREVIOUS -> preparePreviousContext(node)
         }
 
         val prefix = prefixCreator.getPrefix(node.getText())
-        actions += PrintText(prefix)
+        if (!prefix.isEmpty())
+            actions += PrintText(prefix)
         actions += CallCompletion(node.getText(), strategy.type)
-        actions += DeleteRange(node.getOffset(), node.getOffset() + prefix.length)
+        if (!prefix.isEmpty())
+            actions += DeleteRange(node.getOffset(), node.getOffset() + prefix.length)
         actions += PrintText(node.getText())
 
         actions += CancelSession()
     }
 
-    private fun prepareAllContext(node: CompletableNode) {
+    private fun prepareAllContext(node: Completable) {
         actions += DeleteRange(node.getOffset(), node.getOffset() + node.getLength())
         actions += MoveCaret(node.getOffset())
     }
 
-    private fun preparePreviousContext(node: CompletableNode) {
+    private fun preparePreviousContext(node: Completable) {
         if (previousTextStart < node.getOffset()) {
             actions += MoveCaret(previousTextStart)
             actions += PrintText(text.substring(IntRange(previousTextStart, node.getOffset() - 1)))

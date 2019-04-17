@@ -1,14 +1,11 @@
 package org.jb.cce
 
 import com.google.gson.JsonObject
-import org.jb.cce.uast.CompletableNode
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
-import org.jb.cce.uast.statements.AssignmentNode
 import org.jb.cce.uast.statements.declarations.ClassDeclarationNode
-import org.jb.cce.uast.statements.declarations.blocks.BlockNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
-import org.jb.cce.uast.statements.expressions.references.VariableAccessNode
+import org.jb.cce.uast.statements.expressions.VariableAccessNode
 
 class BabelFishCSharpVisitor: BabelFishUnifiedVisitor() {
     override fun visitFileNode(json: JsonObject): FileNode {
@@ -37,15 +34,11 @@ class BabelFishCSharpVisitor: BabelFishUnifiedVisitor() {
 
         val methodCallNodes = visitCompletableNodes(typeObj) { name, offset, length -> MethodCallNode(name, offset, length) }
         for (node in methodCallNodes) {
-            when (parentNode) {
-                is BlockNode -> parentNode.addStatement(node)
-                is AssignmentNode -> parentNode.setAssigned(node)
-                is MethodCallNode -> parentNode.addArgument(node)
-            }
+            addToParent(node as UnifiedAstNode, parentNode)
         }
         val lastNode = methodCallNodes.last()
 
-        visitChildren(json, lastNode)
+        visitChildren(json, lastNode as UnifiedAstNode)
     }
 
     private fun visitAssignment(json: JsonObject, parentNode: UnifiedAstNode) {
@@ -75,11 +68,7 @@ class BabelFishCSharpVisitor: BabelFishUnifiedVisitor() {
         val nameObj = if (typeEquals(json, "csharp:GenericName")) json["Identifier"].asJsonObject else json
         val variableAccessNodes = visitCompletableNodes(nameObj) { name, offset, length -> VariableAccessNode(name, offset, length) }
         for (node in variableAccessNodes) {
-            when (parentNode) {
-                is BlockNode -> parentNode.addStatement(node)
-                is AssignmentNode -> parentNode.setAssigned(node)
-                is MethodCallNode -> parentNode.addArgument(node)
-            }
+            addToParent(node as UnifiedAstNode, parentNode)
         }
     }
 
@@ -95,15 +84,11 @@ class BabelFishCSharpVisitor: BabelFishUnifiedVisitor() {
 
         val methodCallNodes = visitCompletableNodes(nameObj) { name, offset, length -> MethodCallNode(name, offset, length) }
         for (node in methodCallNodes) {
-            when (parentNode) {
-                is BlockNode -> parentNode.addStatement(node)
-                is AssignmentNode -> parentNode.setAssigned(node)
-                is MethodCallNode -> parentNode.addArgument(node)
-            }
+            addToParent(node as UnifiedAstNode, parentNode)
         }
         val lastNode = methodCallNodes.last()
 
-        visitChildren(json, lastNode)
+        visitChildren(json, lastNode as UnifiedAstNode)
     }
 
     override fun visitTypeDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {
@@ -112,9 +97,6 @@ class BabelFishCSharpVisitor: BabelFishUnifiedVisitor() {
 
         visitChildren(json, classDeclaration)
 
-        when (parentNode) {
-            is FileNode -> parentNode.addDeclaration(classDeclaration)
-            is ClassDeclarationNode -> parentNode.addMember(classDeclaration)
-        }
+        addToParent(classDeclaration, parentNode)
     }
 }

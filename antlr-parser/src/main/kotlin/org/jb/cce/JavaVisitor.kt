@@ -9,7 +9,7 @@ import org.jb.cce.uast.statements.declarations.blocks.BlockNode
 import org.jb.cce.uast.statements.declarations.blocks.ClassInitializerNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
-import org.jb.cce.uast.statements.expressions.references.VariableAccessNode
+import org.jb.cce.uast.statements.expressions.VariableAccessNode
 
 class JavaVisitor : Java8BaseVisitor<Unit>() {
 

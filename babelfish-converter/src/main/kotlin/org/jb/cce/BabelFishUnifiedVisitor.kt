@@ -2,20 +2,27 @@ package org.jb.cce
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
-import org.jb.cce.uast.CompletableNode
+import org.jb.cce.uast.Completable
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.exceptions.UnifiedAstException
+import org.jb.cce.uast.statements.AssignmentNode
+import org.jb.cce.uast.statements.StatementNode
 import org.jb.cce.uast.statements.declarations.ClassDeclarationNode
+import org.jb.cce.uast.statements.declarations.DeclarationNode
 import org.jb.cce.uast.statements.declarations.MethodDeclarationNode
 import org.jb.cce.uast.statements.declarations.MethodHeaderNode
+import org.jb.cce.uast.statements.declarations.blocks.BlockNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
-import org.jb.cce.uast.statements.expressions.references.VariableAccessNode
+import org.jb.cce.uast.statements.expressions.ExpressionNode
+import org.jb.cce.uast.statements.expressions.references.MethodCallNode
+import org.jb.cce.uast.statements.expressions.references.ReferenceNode
+import org.jb.cce.uast.statements.expressions.VariableAccessNode
 import java.util.logging.Logger
 
 open class BabelFishUnifiedVisitor {
 
-    protected val LOG = Logger.getLogger(this.javaClass.name)!!
+    private val LOG = Logger.getLogger(this.javaClass.name)!!
 
     fun getUast(json: JsonObject): FileNode {
         return visitFileNode(json)
@@ -55,10 +62,7 @@ open class BabelFishUnifiedVisitor {
     protected open fun visitFunctionDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {
         val function = MethodDeclarationNode(getOffset(json), getLength(json))
         visitChildren(json, function)
-        when (parentNode) {
-            is ClassDeclarationNode -> parentNode.addMember(function)
-            is FileNode -> parentNode.addDeclaration(function)
-        }
+        addToParent(function, parentNode)
     }
 
     protected open fun visitFunctionHeader(json: JsonObject, parentNode: MethodDeclarationNode) {
@@ -82,10 +86,32 @@ open class BabelFishUnifiedVisitor {
     protected open fun visitVariableAccess(json: JsonObject, parentNode: UnifiedAstNode) {
     }
 
+    protected open fun visitFieldAccess(json: JsonObject, parentNode: UnifiedAstNode) {
+    }
+
     protected open fun visitVariableDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {
     }
 
-    protected open fun <T: CompletableNode> visitCompletableNodes (json: JsonObject, factory : (String, Int, Int) -> T): List<CompletableNode> {
+    protected fun addToParent(node: UnifiedAstNode, parentNode: UnifiedAstNode) {
+        when (parentNode) {
+            is FileNode -> {
+                when (node) {
+                    is DeclarationNode -> parentNode.addDeclaration(node)
+                    is StatementNode -> parentNode.addStatement(node)
+                }
+            }
+            is ClassDeclarationNode -> parentNode.addMember(node as DeclarationNode)
+            is BlockNode -> parentNode.addStatement(node as StatementNode)
+            is AssignmentNode -> parentNode.setAssigned(node as ExpressionNode)
+            is MethodCallNode -> {
+                if (parentNode.getOffset() > node.getOffset()) parentNode.prefix = node as ReferenceNode
+                else parentNode.addArgument(node as StatementNode)
+            }
+            else -> throw UnifiedAstException("Unexpected parent $parentNode for node $node")
+        }
+    }
+
+    protected open fun <T: Completable> visitCompletableNodes (json: JsonObject, factory : (String, Int, Int) -> T): List<Completable> {
         val nodes = mutableListOf<T>()
         when {
             typeEquals(json, "uast:QualifiedIdentifier") -> return visitQualifiedIdentifier(json, factory)
@@ -98,10 +124,10 @@ open class BabelFishUnifiedVisitor {
         return nodes
     }
 
-    protected fun <T: CompletableNode> visitQualifiedIdentifier(json: JsonObject, factory : (String, Int, Int) -> T): List<CompletableNode> {
-        val nodes = mutableListOf<CompletableNode>()
+    private fun <T: Completable> visitQualifiedIdentifier(json: JsonObject, factory : (String, Int, Int) -> T): List<Completable> {
+        val nodes = mutableListOf<Completable>()
         val names = json["Names"].asJsonArray
-        for (i in 0..names.size()-2) {
+        for (i in 0 until (names.size() - 1)) {
             nodes.add(VariableAccessNode(visitIdentifier(names[i].asJsonObject), getOffset(names[i].asJsonObject), getLength(names[i].asJsonObject)))
         }
         val lastName = names.last().asJsonObject

@@ -1,16 +1,13 @@
 package org.jb.cce
 
 import com.google.gson.JsonObject
-import org.jb.cce.uast.CompletableNode
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
-import org.jb.cce.uast.exceptions.UnifiedAstException
-import org.jb.cce.uast.statements.AssignmentNode
 import org.jb.cce.uast.statements.declarations.ClassDeclarationNode
 import org.jb.cce.uast.statements.declarations.VariableDeclarationNode
-import org.jb.cce.uast.statements.declarations.blocks.BlockNode
+import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
-import org.jb.cce.uast.statements.expressions.references.VariableAccessNode
+import org.jb.cce.uast.statements.expressions.VariableAccessNode
 
 class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
 
@@ -30,7 +27,7 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
             (roleExists(json, "Expression") || roleExists(json, "Argument") || roleExists(json, "Assignment"))
                 && (typeEquals(json, "uast:Identifier") ||
                     typeEquals(json, "uast:QualifiedIdentifier")) -> visitVariableAccess(json, parentNode)
-            typeEquals(json, "java:FieldAccess") -> visitVariableAccess(json, parentNode)
+            typeEquals(json, "java:FieldAccess") -> visitFieldAccess(json, parentNode)
             else -> super.visitChild(json, parentNode)
         }
     }
@@ -44,35 +41,31 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
 
     override fun visitVariableDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {
         val variableDeclaration = VariableDeclarationNode(visitIdentifier(json["name"].asJsonObject), getOffset(json), getLength(json))
-        when (parentNode) {
-            is ClassDeclarationNode -> parentNode.addMember(variableDeclaration)
-            is BlockNode -> parentNode.addStatement(variableDeclaration)
+        addToParent(variableDeclaration, parentNode)
+    }
+
+    override fun visitFieldAccess(json: JsonObject, parentNode: UnifiedAstNode) {
+        val fieldAccessNodes = visitCompletableNodes(json) { name, offset, length -> FieldAccessNode(name, offset, length) }
+        for (node in fieldAccessNodes) {
+            addToParent(node as UnifiedAstNode, parentNode)
         }
     }
 
     override fun visitVariableAccess(json: JsonObject, parentNode: UnifiedAstNode) {
         val variableAccessNodes = visitCompletableNodes(json) { name, offset, length -> VariableAccessNode(name, offset, length) }
         for (node in variableAccessNodes) {
-            when (parentNode) {
-                is BlockNode -> parentNode.addStatement(node)
-                is AssignmentNode -> parentNode.setAssigned(node)
-                is MethodCallNode -> parentNode.addArgument(node)
-            }
+            addToParent(node as UnifiedAstNode, parentNode)
         }
     }
 
     override fun visitMethodCall(json: JsonObject, parentNode: UnifiedAstNode) {
         val methodCallNodes = visitCompletableNodes(json) { name, offset, length -> MethodCallNode(name, offset, length) }
         for (node in methodCallNodes) {
-            when (parentNode) {
-                is BlockNode -> parentNode.addStatement(node)
-                is AssignmentNode -> parentNode.setAssigned(node)
-                is MethodCallNode -> parentNode.addArgument(node)
-            }
+            addToParent(node as UnifiedAstNode, parentNode)
         }
         val lastNode = methodCallNodes.last()
 
-        visitChildren(json, lastNode)
+        visitChildren(json, lastNode as UnifiedAstNode)
     }
 
     override fun visitTypeDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {
@@ -81,9 +74,6 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
 
         visitChildren(json, classDeclaration)
 
-        when (parentNode) {
-            is FileNode -> parentNode.addDeclaration(classDeclaration)
-            is ClassDeclarationNode -> parentNode.addMember(classDeclaration)
-        }
+        addToParent(classDeclaration, parentNode)
     }
 }
