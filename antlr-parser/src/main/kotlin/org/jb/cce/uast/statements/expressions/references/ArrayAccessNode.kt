@@ -1,11 +1,10 @@
 package org.jb.cce.uast.statements.expressions.references
 
-import org.jb.cce.uast.CompletableNode
 import org.jb.cce.uast.statements.expressions.ExpressionNode
 
-class ArrayAccessNode(private val name: CompletableNode,
+class ArrayAccessNode(name: String,
                       offset: Int,
-                      length: Int) : ReferenceNode(name.getText(), offset, length) {
+                      length: Int) : ReferenceNode(name, offset, length) {
 
     private val indices = mutableListOf<ExpressionNode>()
 
@@ -13,5 +12,5 @@ class ArrayAccessNode(private val name: CompletableNode,
         indices += index
     }
 
-    override fun getChildren() = prefixReference?.let { listOf(it, name) + indices } ?:listOf(name) + indices
+    override fun getChildren() = indices
 }

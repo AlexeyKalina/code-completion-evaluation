@@ -8,13 +8,12 @@ import org.jb.cce.uast.statements.expressions.references.*
 
 interface UnifiedAstVisitor {
 
-    fun visitChildren(node: UnifiedAstNode) = node.getChildren().forEach { visit(it) }
+    fun visitChildren(node: UnifiedAstNode) = node.getChildren().sortedBy { it.getOffset() }.forEach { visit(it) }
 
     fun visit(node: UnifiedAstNode) {
         when (node) {
             is FileNode -> visitFileNode(node)
             is StatementNode -> visitStatementNode(node)
-            is CompletableNode -> visitCompletableNode(node)
         }
     }
 
@@ -49,6 +48,7 @@ interface UnifiedAstVisitor {
     fun visitExpressionNode(node: ExpressionNode) {
         when (node) {
             is ReferenceNode -> visitReferenceNode(node)
+            is VariableAccessNode -> visitVariableAccessNode(node)
         }
     }
 
@@ -56,7 +56,7 @@ interface UnifiedAstVisitor {
         when (node) {
             is ArrayAccessNode -> visitArrayAccessNode(node)
             is MethodCallNode -> visitMethodCallNode(node)
-            is VariableAccessNode -> visitVariableAccessNode(node)
+            is FieldAccessNode -> visitFieldAccessNode(node)
         }
     }
 
@@ -72,11 +72,20 @@ interface UnifiedAstVisitor {
     fun visitVariableDeclarationNode(node: VariableDeclarationNode) = visitChildren(node)
 
     fun visitArrayAccessNode(node: ArrayAccessNode) = visitChildren(node)
-    fun visitMethodCallNode(node: MethodCallNode) = visitChildren(node)
-    fun visitVariableAccessNode(node: VariableAccessNode) = visitChildren(node)
+    fun visitMethodCallNode(node: MethodCallNode) {
+        if (node.prefix != null) visit(node.prefix!!)
+        visitCompletable(node)
+        visitChildren(node)
+    }
+    fun visitFieldAccessNode(node: FieldAccessNode) {
+        if (node.prefix != null) visit(node.prefix!!)
+        visitCompletable(node)
+        visitChildren(node)
+    }
 
     fun visitAssignmentNode(node: AssignmentNode) = visitChildren(node)
+    fun visitVariableAccessNode(node: VariableAccessNode) = visitCompletable(node)
 
     fun visitFileNode(node: FileNode) = visitChildren(node)
-    fun visitCompletableNode(node: CompletableNode) = visitChildren(node)
+    fun visitCompletable(node: Completable) = visitChildren(node as UnifiedAstNode)
 }

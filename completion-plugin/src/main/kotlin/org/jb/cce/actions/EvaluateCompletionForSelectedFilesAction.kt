@@ -11,26 +11,34 @@ import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScopes
 import org.antlr.v4.runtime.BufferedTokenStream
 import org.antlr.v4.runtime.CharStreams
-import org.jb.cce.Interpretator
-import org.jb.cce.Java8Lexer
-import org.jb.cce.Java8Parser
-import org.jb.cce.JavaVisitor
+import org.jb.cce.*
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.metrics.*
+import org.jb.cce.uast.FileNode
 import java.io.File
+import java.nio.file.Paths
 import java.util.stream.Collectors
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent?) {
+
+        val settingsDialog = CompletionSettingsDialogWrapper()
+        val result = settingsDialog.showAndGet()
+        if (!result) return
+
         val project = e?.project ?: return
         val containingFiles = getFiles(project, e)
         containingFiles.forEach { println(it.canonicalPath) }
         val generatedActions = mutableListOf<List<Action>>()
         for (javaFile in containingFiles) {
-            val lexer = Java8Lexer(CharStreams.fromFileName(javaFile.path))
-            val parser = Java8Parser(BufferedTokenStream(lexer))
-            val tree = JavaVisitor().buildUnifiedAst(parser)
-            generatedActions.add(generateActions(javaFile.path, File(javaFile.path).readText(), tree))
+//            val lexer = Java8Lexer(CharStreams.fromFileName(javaFile.path))
+//            val parser = Java8Parser(BufferedTokenStream(lexer))
+//            val tree = JavaVisitor().buildUnifiedAst(parser)
+            val client = BabelFishClient("bblfsh_client", "0.0.0.0:9432")
+            val babelFishUast = client.parse(javaFile.path)
+            val tree = BabelFishConverter().convert(babelFishUast, Language.JAVA)
+            val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionStatement, settingsDialog.completionType, settingsDialog.completionContext)
+            generatedActions.add(generateActions(javaFile.path, File(javaFile.path).readText(), tree, strategy))
         }
         val completionInvoker = CompletionInvokerImpl(e.project!!)
         val interpretator = Interpretator(completionInvoker)
@@ -38,12 +46,9 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
                 .flatMap { l -> l.stream() }
                 .collect(Collectors.toList())
         val completions = interpretator.interpret(actions)
-        println("Completion quality evaluation for project files in selected directory")
-        println("Precision Metric value = " + PrecisionMetricsEvaluator.evaluate(completions))
-        println("Recall Metric value = " + RecallMetricsEvaluator.evaluate(completions))
-        println("FMeasure Metric value = " + FMeasureMetricsEvaluator.evaluate(completions))
-        println("Mean Reciprocal Rank Metric value = " + MeanReciprocalRankMetricsEvaluator.evaluate(completions))
-        println("eSaved Metric value = " + ESavedMetricsEvaluator.evaluate(completions))
+        val metricsEvaluator = MetricsEvaluator()
+        metricsEvaluator.registerDefaultMetrics()
+        metricsEvaluator.evaluate(completions, System.out)
     }
 
     private fun getFiles(project: Project, e: AnActionEvent): Collection<VirtualFile> {
