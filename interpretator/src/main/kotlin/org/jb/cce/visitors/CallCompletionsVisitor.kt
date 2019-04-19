@@ -48,7 +48,7 @@ abstract class CallCompletionsVisitor(protected open val text: String,
         }
     }
 
-    protected fun visitToComplete(node: Completable) {
+    protected fun visitCompletable(node: Completable) {
         when (strategy.context) {
             CompletionContext.ALL -> prepareAllContext(node)
             CompletionContext.PREVIOUS -> preparePreviousContext(node)

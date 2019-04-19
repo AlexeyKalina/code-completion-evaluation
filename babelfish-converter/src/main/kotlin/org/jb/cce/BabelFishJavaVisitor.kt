@@ -45,27 +45,27 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
     }
 
     override fun visitFieldAccess(json: JsonObject, parentNode: UnifiedAstNode) {
-        val fieldAccessNodes = visitCompletableNodes(json) { name, offset, length -> FieldAccessNode(name, offset, length) }
+        val fieldAccessNodes = visitNamedNodes(json) { name, offset, length -> FieldAccessNode(name, offset, length) }
         for (node in fieldAccessNodes) {
-            addToParent(node as UnifiedAstNode, parentNode)
+            addToParent(node, parentNode)
         }
     }
 
     override fun visitVariableAccess(json: JsonObject, parentNode: UnifiedAstNode) {
-        val variableAccessNodes = visitCompletableNodes(json) { name, offset, length -> VariableAccessNode(name, offset, length) }
+        val variableAccessNodes = visitNamedNodes(json) { name, offset, length -> VariableAccessNode(name, offset, length) }
         for (node in variableAccessNodes) {
-            addToParent(node as UnifiedAstNode, parentNode)
+            addToParent(node, parentNode)
         }
     }
 
     override fun visitMethodCall(json: JsonObject, parentNode: UnifiedAstNode) {
-        val methodCallNodes = visitCompletableNodes(json) { name, offset, length -> MethodCallNode(name, offset, length) }
+        val methodCallNodes = visitNamedNodes(json) { name, offset, length -> MethodCallNode(name, offset, length) }
         for (node in methodCallNodes) {
-            addToParent(node as UnifiedAstNode, parentNode)
+            addToParent(node, parentNode)
         }
         val lastNode = methodCallNodes.last()
 
-        visitChildren(json, lastNode as UnifiedAstNode)
+        visitChildren(json, lastNode)
     }
 
     override fun visitTypeDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {
