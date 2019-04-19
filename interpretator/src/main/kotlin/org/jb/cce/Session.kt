@@ -1,6 +1,9 @@
 package org.jb.cce
 
-class Session {
-    val completions: MutableList<String> = mutableListOf()
-    val lookups: MutableList<List<String>> = mutableListOf()
+import java.util.*
+
+class Session(val offset: Int,
+              val completion: String,
+              val lookups: List<String>) {
+    val id = UUID.randomUUID()!!
 }

@@ -4,6 +4,7 @@ import com.intellij.openapi.ui.DialogWrapper
 import java.awt.FlowLayout
 import java.awt.GridLayout
 import java.awt.event.ItemEvent
+import java.io.File
 import javax.swing.*
 import javax.swing.JPanel
 import javax.swing.JSpinner
@@ -20,14 +21,16 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
     var completionContext = CompletionContext.ALL
     var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix()
     var completionStatement = CompletionStatement.METHOD_CALLS
+    var outputDir = ""
 
     override fun createCenterPanel(): JComponent? {
-        val dialogPanel = JPanel(GridLayout(4,1))
+        val dialogPanel = JPanel(GridLayout(5,1))
 
         dialogPanel.add(createTypePanel())
         dialogPanel.add(createContextPanel())
         dialogPanel.add(createPrefixPanel())
         dialogPanel.add(createStatementPanel())
+        dialogPanel.add(createOutputDirChooser())
 
         return dialogPanel
     }
@@ -104,7 +107,7 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
                 simplePrefixSpinner.isEnabled = true
             }
         }
-        simplePrefixSpinner.addChangeListener { event ->
+        simplePrefixSpinner.addChangeListener {
             completionPrefix = CompletionPrefix.SimplePrefix(simplePrefixSpinner.value as Int)
         }
         val capitalizePrefixButton =  JRadioButton("Capitalize prefix")
@@ -168,6 +171,28 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
         statementPanel.add(allStatementsButton)
 
         return statementPanel
+    }
+
+    private fun createOutputDirChooser(): JPanel {
+        val outputLabel = JLabel("Output directory for report:")
+        val outputPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+
+        val chooseButton = JButton("Choose")
+        chooseButton.addActionListener {
+            val chooser = JFileChooser()
+            chooser.dialogTitle = "Choose output directory for report"
+            chooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+            chooser.isAcceptAllFileFilterUsed = false
+
+            if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
+                outputDir = chooser.selectedFile!!.absolutePath
+            }
+        }
+
+        outputPanel.add(outputLabel)
+        outputPanel.add(chooseButton)
+
+        return outputPanel
     }
 }
 

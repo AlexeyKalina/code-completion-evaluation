@@ -4,27 +4,42 @@ import org.jb.cce.Session
 import java.util.stream.Collectors
 
 object PrecisionMetric : Metric {
-    override fun evaluate(sessions: List<Session>): Double {
+    private var totalCount = 0L
+    private var relevantCount = 0L
+
+    override fun clear() {
+        totalCount = 0
+        relevantCount = 0
+    }
+
+    override val aggregatedValue: Double
+        get() = if (totalCount == 0L) 0.0 else relevantCount.toDouble() / totalCount.toDouble()
+
+    override fun evaluate(sessions: List<Session>, update: Boolean): Double {
         // top3
         val listOfCompletions = sessions.stream()
-                .flatMap { compl -> compl.lookups.stream() }
+                .map { compl -> compl.lookups }
                 .collect(Collectors.toList())
         val recommendationsMadeCount = listOfCompletions.stream()
                 .filter { l -> !l.isEmpty() }
                 .count()
 
         val listOfRealCompletions = sessions.stream()
-                .flatMap { compl -> compl.completions.stream() }
+                .map { compl -> compl.completion }
                 .collect(Collectors.toList())
 
         assert(listOfCompletions.size == listOfRealCompletions.size)
         var relevantRecommendationsCount = 0
-        var completionIndex = 0
-        for (realCompletion in listOfRealCompletions) {
-            val indexOfNecessaryCompletion = listOfCompletions[completionIndex++].indexOf(realCompletion)
+
+        for ((completionIndex, realCompletion) in listOfRealCompletions.withIndex()) {
+            val indexOfNecessaryCompletion = listOfCompletions[completionIndex].indexOf(realCompletion)
             if (indexOfNecessaryCompletion in 0..3) {
                 relevantRecommendationsCount++
             }
+        }
+        if (update) {
+            totalCount += recommendationsMadeCount
+            relevantCount += relevantRecommendationsCount
         }
         return relevantRecommendationsCount.toDouble() / recommendationsMadeCount
     }
