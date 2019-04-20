@@ -10,7 +10,7 @@ repositories {
 }
 
 dependencies {
-    compile project(':antlr-parser')
+    compile project(':uast')
     compile project(':completion-plugin')
     compile project(':interpretator')
 }

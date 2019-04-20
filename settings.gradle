@@ -1,4 +1,4 @@
 rootProject.name = 'completion-evaluation'
 
-include 'antlr-parser', 'completion-plugin', 'interpretator', 'metrics-evaluator', 'babelfish-converter', 'babelfish-publish', 'report-generators'
+include 'uast', 'completion-plugin', 'interpretator', 'metrics-evaluator', 'babelfish-converter', 'babelfish-publish', 'report-generators'
 
