@@ -30,11 +30,11 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val containingFiles = getFiles(project, e)
         containingFiles.forEach { println(it.canonicalPath) }
         val generatedActions = mutableListOf<List<Action>>()
+        val client = BabelFishClient("0.0.0.0:9432")
         for (javaFile in containingFiles) {
 //            val lexer = Java8Lexer(CharStreams.fromFileName(javaFile.path))
 //            val parser = Java8Parser(BufferedTokenStream(lexer))
 //            val tree = JavaVisitor().buildUnifiedAst(parser)
-            val client = BabelFishClient("bblfsh_client", "0.0.0.0:9432")
             val babelFishUast = client.parse(javaFile.path)
             val tree = BabelFishConverter().convert(babelFishUast, Language.JAVA)
             val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionStatement, settingsDialog.completionType, settingsDialog.completionContext)
