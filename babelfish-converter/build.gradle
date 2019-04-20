@@ -24,6 +24,7 @@ dependencies {
     compile group: 'net.java.dev.jna', name: 'jna', version: '4.2.2'
     compile project(':antlr-parser')
     bblfshNativeLibs 'com.intellij.completion.evaluation:bblfsh-client:0.0.1'
+    testCompile project(':interpretator')
     testCompile("org.junit.jupiter:junit-jupiter-api:5.4.1")
     testRuntime("org.junit.jupiter:junit-jupiter-engine:5.4.1")
 }

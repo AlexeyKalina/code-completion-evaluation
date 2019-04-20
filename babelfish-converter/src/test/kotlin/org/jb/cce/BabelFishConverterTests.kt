@@ -1,8 +1,7 @@
-package org.jb.cee
+package org.jb.cce
 import com.google.gson.Gson
 import org.antlr.v4.runtime.BufferedTokenStream
 import org.antlr.v4.runtime.CharStreams
-import org.jb.cce.*
 import org.jb.cce.actions.*
 import org.junit.jupiter.api.Test
 import java.io.File
@@ -15,7 +14,7 @@ class BabelFishConverterTests {
     private val pythonFilePath = "examples/files/test.py"
 
     private fun parse(filePath: String, language: Language, resultPath: String) {
-        val client = BabelFishClient(endpoint)
+        val client = BabelFishClient("bblfsh_client", endpoint)
         val babelFishUast = client.parse(filePath)
         val uast = BabelFishConverter().convert(babelFishUast, language)
         File(resultPath).writeText(Gson().toJson(uast))
@@ -28,7 +27,7 @@ class BabelFishConverterTests {
 
     @Test
     fun getActionsJava() {
-        val client = BabelFishClient(endpoint)
+        val client = BabelFishClient("bblfsh_client", endpoint)
         val babelFishUast = client.parse(javaFilePath1)
         val uast = BabelFishConverter().convert(babelFishUast, Language.JAVA)
         val strategy = CompletionStrategy(CompletionPrefix.CapitalizePrefix(), CompletionStatement.ALL, CompletionType.BASIC, CompletionContext.PREVIOUS)
