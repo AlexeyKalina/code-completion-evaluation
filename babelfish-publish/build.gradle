@@ -1,0 +1,66 @@
+plugins {
+    id 'java'
+    id "com.jfrog.bintray" version "1.8.4"
+    id 'maven-publish'
+}
+
+group 'com.intellij.completion.evaluation'
+version mvnVersion
+
+def binariesPath = "$projectDir/bin" as String
+
+sourceSets {
+    main.java.srcDirs = []
+    main.resources.srcDirs = []
+    test.java.srcDirs = []
+    test.resources.srcDirs = []
+}
+
+static def checkBinaries(String binPath) {
+    def expectedFiles = ['win32-x86-64/bblfsh_client.dll', 'darwin/libbblfsh_client.dylib', 'linux-x86-64/libbblfsh_client.so']
+    expectedFiles.collect { new File(binPath, it) }.each { file ->
+        if (!file.exists()) {
+            throw new GradleException("Binary dependency not found: ${file.path}")
+        }
+    }
+}
+
+task includeBinaries {
+    doFirst {
+        checkBinaries(binariesPath)
+    }
+    outputs.files files(binariesPath)
+}
+
+jar {
+    into('.') {
+        from includeBinaries
+    }
+    baseName mvnArtifactId
+    version mvnVersion
+}
+
+publishing {
+    publications {
+        MyPublication(MavenPublication) {
+            from components.java
+            groupId mvnGroupId
+            artifactId mvnArtifactId
+            version mvnVersion
+        }
+    }
+}
+
+bintray {
+    user = System.getProperty('BINTRAY_USER')
+    key = System.getProperty('BINTRAY_KEY')
+
+    publish = true
+    pkg {
+        repo = bintrayRepoName
+        name = bintrayPkgName
+        version.name = mvnVersion
+    }
+
+    publications = ['MyPublication']
+}
