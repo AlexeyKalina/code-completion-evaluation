@@ -2,18 +2,16 @@ package org.jb.cce.metrics
 
 import org.jb.cce.Session
 
-object FMeasureMetric : Metric {
-    override fun clear() {
-        PrecisionMetric.clear()
-        RecallMetric.clear()
-    }
+class FMeasureMetric : Metric {
+    private val precision = PrecisionMetric()
+    private val recall = RecallMetric()
 
-    override val aggregatedValue: Double
-        get() = 2 * PrecisionMetric.aggregatedValue * RecallMetric.aggregatedValue / (PrecisionMetric.aggregatedValue + RecallMetric.aggregatedValue)
+    override val value: Double
+        get() = 2 * precision.value * recall.value / (precision.value + recall.value)
 
-    override fun evaluate(sessions: List<Session>, update: Boolean): Double {
-        val precision = PrecisionMetric.evaluate(sessions, false)
-        val recall = RecallMetric.evaluate(sessions, false)
+    override fun evaluate(sessions: List<Session>): Double {
+        val precision = precision.evaluate(sessions)
+        val recall = recall.evaluate(sessions)
         return 2 * precision * recall / (precision + recall)
     }
 

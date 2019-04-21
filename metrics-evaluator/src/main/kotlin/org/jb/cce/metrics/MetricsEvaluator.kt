@@ -8,11 +8,11 @@ class MetricsEvaluator {
     private val metrics = mutableListOf<Metric>()
 
     fun registerDefaultMetrics() {
-        registerMetric(PrecisionMetric)
-        registerMetric(RecallMetric)
-        registerMetric(FMeasureMetric)
-        registerMetric(MeanReciprocalRankMetric)
-//        registerMetric(ESavedMetric)
+        registerMetric(PrecisionMetric())
+        registerMetric(RecallMetric())
+        registerMetric(FMeasureMetric())
+        registerMetric(MeanReciprocalRankMetric())
+//        registerMetric(ESavedMetric())
     }
 
     fun registerMetric(metric: Metric) {
@@ -39,7 +39,7 @@ class MetricsEvaluator {
         }
 
         for (metric in metrics) {
-            out.println("${metric.name} Metric value = ${metric.aggregatedValue}")
+            out.println("${metric.name} Metric value = ${metric.value}")
         }
     }
 }

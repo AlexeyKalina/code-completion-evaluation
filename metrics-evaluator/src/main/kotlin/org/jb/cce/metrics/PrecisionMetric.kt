@@ -3,19 +3,14 @@ package org.jb.cce.metrics
 import org.jb.cce.Session
 import java.util.stream.Collectors
 
-object PrecisionMetric : Metric {
+class PrecisionMetric : Metric {
     private var totalCount = 0L
     private var relevantCount = 0L
 
-    override fun clear() {
-        totalCount = 0
-        relevantCount = 0
-    }
-
-    override val aggregatedValue: Double
+    override val value: Double
         get() = if (totalCount == 0L) 0.0 else relevantCount.toDouble() / totalCount.toDouble()
 
-    override fun evaluate(sessions: List<Session>, update: Boolean): Double {
+    override fun evaluate(sessions: List<Session>): Double {
         // top3
         val listOfCompletions = sessions.stream()
                 .map { compl -> compl.lookups }
@@ -37,10 +32,9 @@ object PrecisionMetric : Metric {
                 relevantRecommendationsCount++
             }
         }
-        if (update) {
-            totalCount += recommendationsMadeCount
-            relevantCount += relevantRecommendationsCount
-        }
+
+        totalCount += recommendationsMadeCount
+        relevantCount += relevantRecommendationsCount
         return relevantRecommendationsCount.toDouble() / recommendationsMadeCount
     }
 

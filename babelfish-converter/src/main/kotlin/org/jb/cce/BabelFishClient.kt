@@ -3,7 +3,7 @@ package org.jb.cce
 import com.sun.jna.*
 import java.util.*
 
-class BabelFishClient(private val endpoint: String) {
+class BabelFishClient(private val endpoint: String = "0.0.0.0:9432") {
     private companion object {
         private val client = Native.loadLibrary("bblfsh_client", GoBabelFishClient::class.java) as GoBabelFishClient
     }

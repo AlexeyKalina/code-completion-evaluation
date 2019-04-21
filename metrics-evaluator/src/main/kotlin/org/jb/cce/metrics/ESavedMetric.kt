@@ -2,15 +2,12 @@ package org.jb.cce.metrics
 
 import org.jb.cce.Session
 
-object ESavedMetric : Metric {
-    override fun clear() {
-        TODO("not implemented")
-    }
+class ESavedMetric : Metric {
 
-    override val aggregatedValue: Double
+    override val value: Double
         get() = TODO("not implemented")
 
-    override fun evaluate(sessions: List<Session>, update: Boolean): Double {
+    override fun evaluate(sessions: List<Session>): Double {
         TODO("not implemented")
     }
 
