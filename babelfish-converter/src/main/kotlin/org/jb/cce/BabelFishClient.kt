@@ -3,11 +3,13 @@ package org.jb.cce
 import com.sun.jna.*
 import java.util.*
 
-class BabelFishClient(libraryPath: String, private val endpoint: String) {
-    private val client = Native.loadLibrary(libraryPath, GoBabelFishClient::class.java) as GoBabelFishClient
+class BabelFishClient(private val endpoint: String) {
+    private companion object {
+        private val client = Native.loadLibrary("bblfsh_client", GoBabelFishClient::class.java) as GoBabelFishClient
+    }
 
     fun parse(filePath: String): String {
-        return client.Parse(getGoStr(filePath), getGoStr(endpoint))
+        return client.Parse(getGoStr(filePath), getGoStr(endpoint)).getString(0)
     }
 
     private fun getGoStr(value: String): GoBabelFishClient.GoString.ByValue {
@@ -31,6 +33,6 @@ class BabelFishClient(libraryPath: String, private val endpoint: String) {
             var n: Long = 0
         }
 
-        fun Parse(file: GoString.ByValue, endpoint: GoString.ByValue): String
+        fun Parse(file: GoString.ByValue, endpoint: GoString.ByValue): Pointer
     }
 }

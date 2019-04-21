@@ -9,6 +9,13 @@ sourceCompatibility = 1.8
 
 repositories {
     mavenCentral()
+    maven {
+        url "https://dl.bintray.com/bibaev/util"
+    }
+}
+
+configurations {
+    bblfshNativeLibs { transitive = false }
 }
 
 dependencies {
@@ -16,9 +23,17 @@ dependencies {
     compile "com.google.code.gson:gson:2.8.5"
     compile group: 'net.java.dev.jna', name: 'jna', version: '4.2.2'
     compile project(':antlr-parser')
+    bblfshNativeLibs 'com.intellij.completion.evaluation:bblfsh-client:0.0.1'
     testCompile("org.junit.jupiter:junit-jupiter-api:5.4.1")
     testRuntime("org.junit.jupiter:junit-jupiter-engine:5.4.1")
 }
+
+task extractLibraries(type: Copy) {
+    from zipTree(configurations.bblfshNativeLibs.singleFile)
+    into "$buildDir/resources/main"
+}
+
+compileJava.dependsOn(extractLibraries)
 
 compileKotlin {
     kotlinOptions.jvmTarget = "1.8"
