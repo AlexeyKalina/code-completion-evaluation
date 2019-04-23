@@ -1,17 +1,26 @@
 package org.jb.cce.actions
 
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.ValidationInfo
 import java.awt.FlowLayout
 import java.awt.GridLayout
 import java.awt.event.ItemEvent
-import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import javax.swing.*
 import javax.swing.JPanel
 import javax.swing.JSpinner
 import javax.swing.SpinnerNumberModel
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
 
 
 class CompletionSettingsDialogWrapper : DialogWrapper(true) {
+    private val properties = PropertiesComponent.getInstance()
+    private val outputDirProperty = "org.jb.cce.output_dir"
+    var outputDir = properties.getValue(outputDirProperty)?: ""
+
     init {
         init()
         title = "Completion evaluation settings"
@@ -21,7 +30,6 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
     var completionContext = CompletionContext.ALL
     var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix()
     var completionStatement = CompletionStatement.METHOD_CALLS
-    var outputDir = ""
 
     override fun createCenterPanel(): JComponent? {
         val dialogPanel = JPanel(GridLayout(5,1))
@@ -33,6 +41,15 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
         dialogPanel.add(createOutputDirChooser())
 
         return dialogPanel
+    }
+
+    override fun doValidate(): ValidationInfo? {
+        val path = Paths.get(outputDir)
+        if (!Files.isDirectory(path)) {
+            return ValidationInfo("Incorrect output directory")
+        }
+        properties.setValue(outputDirProperty, outputDir)
+        return null
     }
 
     private fun createTypePanel(): JPanel {
@@ -177,20 +194,19 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
         val outputLabel = JLabel("Output directory for report:")
         val outputPanel = JPanel(FlowLayout(FlowLayout.LEFT))
 
-        val chooseButton = JButton("Choose")
-        chooseButton.addActionListener {
-            val chooser = JFileChooser()
-            chooser.dialogTitle = "Choose output directory for report"
-            chooser.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
-            chooser.isAcceptAllFileFilterUsed = false
+        val outDirText = JTextField(outputDir)
+        outDirText.document.addDocumentListener(object : DocumentListener {
+            override fun changedUpdate(e: DocumentEvent) = update()
+            override fun removeUpdate(e: DocumentEvent) = update()
+            override fun insertUpdate(e: DocumentEvent) = update()
 
-            if (chooser.showOpenDialog(null) == JFileChooser.APPROVE_OPTION) {
-                outputDir = chooser.selectedFile!!.absolutePath
+            private fun update() {
+                outputDir = outDirText.text
             }
-        }
+        })
 
         outputPanel.add(outputLabel)
-        outputPanel.add(chooseButton)
+        outputPanel.add(outDirText)
 
         return outputPanel
     }
