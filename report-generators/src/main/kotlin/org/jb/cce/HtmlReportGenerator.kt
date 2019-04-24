@@ -5,8 +5,6 @@ import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import java.util.*
 
 class HtmlReportGenerator {
@@ -22,14 +20,13 @@ class HtmlReportGenerator {
     private val sessionsFileName = "sessions.js"
     private val reportFileName = "report.html"
 
-    private val dateFormat = "HH-mm-ss dd.MM.yyyy"
+    private val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
 
     fun generate(sessions: List<Session>, outputDir: String, filePath: String, text: String) {
         val serializer = SessionSerializer()
         val json = serializer.serialize(sessions)
         val file = File(filePath)
-        var formatter = SimpleDateFormat(dateFormat)
-        val reportDir = "${file.name}-${formatter.format(Date())}"
+        val reportDir = "${file.name}_${formatter.format(Date())}"
         val outputPath = Paths.get(outputDir, reportDir)
         Files.createDirectories(outputPath)
         FileWriter(Paths.get(outputPath.toString(), sessionsFileName).toString()).use { it.write("sessions = '$json'") }
