@@ -4,6 +4,9 @@ import java.io.File
 import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.*
 
 class HtmlReportGenerator {
@@ -19,16 +22,19 @@ class HtmlReportGenerator {
     private val sessionsFileName = "sessions.js"
     private val reportFileName = "report.html"
 
-    fun generate(completions: List<Session>, outputDir: String, filePath: String, text: String) {
+    private val dateFormat = "HH-mm-ss dd.MM.yyyy"
+
+    fun generate(sessions: List<Session>, outputDir: String, filePath: String, text: String) {
         val serializer = SessionSerializer()
-        val json = serializer.serialize(completions)
+        val json = serializer.serialize(sessions)
         val file = File(filePath)
-        val reportDir = "${file.name}-${Date()}"
+        var formatter = SimpleDateFormat(dateFormat)
+        val reportDir = "${file.name}-${formatter.format(Date())}"
         val outputPath = Paths.get(outputDir, reportDir)
         Files.createDirectories(outputPath)
         FileWriter(Paths.get(outputPath.toString(), sessionsFileName).toString()).use { it.write("sessions = '$json'") }
 
-        val report = getHtml(completions, file.name, text)
+        val report = getHtml(sessions, file.name, text)
 
         FileWriter(Paths.get(outputPath.toString(), reportFileName).toString()).use { it.write(report) }
     }
@@ -60,15 +66,15 @@ class HtmlReportGenerator {
                 <style>$style</style></head>"""
 
 
-    private fun prepareCode(text: String, completions: List<Session>) : String {
+    private fun prepareCode(text: String, sessions: List<Session>) : String {
         val divClosed = "</div>"
         val sb = StringBuilder(text)
         var offset = 0
-        for (completion in completions) {
-            val divOpened = getDiv(completion)
-            sb.insert(completion.offset + offset, divOpened)
+        for (session in sessions) {
+            val divOpened = getDiv(session)
+            sb.insert(session.offset + offset, divOpened)
             offset += divOpened.length
-            sb.insert(completion.offset + completion.completion.length + offset, divClosed)
+            sb.insert(session.offset + session.expectedText.length + offset, divClosed)
             offset += divClosed.length
         }
         return sb.toString()
@@ -76,9 +82,9 @@ class HtmlReportGenerator {
 
     private fun getDiv(session: Session) : String {
         val color = when {
-            !session.lookups.contains(session.completion) -> badColor
-            session.lookups.size < middleCountLookups ||
-                    session.lookups.subList(0, middleCountLookups).contains(session.completion) -> goodColor
+            !session.lookups.last().suggests.contains(session.expectedText) -> badColor
+            session.lookups.last().suggests.size < middleCountLookups ||
+                    session.lookups.last().suggests.subList(0, middleCountLookups).contains(session.expectedText) -> goodColor
             else -> middleColor
         }
         return "<div class=\"completion\" id=\"${session.id}\" style=\"color: $color; font-weight: bold\">"

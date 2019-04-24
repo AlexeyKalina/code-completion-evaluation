@@ -12,7 +12,7 @@ class MetricsEvaluator {
         registerMetric(RecallMetric())
         registerMetric(FMeasureMetric())
         registerMetric(MeanReciprocalRankMetric())
-//        registerMetric(ESavedMetric())
+        registerMetric(ESavedMetric())
     }
 
     fun registerMetric(metric: Metric) {
@@ -39,7 +39,10 @@ class MetricsEvaluator {
         }
 
         for (metric in metrics) {
-            out.println("${metric.name} Metric value = ${metric.value}")
+            out.println("${metric.name} Metric stat:")
+            out.println("Mean value = ${metric.sample.mean()}")
+            out.println("Min value = ${metric.sample.min()}")
+            out.println("Max value = ${metric.sample.max()}")
         }
     }
 }

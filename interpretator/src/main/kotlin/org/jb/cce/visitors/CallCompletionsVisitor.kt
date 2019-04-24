@@ -55,9 +55,14 @@ abstract class CallCompletionsVisitor(protected open val text: String,
         }
 
         val prefix = prefixCreator.getPrefix(node.getText())
-        if (!prefix.isEmpty())
-            actions += PrintText(prefix)
-        actions += CallCompletion(node.getText(), strategy.type)
+        var currentPrefix = ""
+        for (symbol in prefix) {
+            actions += CallCompletion(currentPrefix, node.getText(), strategy.type)
+            actions += PrintText(symbol.toString())
+            currentPrefix += symbol
+        }
+        actions += CallCompletion(prefix, node.getText(), strategy.type)
+
         if (!prefix.isEmpty())
             actions += DeleteRange(node.getOffset(), node.getOffset() + prefix.length)
         actions += PrintText(node.getText())

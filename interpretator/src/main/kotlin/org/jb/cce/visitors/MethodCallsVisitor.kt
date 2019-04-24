@@ -14,7 +14,8 @@ class MethodCallsVisitor(override val text: String, strategy: CompletionStrategy
     override fun visitMethodCallNode(node: MethodCallNode) {
         val prevValue = insideMethodCall
         insideMethodCall = true
-        if (node.prefix != null) visit(node.prefix!!)
+        val prefix = node.prefix
+        if (prefix != null) visit(prefix)
         visitCompletable(node)
         visitChildren(node)
         insideMethodCall = prevValue

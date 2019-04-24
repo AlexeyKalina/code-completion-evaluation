@@ -3,7 +3,7 @@ package org.jb.cce
 import java.util.*
 
 class Session(val offset: Int,
-              val completion: String,
-              val lookups: List<String>) {
+              val expectedText: String) {
+    val lookups: MutableList<Lookup> = mutableListOf()
     val id = UUID.randomUUID()!!
 }

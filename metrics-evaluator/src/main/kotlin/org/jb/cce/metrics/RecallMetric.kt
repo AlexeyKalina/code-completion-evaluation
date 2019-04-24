@@ -1,22 +1,22 @@
 package org.jb.cce.metrics
 
 import org.jb.cce.Session
+import org.jb.cce.metrics.samples.AppendableSample
+import java.util.stream.Collectors
 
 class RecallMetric : Metric {
-    private var totalCount = 0L
-    private var relevantCount = 0L
-
-    override val value: Double
-        get() = if (totalCount == 0L) 0.0 else relevantCount.toDouble() / totalCount.toDouble()
+    override val sample = AppendableSample()
 
     override fun evaluate(sessions: List<Session>): Double {
-        val recommendationsMadeCount = sessions.stream()
-                .filter { session -> session.lookups.contains(session.completion) }
+        val listOfCompletions = sessions.stream()
+                .flatMap { session -> session.lookups.map { lookup -> Pair(lookup.suggests, session.expectedText) }.stream() }
+                .collect(Collectors.toList())
+        val recommendationsMadeCount = listOfCompletions.stream()
+                .filter { (suggests, expectedText) -> suggests.contains(expectedText) }
                 .count()
 
-        totalCount += sessions.size
-        relevantCount += recommendationsMadeCount
-        return recommendationsMadeCount.toDouble() / sessions.size
+        sample.add(recommendationsMadeCount.toDouble(), listOfCompletions.size.toLong())
+        return recommendationsMadeCount.toDouble() / listOfCompletions.size
     }
 
     override val name: String = "Recall"

@@ -57,9 +57,9 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val interpretator = Interpretator(completionInvoker, invokeLaterScheduler)
         interpretator.interpret(generatedActions.stream()
                 .flatMap { l -> l.stream() }
-                .collect(Collectors.toList()), Consumer { (completions, filePath, text) ->
-            metricsEvaluator.evaluate(completions, filePath, System.out)
-            reportGenerator.generate(completions, settingsDialog.outputDir, filePath, text)
+                .collect(Collectors.toList()), Consumer { (sessions, filePath, text) ->
+            metricsEvaluator.evaluate(sessions, filePath, System.out)
+            reportGenerator.generate(sessions, settingsDialog.outputDir, filePath, text)
         }, Runnable { metricsEvaluator.printResult(System.out) })
     }
 

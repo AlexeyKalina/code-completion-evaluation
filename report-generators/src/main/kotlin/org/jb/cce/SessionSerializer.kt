@@ -6,9 +6,9 @@ import java.util.*
 class SessionSerializer {
 
     fun serialize(sessions: List<Session>) : String {
-        val map = HashMap<UUID, List<String>>()
+        val map = HashMap<UUID, Session>()
         for (session in sessions) {
-            map[session.id] = session.lookups
+            map[session.id] = session
         }
         return Gson().toJson(map)
     }

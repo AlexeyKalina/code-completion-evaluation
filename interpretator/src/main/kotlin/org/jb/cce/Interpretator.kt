@@ -51,8 +51,9 @@ class Interpretator(private val invoker: CompletionInvoker, private val actionSc
                         }
                         is CallCompletion -> {
                             if (session == null) {
-                                session = Session(position, action.text, invoker.callCompletion(action.completionType))
+                                session = Session(position, action.expectedText)
                             }
+                            session.lookups.add(Lookup(action.text, invoker.callCompletion(action.completionType)))
                         }
                         is CancelSession -> {
                             if (session == null) {
