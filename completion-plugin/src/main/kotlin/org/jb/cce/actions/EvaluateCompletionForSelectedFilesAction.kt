@@ -10,19 +10,11 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScopes
-import org.antlr.v4.runtime.BufferedTokenStream
-import org.antlr.v4.runtime.CharStreams
 import org.jb.cce.*
 import org.jb.cce.interpretator.CompletionInvokerImpl
-import org.jb.cce.metrics.*
-import org.jb.cce.uast.FileNode
-import java.io.File
+import org.jb.cce.metrics.MetricsEvaluator
 import java.io.FileReader
-import java.io.FileWriter
-import java.nio.file.Paths
-import java.util.function.BiConsumer
 import java.util.function.Consumer
-import java.util.function.Supplier
 import java.util.stream.Collectors
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
