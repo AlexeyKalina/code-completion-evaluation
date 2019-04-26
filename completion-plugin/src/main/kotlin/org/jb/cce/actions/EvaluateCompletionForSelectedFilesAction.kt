@@ -38,11 +38,15 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
 
         val generatedActions = mutableListOf<List<Action>>()
         for (javaFile in containingFiles) {
-            val babelFishUast = client.parse(javaFile.path)
-            val tree = converter.convert(babelFishUast, Language.JAVA)
             val fileText = FileReader(javaFile.path).use { it.readText() }
-
-            generatedActions.add(generateActions(javaFile.path, fileText, tree, strategy))
+            try {
+                val babelFishUast = client.parse(fileText, Language.JAVA)
+                val tree = converter.convert(babelFishUast, Language.JAVA)
+                generatedActions.add(generateActions(javaFile.path, fileText, tree, strategy))
+            } catch (e: RuntimeException) {
+                //TODO: write to log
+                println("Error for file ${javaFile.path}. Message: ${e.message}")
+            }
         }
 
         val invokeLaterScheduler = Consumer<Runnable> { ApplicationManager.getApplication().invokeLater(it) }

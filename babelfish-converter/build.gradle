@@ -23,7 +23,7 @@ dependencies {
     compile "com.google.code.gson:gson:2.8.5"
     compile group: 'net.java.dev.jna', name: 'jna', version: '4.2.2'
     compile project(':uast')
-    bblfshNativeLibs 'com.intellij.completion.evaluation:bblfsh-client:0.0.1'
+    bblfshNativeLibs 'com.intellij.completion.evaluation:bblfsh-client:0.0.3'
     testCompile project(':interpretator')
     testCompile("org.junit.jupiter:junit-jupiter-api:5.4.1")
     testRuntime("org.junit.jupiter:junit-jupiter-engine:5.4.1")
