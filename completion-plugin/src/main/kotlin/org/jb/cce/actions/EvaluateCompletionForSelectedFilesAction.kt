@@ -14,6 +14,8 @@ import org.jb.cce.*
 import org.jb.cce.exceptions.BabelFishClientException
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.metrics.MetricsEvaluator
+import java.awt.Desktop
+import java.io.File
 import java.io.FileReader
 import java.util.function.Consumer
 import java.util.stream.Collectors
@@ -22,6 +24,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
 
         val settingsDialog = CompletionSettingsDialogWrapper()
+        val openFolderDialog = OpenFolderDialogWrapper()
         val result = settingsDialog.showAndGet()
         if (!result) return
 
@@ -57,7 +60,12 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
                 .collect(Collectors.toList()), Consumer { (sessions, filePath, text) ->
             metricsEvaluator.evaluate(sessions, filePath, System.out)
             reportGenerator.generate(sessions, settingsDialog.outputDir, filePath, text)
-        }, Runnable { metricsEvaluator.printResult(System.out) })
+        }, Runnable {
+            metricsEvaluator.printResult(System.out)
+            if (openFolderDialog.showAndGet(Desktop.isDesktopSupported(), settingsDialog.outputDir)
+                    && Desktop.isDesktopSupported())
+                Desktop.getDesktop().open(File(settingsDialog.outputDir))
+        })
     }
 
     private fun getFiles(project: Project, e: AnActionEvent): Collection<VirtualFile> {
