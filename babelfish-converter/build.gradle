@@ -22,8 +22,9 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile "com.google.code.gson:gson:2.8.5"
     compile group: 'net.java.dev.jna', name: 'jna', version: '4.2.2'
-    compile project(':antlr-parser')
+    compile project(':uast')
     bblfshNativeLibs 'com.intellij.completion.evaluation:bblfsh-client:0.0.1'
+    testCompile project(':interpretator')
     testCompile("org.junit.jupiter:junit-jupiter-api:5.4.1")
     testRuntime("org.junit.jupiter:junit-jupiter-engine:5.4.1")
 }
