@@ -5,10 +5,11 @@ import org.jb.cce.uast.statements.declarations.DeclarationNode
 import org.jb.cce.uast.statements.expressions.references.ArrayAccessNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
+import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
 
 class MethodArgumentsVisitor(override val text: String, strategy: CompletionStrategy): CallCompletionsVisitor(text, strategy) {
 
-    private var insideMethodCall = false;
+    private var insideMethodCall = false
 
     override fun visitMethodCallNode(node: MethodCallNode) {
         val prevValue = insideMethodCall
@@ -26,7 +27,13 @@ class MethodArgumentsVisitor(override val text: String, strategy: CompletionStra
 
     override fun visitVariableAccessNode(node: VariableAccessNode) {
         if (insideMethodCall) {
-            visitToComplete(node)
+            visitCompletable(node)
+        }
+    }
+
+    override fun visitFieldAccessNode(node: FieldAccessNode) {
+        if (insideMethodCall) {
+            visitCompletable(node)
         }
     }
 

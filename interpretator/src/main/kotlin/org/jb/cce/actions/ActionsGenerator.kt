@@ -11,7 +11,7 @@ fun generateActions(filePath: String, fileText: String, tree: FileNode, strategy
     }
 
     val completionVisitor = when (strategy.statement) {
-        CompletionStatement.ALL -> CompletableNodesVisitor(fileText, strategy)
+        CompletionStatement.ALL -> AllCompletableVisitor(fileText, strategy)
         CompletionStatement.METHOD_CALLS -> MethodCallsVisitor(fileText, strategy)
         CompletionStatement.ARGUMENTS -> MethodArgumentsVisitor(fileText, strategy)
         CompletionStatement.VARIABLES -> VariableAccessVisitor(fileText, strategy)

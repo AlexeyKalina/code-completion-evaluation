@@ -47,6 +47,12 @@ interface UnifiedAstVisitor {
 
     fun visitExpressionNode(node: ExpressionNode) {
         when (node) {
+            is NamedNode -> visitNamedNode(node)
+        }
+    }
+
+    fun visitNamedNode(node: NamedNode) {
+        when (node) {
             is ReferenceNode -> visitReferenceNode(node)
             is VariableAccessNode -> visitVariableAccessNode(node)
         }
@@ -71,21 +77,18 @@ interface UnifiedAstVisitor {
     fun visitMethodHeaderNode(node: MethodHeaderNode) = visitChildren(node)
     fun visitVariableDeclarationNode(node: VariableDeclarationNode) = visitChildren(node)
 
-    fun visitArrayAccessNode(node: ArrayAccessNode) = visitChildren(node)
-    fun visitMethodCallNode(node: MethodCallNode) {
-        if (node.prefix != null) visit(node.prefix!!)
-        visitCompletable(node)
-        visitChildren(node)
-    }
-    fun visitFieldAccessNode(node: FieldAccessNode) {
-        if (node.prefix != null) visit(node.prefix!!)
-        visitCompletable(node)
-        visitChildren(node)
-    }
+    fun visitArrayAccessNode(node: ArrayAccessNode) = visitNodeWithPrefix(node)
+    fun visitMethodCallNode(node: MethodCallNode) = visitNodeWithPrefix(node)
+    fun visitFieldAccessNode(node: FieldAccessNode) = visitNodeWithPrefix(node)
 
     fun visitAssignmentNode(node: AssignmentNode) = visitChildren(node)
-    fun visitVariableAccessNode(node: VariableAccessNode) = visitCompletable(node)
+    fun visitVariableAccessNode(node: VariableAccessNode) = visitChildren(node)
 
     fun visitFileNode(node: FileNode) = visitChildren(node)
-    fun visitCompletable(node: Completable) = visitChildren(node as UnifiedAstNode)
+
+    private fun visitNodeWithPrefix(node: ReferenceNode) {
+        val prefix = node.prefix
+        if (prefix != null) visit(prefix)
+        visitChildren(node)
+    }
 }

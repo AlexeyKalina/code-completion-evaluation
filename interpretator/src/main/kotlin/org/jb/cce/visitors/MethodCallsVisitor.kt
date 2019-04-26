@@ -1,11 +1,11 @@
 package org.jb.cce.visitors
 
 import org.jb.cce.actions.CompletionStrategy
-import org.jb.cce.uast.Completable
 import org.jb.cce.uast.statements.declarations.DeclarationNode
 import org.jb.cce.uast.statements.expressions.references.ArrayAccessNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
+import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
 
 class MethodCallsVisitor(override val text: String, strategy: CompletionStrategy): CallCompletionsVisitor(text, strategy) {
 
@@ -14,7 +14,10 @@ class MethodCallsVisitor(override val text: String, strategy: CompletionStrategy
     override fun visitMethodCallNode(node: MethodCallNode) {
         val prevValue = insideMethodCall
         insideMethodCall = true
-        super.visitMethodCallNode(node)
+        val prefix = node.prefix
+        if (prefix != null) visit(prefix)
+        visitCompletable(node)
+        visitChildren(node)
         insideMethodCall = prevValue
     }
 
@@ -32,16 +35,17 @@ class MethodCallsVisitor(override val text: String, strategy: CompletionStrategy
         insideMethodCall = prevValue
     }
 
+    override fun visitFieldAccessNode(node: FieldAccessNode) {
+        val prevValue = insideMethodCall
+        insideMethodCall = false
+        super.visitFieldAccessNode(node)
+        insideMethodCall = prevValue
+    }
+
     override fun visitArrayAccessNode(node: ArrayAccessNode) {
         val prevValue = insideMethodCall
         insideMethodCall = false
         super.visitArrayAccessNode(node)
         insideMethodCall = prevValue
-    }
-
-    override fun visitCompletable(node: Completable) {
-        if (insideMethodCall) {
-            visitToComplete(node)
-        }
     }
 }

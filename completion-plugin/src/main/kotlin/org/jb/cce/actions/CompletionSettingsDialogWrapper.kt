@@ -1,16 +1,26 @@
 package org.jb.cce.actions
 
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.ValidationInfo
 import java.awt.FlowLayout
 import java.awt.GridLayout
 import java.awt.event.ItemEvent
+import java.nio.file.Files
+import java.nio.file.Paths
 import javax.swing.*
 import javax.swing.JPanel
 import javax.swing.JSpinner
 import javax.swing.SpinnerNumberModel
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
 
 
 class CompletionSettingsDialogWrapper : DialogWrapper(true) {
+    private val properties = PropertiesComponent.getInstance()
+    private val outputDirProperty = "org.jb.cce.output_dir"
+    var outputDir = properties.getValue(outputDirProperty)?: ""
+
     init {
         init()
         title = "Completion evaluation settings"
@@ -22,14 +32,24 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
     var completionStatement = CompletionStatement.METHOD_CALLS
 
     override fun createCenterPanel(): JComponent? {
-        val dialogPanel = JPanel(GridLayout(4,1))
+        val dialogPanel = JPanel(GridLayout(5,1))
 
         dialogPanel.add(createTypePanel())
         dialogPanel.add(createContextPanel())
         dialogPanel.add(createPrefixPanel())
         dialogPanel.add(createStatementPanel())
+        dialogPanel.add(createOutputDirChooser())
 
         return dialogPanel
+    }
+
+    override fun doValidate(): ValidationInfo? {
+        val path = Paths.get(outputDir)
+        if (!Files.isDirectory(path)) {
+            return ValidationInfo("Incorrect output directory")
+        }
+        properties.setValue(outputDirProperty, outputDir)
+        return null
     }
 
     private fun createTypePanel(): JPanel {
@@ -104,7 +124,7 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
                 simplePrefixSpinner.isEnabled = true
             }
         }
-        simplePrefixSpinner.addChangeListener { event ->
+        simplePrefixSpinner.addChangeListener {
             completionPrefix = CompletionPrefix.SimplePrefix(simplePrefixSpinner.value as Int)
         }
         val capitalizePrefixButton =  JRadioButton("Capitalize prefix")
@@ -168,6 +188,27 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
         statementPanel.add(allStatementsButton)
 
         return statementPanel
+    }
+
+    private fun createOutputDirChooser(): JPanel {
+        val outputLabel = JLabel("Output directory for report:")
+        val outputPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+
+        val outDirText = JTextField(outputDir)
+        outDirText.document.addDocumentListener(object : DocumentListener {
+            override fun changedUpdate(e: DocumentEvent) = update()
+            override fun removeUpdate(e: DocumentEvent) = update()
+            override fun insertUpdate(e: DocumentEvent) = update()
+
+            private fun update() {
+                outputDir = outDirText.text
+            }
+        })
+
+        outputPanel.add(outputLabel)
+        outputPanel.add(outDirText)
+
+        return outputPanel
     }
 }
 

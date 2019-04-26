@@ -9,9 +9,9 @@ class MethodCallNode(name: String,
                      length: Int) : ReferenceNode(name, offset, length), Completable {
     override fun getText() = name
 
-    private val arguments = mutableListOf<StatementNode>()
+    private val arguments = mutableListOf<ExpressionNode>()
 
-    fun addArgument(argument: StatementNode) {
+    fun addArgument(argument: ExpressionNode) {
         arguments += argument
     }
 

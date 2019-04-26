@@ -2,7 +2,6 @@ package org.jb.cce
 
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
-import org.jb.cce.uast.Completable
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.exceptions.UnifiedAstException
@@ -15,9 +14,9 @@ import org.jb.cce.uast.statements.declarations.MethodHeaderNode
 import org.jb.cce.uast.statements.declarations.blocks.BlockNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 import org.jb.cce.uast.statements.expressions.ExpressionNode
+import org.jb.cce.uast.statements.expressions.NamedNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 import org.jb.cce.uast.statements.expressions.references.ReferenceNode
-import org.jb.cce.uast.statements.expressions.VariableAccessNode
 import java.util.logging.Logger
 
 open class BabelFishUnifiedVisitor {
@@ -104,14 +103,18 @@ open class BabelFishUnifiedVisitor {
             is BlockNode -> parentNode.addStatement(node as StatementNode)
             is AssignmentNode -> parentNode.setAssigned(node as ExpressionNode)
             is MethodCallNode -> {
+                if (node !is ExpressionNode) {
+                    LOG.warning("$node is not Expression inside MethodCall")
+                    return
+                }
                 if (parentNode.getOffset() > node.getOffset()) parentNode.prefix = node as ReferenceNode
-                else parentNode.addArgument(node as StatementNode)
+                else parentNode.addArgument(node)
             }
             else -> throw UnifiedAstException("Unexpected parent $parentNode for node $node")
         }
     }
 
-    protected open fun <T: Completable> visitCompletableNodes (json: JsonObject, factory : (String, Int, Int) -> T): List<Completable> {
+    protected open fun <T: NamedNode> visitNamedNodes (json: JsonObject, factory : (String, Int, Int) -> T): List<NamedNode> {
         val nodes = mutableListOf<T>()
         when {
             typeEquals(json, "uast:QualifiedIdentifier") -> return visitQualifiedIdentifier(json, factory)
@@ -124,14 +127,12 @@ open class BabelFishUnifiedVisitor {
         return nodes
     }
 
-    private fun <T: Completable> visitQualifiedIdentifier(json: JsonObject, factory : (String, Int, Int) -> T): List<Completable> {
-        val nodes = mutableListOf<Completable>()
+    private fun <T: NamedNode> visitQualifiedIdentifier(json: JsonObject, factory : (String, Int, Int) -> T): List<NamedNode> {
+        val nodes = mutableListOf<NamedNode>()
         val names = json["Names"].asJsonArray
-        for (i in 0 until (names.size() - 1)) {
-            nodes.add(VariableAccessNode(visitIdentifier(names[i].asJsonObject), getOffset(names[i].asJsonObject), getLength(names[i].asJsonObject)))
+        for (name in names) {
+            nodes.add(factory(visitIdentifier(name.asJsonObject), getOffset(name.asJsonObject), getLength(name.asJsonObject)))
         }
-        val lastName = names.last().asJsonObject
-        nodes.add(factory(visitIdentifier(lastName), getOffset(lastName), getLength(lastName)))
         return nodes
     }
 
