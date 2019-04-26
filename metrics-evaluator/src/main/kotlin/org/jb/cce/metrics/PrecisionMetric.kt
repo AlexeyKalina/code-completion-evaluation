@@ -25,7 +25,7 @@ class PrecisionMetric : Metric {
             if (indexOfNecessaryCompletion in 0..3) {
                 relevantRecommendationsCount++
                 sample.add(1.0)
-            } else
+            } else if (!completion.first.isEmpty())
                 sample.add(0.0)
         }
 
