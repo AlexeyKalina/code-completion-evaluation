@@ -1,11 +1,12 @@
 package org.jb.cce
 
 import com.sun.jna.*
+import org.jb.cce.exceptions.BabelFishClientException
 import java.util.*
 
 class BabelFishClient(private val endpoint: String = "0.0.0.0:9432") {
     private companion object {
-        private val client = Native.loadLibrary("bblfsh_client", GoBabelFishClient::class.java) as GoBabelFishClient
+        private val client = Native.loadLibrary("/home/kalina-alexey/projects/cs_center/practice/code_completion/code-completion-evaluation/babelfish-publish/go-client/libbblfsh_client.so", GoBabelFishClient::class.java) as GoBabelFishClient
     }
 
     fun parse(text: String, language: Language): String {
@@ -16,7 +17,7 @@ class BabelFishClient(private val endpoint: String = "0.0.0.0:9432") {
 
     private fun checkErrors(result: String) {
         val checkError = { prefix: String, explanation: String ->
-            if (result.startsWith(prefix)) throw RuntimeException("$explanation: ${result.substring(prefix.length)}")
+            if (result.startsWith(prefix)) throw BabelFishClientException("$explanation: ${result.substring(prefix.length)}")
         }
         checkError("ERROR-0", "BabelFish daemon error")
         checkError("ERROR-1", "File parsing error")

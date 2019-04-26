@@ -11,6 +11,7 @@ import com.intellij.psi.PsiManager
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScopes
 import org.jb.cce.*
+import org.jb.cce.exceptions.BabelFishClientException
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.metrics.MetricsEvaluator
 import java.io.FileReader
@@ -43,7 +44,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
                 val babelFishUast = client.parse(fileText, Language.JAVA)
                 val tree = converter.convert(babelFishUast, Language.JAVA)
                 generatedActions.add(generateActions(javaFile.path, fileText, tree, strategy))
-            } catch (e: RuntimeException) {
+            } catch (e: BabelFishClientException) {
                 //TODO: write to log
                 println("Error for file ${javaFile.path}. Message: ${e.message}")
             }
