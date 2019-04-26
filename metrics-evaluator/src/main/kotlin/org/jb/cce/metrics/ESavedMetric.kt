@@ -1,10 +1,13 @@
 package org.jb.cce.metrics
 
 import org.jb.cce.Session
-import org.jb.cce.metrics.samples.AppendableSample
+import org.jb.cce.metrics.util.Sample
 
 class ESavedMetric : Metric {
-    override val sample = AppendableSample()
+    private val sample = Sample()
+
+    override val value: Double
+        get() = sample.mean()
 
     override fun evaluate(sessions: List<Session>): Double {
         var eSavedSum = 0.0
@@ -15,10 +18,11 @@ class ESavedMetric : Metric {
             if (rank < 0) {
                 rank = it.lookups.size
             }
-            eSavedSum += (1.0 - rank.toDouble() / it.lookups.size)
+            val eSavedValue = (1.0 - rank.toDouble() / it.lookups.size)
+            eSavedSum += eSavedValue
+            sample.add(eSavedValue)
         }
 
-        sample.add(eSavedSum, sessions.size.toLong())
         return eSavedSum / sessions.size
     }
 

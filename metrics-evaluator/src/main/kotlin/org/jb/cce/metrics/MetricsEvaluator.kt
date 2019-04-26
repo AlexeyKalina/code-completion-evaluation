@@ -39,10 +39,7 @@ class MetricsEvaluator {
         }
 
         for (metric in metrics) {
-            out.println("${metric.name} Metric stat:")
-            out.println("Mean value = ${metric.sample.mean()}")
-            out.println("Min value = ${metric.sample.min()}")
-            out.println("Max value = ${metric.sample.max()}")
+            out.println("${metric.name} Metric value = ${metric.value}")
         }
     }
 }

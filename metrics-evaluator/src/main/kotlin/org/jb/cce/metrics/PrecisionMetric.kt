@@ -1,11 +1,14 @@
 package org.jb.cce.metrics
 
 import org.jb.cce.Session
-import org.jb.cce.metrics.samples.AppendableSample
+import org.jb.cce.metrics.util.Sample
 import java.util.stream.Collectors
 
 class PrecisionMetric : Metric {
-    override val sample = AppendableSample()
+    private val sample = Sample()
+
+    override val value: Double
+        get() = sample.mean()
 
     override fun evaluate(sessions: List<Session>): Double {
         // top3
@@ -21,10 +24,11 @@ class PrecisionMetric : Metric {
             val indexOfNecessaryCompletion = completion.first.indexOf(completion.second)
             if (indexOfNecessaryCompletion in 0..3) {
                 relevantRecommendationsCount++
-            }
+                sample.add(1.0)
+            } else
+                sample.add(0.0)
         }
 
-        sample.add(relevantRecommendationsCount.toDouble(), recommendationsMadeCount)
         return relevantRecommendationsCount.toDouble() / recommendationsMadeCount
     }
 

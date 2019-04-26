@@ -7,7 +7,7 @@ document.addEventListener("click", function (e) {
 });
 elementsArray.forEach(function(elem) {
     elem.addEventListener("click", function() {
-        var lookups = completions[elem.id]["lookups"];
+        var lookups = completions[elem.id]["_lookups"];
         var suggests = lookups[lookups.length - 1]["suggests"];
         var a, b, i, val = this.value;
         closeAllLists();

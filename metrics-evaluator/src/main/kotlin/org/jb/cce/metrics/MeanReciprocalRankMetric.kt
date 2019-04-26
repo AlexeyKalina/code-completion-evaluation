@@ -1,10 +1,13 @@
 package org.jb.cce.metrics
 
 import org.jb.cce.Session
-import org.jb.cce.metrics.samples.AppendableSample
+import org.jb.cce.metrics.util.Sample
 
 class MeanReciprocalRankMetric : Metric {
-    override val sample = AppendableSample()
+    private val sample = Sample()
+
+    override val value: Double
+        get() = sample.mean()
 
     override fun evaluate(sessions: List<Session>): Double {
         var rankSum = 0.0
@@ -16,11 +19,12 @@ class MeanReciprocalRankMetric : Metric {
                 val rank = suggests.indexOf(expectedText) + 1
                 if (rank > 0) {
                     rankSum += 1.0 / rank
-                }
+                    sample.add(1.0 / rank)
+                } else
+                    sample.add(0.0)
             }
         }
 
-        sample.add(rankSum, totalLookupsCount.toLong())
         return rankSum / totalLookupsCount
     }
 
