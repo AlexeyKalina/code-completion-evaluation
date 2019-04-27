@@ -27,3 +27,7 @@ hs_err_pid*
 **/.idea/**/*.xml
 !.idea/runConfigurations/**
 *.iml
+
+# gradle
+build
+.gradle
