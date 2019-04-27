@@ -24,5 +24,6 @@
 hs_err_pid*
 
 # IDE
-.idea
+**/.idea/**/*.xml
+!.idea/runConfigurations/**
 *.iml
