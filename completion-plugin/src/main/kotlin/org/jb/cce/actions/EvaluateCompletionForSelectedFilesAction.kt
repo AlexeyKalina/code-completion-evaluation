@@ -5,6 +5,7 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
@@ -19,6 +20,9 @@ import java.util.function.Consumer
 import java.util.stream.Collectors
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
+    private companion object {
+        val LOG = Logger.getInstance(EvaluateCompletionForSelectedFilesAction::class.java)
+    }
     override fun actionPerformed(e: AnActionEvent) {
 
         val settingsDialog = CompletionSettingsDialogWrapper()
@@ -45,8 +49,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
                 val tree = converter.convert(babelFishUast, Language.JAVA)
                 generatedActions.add(generateActions(javaFile.path, fileText, tree, strategy))
             } catch (e: BabelFishClientException) {
-                //TODO: write to log
-                println("Error for file ${javaFile.path}. Message: ${e.message}")
+                LOG.error("Error for file ${javaFile.path}. Message: ${e.message}")
             }
         }
 
