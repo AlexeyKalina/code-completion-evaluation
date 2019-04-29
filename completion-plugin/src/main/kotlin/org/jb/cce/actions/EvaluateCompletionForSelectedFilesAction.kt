@@ -24,10 +24,10 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
 
         val settingsDialog = CompletionSettingsDialogWrapper()
-        val openFolderDialog = OpenFolderDialogWrapper()
         val result = settingsDialog.showAndGet()
         if (!result) return
 
+        val outputDir = settingsDialog.outputDir
         val project = e.project ?: return
         val containingFiles = getFiles(project, e)
 
@@ -59,12 +59,10 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
                 .flatMap { l -> l.stream() }
                 .collect(Collectors.toList()), Consumer { (sessions, filePath, text) ->
             metricsEvaluator.evaluate(sessions, filePath, System.out)
-            reportGenerator.generate(sessions, settingsDialog.outputDir, filePath, text)
+            reportGenerator.generate(sessions, outputDir, filePath, text)
         }, Runnable {
             metricsEvaluator.printResult(System.out)
-            if (openFolderDialog.showAndGet(Desktop.isDesktopSupported(), settingsDialog.outputDir)
-                    && Desktop.isDesktopSupported())
-                Desktop.getDesktop().open(File(settingsDialog.outputDir))
+            if (OpenFolderDialogWrapper().showAndGet()) DesktopApi.open(File(outputDir))
         })
     }
 
