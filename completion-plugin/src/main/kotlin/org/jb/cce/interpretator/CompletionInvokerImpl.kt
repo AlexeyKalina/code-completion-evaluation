@@ -6,23 +6,29 @@ import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.codeInsight.lookup.impl.LookupImpl
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
+import org.apache.log4j.Level
 import org.jb.cce.CompletionInvoker
 import java.io.File
 
-
 class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
+    private companion object {
+        val LOG = Logger.getInstance(CompletionInvokerImpl::class.java)
+    }
 
     private var editor: Editor? = null
     override fun moveCaret(offset: Int) {
+        LOG.info("Move caret: $offset")
         editor!!.caretModel.moveToOffset(offset)
     }
 
     override fun callCompletion(type: org.jb.cce.actions.CompletionType): List<String> {
+        LOG.info("Call completion. Type: $type")
         LookupManager.getInstance(project).hideActiveLookup()
         val completionType = when (type) {
             org.jb.cce.actions.CompletionType.BASIC -> CompletionType.BASIC
@@ -37,6 +43,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
     }
 
     override fun printText(text: String) {
+        LOG.info("Print text: $text")
         val document = editor!!.document
         val project = editor!!.project
         val initialOffset = editor!!.caretModel.offset
@@ -46,6 +53,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
     }
 
     override fun deleteRange(begin: Int, end: Int) {
+        LOG.info("Delete range. Begin: $begin, end: $end")
         val document = editor!!.document
         val project = editor!!.project
         val runnable = Runnable { document.deleteString(begin, end) }
@@ -53,12 +61,14 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
     }
 
     override fun openFile(file: String) {
+        LOG.info("Open file: $file")
         val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(File(file))
         val fileEditor = FileEditorManager.getInstance(project).openFile(virtualFile!!, false)[0]
         editor = (fileEditor as TextEditor).editor
     }
 
     override fun closeFile(file: String) {
+        LOG.info("Close file: $file")
         val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(File(file))
         FileEditorManager.getInstance(project).closeFile(virtualFile!!)
         editor = null
