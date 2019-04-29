@@ -11,8 +11,8 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
-import org.apache.log4j.Level
 import org.jb.cce.CompletionInvoker
 import java.io.File
 
@@ -20,15 +20,16 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
     private companion object {
         val LOG = Logger.getInstance(CompletionInvokerImpl::class.java)
     }
-
+    private val LOG_MAX_LENGTH = 50
     private var editor: Editor? = null
+
     override fun moveCaret(offset: Int) {
-        LOG.info("Move caret: $offset")
+        LOG.info("Move caret. ${positionToString(offset)}")
         editor!!.caretModel.moveToOffset(offset)
     }
 
     override fun callCompletion(type: org.jb.cce.actions.CompletionType): List<String> {
-        LOG.info("Call completion. Type: $type")
+        LOG.info("Call completion. Type: $type. ${positionToString(editor!!.caretModel.offset)}")
         LookupManager.getInstance(project).hideActiveLookup()
         val completionType = when (type) {
             org.jb.cce.actions.CompletionType.BASIC -> CompletionType.BASIC
@@ -43,7 +44,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
     }
 
     override fun printText(text: String) {
-        LOG.info("Print text: $text")
+        LOG.info("Print text: ${StringUtil.shortenPathWithEllipsis(text, LOG_MAX_LENGTH)}. ${positionToString(editor!!.caretModel.offset)}")
         val document = editor!!.document
         val project = editor!!.project
         val initialOffset = editor!!.caretModel.offset
@@ -53,8 +54,9 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
     }
 
     override fun deleteRange(begin: Int, end: Int) {
-        LOG.info("Delete range. Begin: $begin, end: $end")
         val document = editor!!.document
+        val textForDelete = StringUtil.shortenPathWithEllipsis(document.text.substring(begin, end), LOG_MAX_LENGTH)
+        LOG.info("Delete range. Text: $textForDelete. Begin: ${positionToString(begin)} End: ${positionToString(end)}")
         val project = editor!!.project
         val runnable = Runnable { document.deleteString(begin, end) }
         WriteCommandAction.runWriteCommandAction(project, runnable)
@@ -72,5 +74,10 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(File(file))
         FileEditorManager.getInstance(project).closeFile(virtualFile!!)
         editor = null
+    }
+
+    private fun positionToString(offset: Int): String {
+        val logicalPosition = editor!!.offsetToLogicalPosition(offset)
+        return "Offset: $offset, Line: ${logicalPosition.line}, Column: ${logicalPosition.column}."
     }
 }
