@@ -6,7 +6,7 @@ import java.util.*
 
 class BabelFishClient(private val endpoint: String = "0.0.0.0:9432") {
     private companion object {
-        private val client = Native.loadLibrary("/home/kalina-alexey/projects/cs_center/practice/code_completion/code-completion-evaluation/babelfish-publish/go-client/libbblfsh_client.so", GoBabelFishClient::class.java) as GoBabelFishClient
+        private val client = Native.loadLibrary("bblfsh_client", GoBabelFishClient::class.java) as GoBabelFishClient
     }
 
     fun parse(text: String, language: Language): String {

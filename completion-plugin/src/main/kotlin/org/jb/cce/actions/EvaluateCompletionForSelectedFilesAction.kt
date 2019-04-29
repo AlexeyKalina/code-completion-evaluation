@@ -1,5 +1,6 @@
 package org.jb.cce.actions
 
+import com.intellij.ide.actions.ShowFilePathAction
 import com.intellij.ide.highlighter.JavaFileType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -14,6 +15,8 @@ import org.jb.cce.*
 import org.jb.cce.exceptions.BabelFishClientException
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.metrics.MetricsEvaluator
+import java.awt.Desktop
+import java.io.File
 import java.io.FileReader
 import java.util.function.Consumer
 import java.util.stream.Collectors
@@ -25,6 +28,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val result = settingsDialog.showAndGet()
         if (!result) return
 
+        val outputDir = settingsDialog.outputDir
         val project = e.project ?: return
         val containingFiles = getFiles(project, e)
 
@@ -56,8 +60,11 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
                 .flatMap { l -> l.stream() }
                 .collect(Collectors.toList()), Consumer { (sessions, filePath, text) ->
             metricsEvaluator.evaluate(sessions, filePath, System.out)
-            reportGenerator.generate(sessions, settingsDialog.outputDir, filePath, text)
-        }, Runnable { metricsEvaluator.printResult(System.out) })
+            reportGenerator.generate(sessions, outputDir, filePath, text)
+        }, Runnable {
+            metricsEvaluator.printResult(System.out)
+            if (OpenFolderDialogWrapper().showAndGet()) ShowFilePathAction.openDirectory(File(outputDir))
+        })
     }
 
     private fun getFiles(project: Project, e: AnActionEvent): Collection<VirtualFile> {
