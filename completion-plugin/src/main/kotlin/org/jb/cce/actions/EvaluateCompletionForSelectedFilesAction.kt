@@ -1,5 +1,6 @@
 package org.jb.cce.actions
 
+import com.intellij.ide.actions.ShowFilePathAction
 import com.intellij.ide.highlighter.JavaFileType
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -62,7 +63,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             reportGenerator.generate(sessions, outputDir, filePath, text)
         }, Runnable {
             metricsEvaluator.printResult(System.out)
-            if (OpenFolderDialogWrapper().showAndGet()) DesktopApi.open(File(outputDir))
+            if (OpenFolderDialogWrapper().showAndGet()) ShowFilePathAction.openDirectory(File(outputDir))
         })
     }
 
