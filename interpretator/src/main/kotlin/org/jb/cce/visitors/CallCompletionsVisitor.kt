@@ -1,12 +1,17 @@
 package org.jb.cce.visitors
 
+import org.jb.cce.TokenType
 import org.jb.cce.actions.*
+import org.jb.cce.exception.UnexpectedActionException
 import org.jb.cce.uast.Completable
 import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.statements.declarations.blocks.BlockNode
 import org.jb.cce.uast.statements.declarations.blocks.ClassInitializerNode
 import org.jb.cce.uast.statements.declarations.blocks.GlobalNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
+import org.jb.cce.uast.statements.expressions.VariableAccessNode
+import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
+import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 
 abstract class CallCompletionsVisitor(protected open val text: String,
                                       private val strategy: CompletionStrategy) : UnifiedAstVisitor {
@@ -54,14 +59,21 @@ abstract class CallCompletionsVisitor(protected open val text: String,
             CompletionContext.PREVIOUS -> preparePreviousContext(node)
         }
 
+        val tokenType = when (node) {
+            is MethodCallNode -> TokenType.METHOD_CALL
+            is VariableAccessNode -> TokenType.VARIABLE
+            is FieldAccessNode -> TokenType.FIELD
+            else -> throw UnexpectedActionException("Unknown token type")
+        }
+
         val prefix = prefixCreator.getPrefix(node.getText())
         var currentPrefix = ""
         for (symbol in prefix) {
-            actions += CallCompletion(currentPrefix, node.getText(), strategy.type)
+            actions += CallCompletion(currentPrefix, node.getText(), strategy.type, tokenType)
             actions += PrintText(symbol.toString())
             currentPrefix += symbol
         }
-        actions += CallCompletion(prefix, node.getText(), strategy.type)
+        actions += CallCompletion(prefix, node.getText(), strategy.type, tokenType)
 
         if (!prefix.isEmpty())
             actions += DeleteRange(node.getOffset(), node.getOffset() + prefix.length)
