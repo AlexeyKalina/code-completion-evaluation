@@ -23,8 +23,8 @@ object DesktopApi {
         }
 
     fun open(file: File): Boolean {
-        if (openSystemSpecific(file.path)) return true
-        return openDesktop(file)
+        if (openDesktop(file)) return true
+        return openSystemSpecific(file.path)
     }
 
     private fun openSystemSpecific(what: String): Boolean {
