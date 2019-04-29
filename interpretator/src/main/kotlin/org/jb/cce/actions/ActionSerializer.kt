@@ -1,5 +1,6 @@
 package org.jb.cce.actions
 import com.google.gson.Gson
+import org.jb.cce.TokenType
 import org.jb.cce.exception.UnexpectedActionException
 
 class ActionSerializer {
@@ -17,7 +18,8 @@ class ActionSerializer {
     private fun deserialize(action: Map<String, Any>): Action {
         return when (action["type"]) {
             Action.ActionType.MOVE_CARET.name -> MoveCaret((action["offset"] as Double).toInt())
-            Action.ActionType.CALL_COMPLETION.name -> CallCompletion(action["text"] as String, action["expectedText"] as String, CompletionType.valueOf(action["completionType"] as String))
+            Action.ActionType.CALL_COMPLETION.name -> CallCompletion(action["text"] as String, action["expectedText"] as String,
+                    CompletionType.valueOf(action["completionType"] as String), TokenType.valueOf(action["tokenType"] as String))
             Action.ActionType.CANCEL_SESSION.name -> CancelSession()
             Action.ActionType.PRINT_TEXT.name -> PrintText(action["text"] as String)
             Action.ActionType.DELETE_RANGE.name ->
