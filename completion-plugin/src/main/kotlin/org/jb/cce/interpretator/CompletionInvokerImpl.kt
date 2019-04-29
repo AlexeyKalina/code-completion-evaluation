@@ -19,8 +19,8 @@ import java.io.File
 class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
     private companion object {
         val LOG = Logger.getInstance(CompletionInvokerImpl::class.java)
+        val LOG_MAX_LENGTH = 50
     }
-    private val LOG_MAX_LENGTH = 50
     private var editor: Editor? = null
 
     override fun moveCaret(offset: Int) {
