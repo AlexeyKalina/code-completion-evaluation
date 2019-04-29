@@ -16,7 +16,6 @@ import org.jb.cce.*
 import org.jb.cce.exceptions.BabelFishClientException
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.metrics.MetricsEvaluator
-import java.awt.Desktop
 import java.io.File
 import java.io.FileReader
 import java.util.function.Consumer
@@ -46,15 +45,21 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionStatement, settingsDialog.completionType, settingsDialog.completionContext)
 
         val generatedActions = mutableListOf<List<Action>>()
+        var completed = 0
+        var withError = 0
         for (javaFile in containingFiles) {
+            LOG.info("Start actions generation for file ${javaFile.path}. Done: $completed/${containingFiles.size}. With error: $withError")
             val fileText = FileReader(javaFile.path).use { it.readText() }
             try {
                 val babelFishUast = client.parse(fileText, Language.JAVA)
                 val tree = converter.convert(babelFishUast, Language.JAVA)
                 generatedActions.add(generateActions(javaFile.path, fileText, tree, strategy))
             } catch (e: BabelFishClientException) {
+                withError++
                 LOG.error("Error for file ${javaFile.path}. Message: ${e.message}")
             }
+            completed++
+            LOG.info("Actions generation for file ${javaFile.path} completed. Done: $completed/${containingFiles.size}. With error: $withError")
         }
 
         val invokeLaterScheduler = Consumer<Runnable> { ApplicationManager.getApplication().invokeLater(it) }
