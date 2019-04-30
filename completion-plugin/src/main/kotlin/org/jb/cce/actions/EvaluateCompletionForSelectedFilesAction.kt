@@ -86,6 +86,6 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
     }
 
     private fun VirtualFile.text(): String {
-        return UnixLineEndingInputStream(this.inputStream, false).bufferedReader().readText()
+        return UnixLineEndingInputStream(this.inputStream, false).bufferedReader().use { it.readText() }
     }
 }
