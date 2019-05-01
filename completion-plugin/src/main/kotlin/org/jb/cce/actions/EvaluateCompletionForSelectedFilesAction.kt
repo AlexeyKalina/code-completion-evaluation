@@ -12,12 +12,12 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.FileTypeIndex
 import com.intellij.psi.search.GlobalSearchScopes
+import org.apache.commons.io.input.UnixLineEndingInputStream
 import org.jb.cce.*
 import org.jb.cce.exceptions.BabelFishClientException
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.metrics.MetricsEvaluator
 import java.io.File
-import java.io.FileReader
 import java.util.function.Consumer
 import java.util.stream.Collectors
 
@@ -49,7 +49,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         var withError = 0
         for (javaFile in containingFiles) {
             LOG.info("Start actions generation for file ${javaFile.path}. Done: $completed/${containingFiles.size}. With error: $withError")
-            val fileText = FileReader(javaFile.path).use { it.readText() }
+            val fileText = javaFile.text()
             try {
                 val babelFishUast = client.parse(fileText, Language.JAVA)
                 val tree = converter.convert(babelFishUast, Language.JAVA)
@@ -83,5 +83,9 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         }
 
         return selectedFiles.flatMap { files(it) }.distinct().toList()
+    }
+
+    private fun VirtualFile.text(): String {
+        return UnixLineEndingInputStream(this.inputStream, false).bufferedReader().use { it.readText() }
     }
 }
