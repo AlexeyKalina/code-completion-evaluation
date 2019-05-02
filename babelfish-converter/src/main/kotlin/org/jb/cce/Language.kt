@@ -1,25 +1,12 @@
 package org.jb.cce
 
-enum class Language {
-    JAVA, PYTHON, CSHARP, ANOTHER;
+enum class Language(val displayName: String, private val extension: String) {
+    JAVA("Java", "java"),
+    PYTHON("Python", "py"),
+    CSHARP("C#", "cs"),
+    UNSUPPORTED("Unsupported", "");
 
     companion object {
-        fun resolve(extension: String): Language {
-            return when (extension) {
-                "java" -> JAVA
-                "py" -> PYTHON
-                "cs" -> CSHARP
-                else -> ANOTHER
-            }
-        }
+        fun resolve(extension: String): Language = Language.values().find { it.extension == extension } ?: UNSUPPORTED
     }
-
-    val displayName: String
-        get() =
-            when (this) {
-                JAVA -> "Java"
-                PYTHON -> "Python"
-                CSHARP -> "C#"
-                else -> this.name
-            }
 }

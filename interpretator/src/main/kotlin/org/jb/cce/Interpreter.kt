@@ -11,7 +11,7 @@ import org.jb.cce.exception.UnexpectedActionException
 import java.io.FileReader
 import java.util.function.Consumer
 
-class Interpretator(private val invoker: CompletionInvoker, private val actionScheduler: Consumer<Runnable>) {
+class Interpreter(private val invoker: CompletionInvoker, private val actionScheduler: Consumer<Runnable>) {
 
     fun interpret(actions: List<Action>, callbackPerFile: Consumer<Triple<List<Session>, String, String>>, callbackFinal: Runnable) {
 

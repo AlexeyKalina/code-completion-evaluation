@@ -19,7 +19,6 @@ import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.metrics.MetricsEvaluator
 import java.io.File
 import java.util.function.Consumer
-import java.util.stream.Collectors
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
     private companion object {
@@ -45,7 +44,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
     private fun generateActions(language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy): List<Action> {
         val client = BabelFishClient()
         val converter = BabelFishConverter()
-        val sortedFiles = files.sortedBy { f -> f.path }
+        val sortedFiles = files.sortedBy { f -> f.name }
 
         val generatedActions = mutableListOf<List<Action>>()
         var completed = 0
@@ -65,20 +64,17 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             LOG.info("Actions generation for file ${file.path} completed. Done: $completed/${files.size}. With error: $withError")
         }
 
-        return generatedActions.stream()
-                .flatMap { l -> l.stream() }
-                .collect(Collectors.toList())
+        return generatedActions.flatten()
     }
 
     private fun interpretActions(actions: List<Action>, project: Project, outputDir: String) {
         val completionInvoker = CompletionInvokerImpl(project)
         val reportGenerator = HtmlReportGenerator()
-        val metricsEvaluator = MetricsEvaluator()
-        metricsEvaluator.registerDefaultMetrics()
+        val metricsEvaluator = MetricsEvaluator.withDefaultMetrics()
 
         val invokeLaterScheduler = Consumer<Runnable> { ApplicationManager.getApplication().invokeLater(it) }
-        val interpretator = Interpretator(completionInvoker, invokeLaterScheduler)
-        interpretator.interpret(actions, Consumer { (sessions, filePath, text) ->
+        val interpreter = Interpreter(completionInvoker, invokeLaterScheduler)
+        interpreter.interpret(actions, Consumer { (sessions, filePath, text) ->
             metricsEvaluator.evaluate(sessions, filePath, System.out)
             reportGenerator.generate(sessions, outputDir, filePath, text)
         }, Runnable {
@@ -97,7 +93,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
                     if (fileOrDir.isDirectory || extension == null) return true
 
                     val language = Language.resolve(extension)
-                    if (language != Language.ANOTHER) {
+                    if (language != Language.UNSUPPORTED) {
                         language2files.computeIfAbsent(language) { mutableSetOf() }.add(fileOrDir)
                     }
                     return true

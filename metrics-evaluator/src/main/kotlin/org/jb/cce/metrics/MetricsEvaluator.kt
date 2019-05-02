@@ -3,7 +3,14 @@ package org.jb.cce.metrics
 import org.jb.cce.Session
 import java.io.PrintStream
 
-class MetricsEvaluator {
+class MetricsEvaluator private constructor() {
+    companion object {
+        fun withDefaultMetrics(): MetricsEvaluator {
+            val evaluator = MetricsEvaluator()
+            evaluator.registerDefaultMetrics()
+            return evaluator
+        }
+    }
 
     private val metrics = mutableListOf<Metric>()
 
