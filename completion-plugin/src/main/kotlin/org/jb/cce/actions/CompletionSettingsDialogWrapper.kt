@@ -70,7 +70,7 @@ class CompletionSettingsDialogWrapper(private val language2files: Map<Language, 
             languagePanel.add(JLabel(languages.single().toString()))
         } else {
             val languageComboBox = ComboBox<LanguageItem>(languages)
-            languageComboBox.selectedItem = languages.find { it.language == language }
+            languageComboBox.selectedItem = languages.first()
             languageComboBox.addItemListener { event ->
                 if (event.stateChange == ItemEvent.SELECTED) {
                     language = (event.item as LanguageItem).language
