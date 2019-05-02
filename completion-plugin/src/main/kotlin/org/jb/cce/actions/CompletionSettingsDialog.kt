@@ -1,23 +1,24 @@
 package org.jb.cce.actions
 
+import com.intellij.ide.util.PropertiesComponent
+import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.Language
 import java.awt.FlowLayout
 import java.awt.GridLayout
 import java.awt.event.ItemEvent
-import java.nio.file.Files
-import java.nio.file.Paths
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 
-class CompletionSettingsDialogWrapper(projectPath: String, private val language2files: Map<Language, Set<VirtualFile>>) : DialogWrapper(true) {
+class CompletionSettingsDialog(project: Project, private val language2files: Map<Language, Set<VirtualFile>>) : DialogWrapper(true) {
     lateinit var language: Language
-    var outputDir = projectPath
+    private val properties = PropertiesComponent.getInstance(project)
+    private val outputDirProperty = "org.jb.cce.output_dir"
+    var outputDir = properties.getValue(outputDirProperty) ?: project.basePath ?: ""
 
     init {
         init()
@@ -40,14 +41,6 @@ class CompletionSettingsDialogWrapper(projectPath: String, private val language2
         dialogPanel.add(createOutputDirChooser())
 
         return dialogPanel
-    }
-
-    override fun doValidate(): ValidationInfo? {
-        val path = Paths.get(outputDir)
-        if (!Files.isDirectory(path)) {
-            return ValidationInfo("Incorrect output directory")
-        }
-        return null
     }
 
     private class LanguageItem(val language: Language, val count: Int) {
@@ -227,6 +220,7 @@ class CompletionSettingsDialogWrapper(projectPath: String, private val language2
 
             private fun update() {
                 outputDir = outDirText.text
+                properties.setValue(outputDirProperty, outputDir)
             }
         })
 

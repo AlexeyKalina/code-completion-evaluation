@@ -5,7 +5,7 @@ import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 
-class OpenBrowserDialogWrapper : DialogWrapper(true) {
+class OpenBrowserDialog : DialogWrapper(true) {
     init {
         init()
         title = "Quality evaluation completed"

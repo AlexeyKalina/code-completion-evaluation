@@ -13,7 +13,6 @@ class HtmlReportGenerator(outputDir: String) {
         private const val goodColor = "#008800"
         private const val middleColor = "#999900"
         private const val badColor = "#BB0066"
-        private const val baseDirectory = "reports"
         private const val globalReportName = "index.html"
 
         private val script = HtmlReportGenerator::class.java.getResource("/script.js").readText()
@@ -23,9 +22,7 @@ class HtmlReportGenerator(outputDir: String) {
 
     private lateinit var reportTitle: String
 
-    private val _reportsDir = Paths.get(outputDir, baseDirectory, formatter.format(Date()))
-    private val reportsDir: String = _reportsDir.toString()
-
+    private val reportsDir: String = Paths.get(outputDir, formatter.format(Date())).toString()
     private val _resourcesDir = Paths.get(reportsDir, "res")
     private val resourcesDir: String = _resourcesDir.toString()
 
@@ -65,23 +62,21 @@ class HtmlReportGenerator(outputDir: String) {
     }
 
     private fun getPaths(fileName: String): ResultPaths {
-        return if (File(Paths.get(resourcesDir, "$fileName.js").toString()).exists()) {
-            val lastIndex = getNewIndex(Paths.get(resourcesDir, fileName).toString())
-            ResultPaths(Paths.get(resourcesDir, "$fileName-$lastIndex.js").toString(),
-                    Paths.get(reportsDir, "$fileName-$lastIndex.html").toString())
+        return if (Files.exists(Paths.get(resourcesDir, "$fileName.js"))) {
+            return getNextFilePaths(Paths.get(resourcesDir, fileName).toString())
         } else {
             ResultPaths(Paths.get(resourcesDir, "$fileName.js").toString(),
                     Paths.get(reportsDir, "$fileName.html").toString())
         }
     }
 
-    private fun getNewIndex(filePath: String): Int {
+    private fun getNextFilePaths(filePath: String): ResultPaths {
         var index = 1
         do {
             index++
             val nextFile = "$filePath-$index.js"
         } while (File(nextFile).exists())
-        return index
+        return ResultPaths("$filePath-$index.js", "$filePath-$index.html")
     }
 
     private fun getHtml(completions: List<Session>, fileName: String, resourcePath: String, text: String) : String {

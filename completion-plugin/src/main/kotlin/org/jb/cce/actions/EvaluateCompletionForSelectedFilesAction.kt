@@ -31,7 +31,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             return
         }
 
-        val settingsDialog = CompletionSettingsDialogWrapper(project.basePath!!, language2files)
+        val settingsDialog = CompletionSettingsDialog(project, language2files)
         val result = settingsDialog.showAndGet()
         if (!result) return
 
@@ -81,7 +81,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             val evaluationResults = HtmlPrintStream()
             metricsEvaluator.printResult(evaluationResults)
             val reportPath = reportGenerator.generateGlobalReport(evaluationResults.toString())
-            if (OpenBrowserDialogWrapper().showAndGet()) BrowserUtil.browse(reportPath)
+            if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
         })
     }
 
