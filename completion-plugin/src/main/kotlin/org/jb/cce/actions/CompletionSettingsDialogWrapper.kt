@@ -1,6 +1,5 @@
 package org.jb.cce.actions
 
-import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
@@ -16,11 +15,9 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 
-class CompletionSettingsDialogWrapper(private val language2files: Map<Language, Set<VirtualFile>>) : DialogWrapper(true) {
-    private val properties = PropertiesComponent.getInstance()
-    private val outputDirProperty = "org.jb.cce.output_dir"
-    var outputDir = properties.getValue(outputDirProperty)?: ""
+class CompletionSettingsDialogWrapper(projectPath: String, private val language2files: Map<Language, Set<VirtualFile>>) : DialogWrapper(true) {
     lateinit var language: Language
+    var outputDir = projectPath
 
     init {
         init()
@@ -50,7 +47,6 @@ class CompletionSettingsDialogWrapper(private val language2files: Map<Language, 
         if (!Files.isDirectory(path)) {
             return ValidationInfo("Incorrect output directory")
         }
-        properties.setValue(outputDirProperty, outputDir)
         return null
     }
 
