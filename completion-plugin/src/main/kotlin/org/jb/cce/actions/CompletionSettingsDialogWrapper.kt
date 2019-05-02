@@ -1,25 +1,26 @@
 package org.jb.cce.actions
 
 import com.intellij.ide.util.PropertiesComponent
+import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
+import com.intellij.openapi.vfs.VirtualFile
+import org.jb.cce.Language
 import java.awt.FlowLayout
 import java.awt.GridLayout
 import java.awt.event.ItemEvent
 import java.nio.file.Files
 import java.nio.file.Paths
 import javax.swing.*
-import javax.swing.JPanel
-import javax.swing.JSpinner
-import javax.swing.SpinnerNumberModel
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 
-class CompletionSettingsDialogWrapper : DialogWrapper(true) {
+class CompletionSettingsDialogWrapper(private val languages: Map<Language, Set<VirtualFile>>) : DialogWrapper(true) {
     private val properties = PropertiesComponent.getInstance()
     private val outputDirProperty = "org.jb.cce.output_dir"
     var outputDir = properties.getValue(outputDirProperty)?: ""
+    var language: Language = languages.maxBy { (_, filesForLanguage) -> filesForLanguage.size }!!.key
 
     init {
         init()
@@ -32,8 +33,9 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
     var completionStatement = CompletionStatement.METHOD_CALLS
 
     override fun createCenterPanel(): JComponent? {
-        val dialogPanel = JPanel(GridLayout(5,1))
+        val dialogPanel = JPanel(GridLayout(6,1))
 
+        dialogPanel.add(createLanguageChooser())
         dialogPanel.add(createTypePanel())
         dialogPanel.add(createContextPanel())
         dialogPanel.add(createPrefixPanel())
@@ -50,6 +52,31 @@ class CompletionSettingsDialogWrapper : DialogWrapper(true) {
         }
         properties.setValue(outputDirProperty, outputDir)
         return null
+    }
+
+    private class LanguageItem(val language: Language, private val count: Int) {
+        override fun toString(): String = "${language.name} ($count)"
+    }
+
+    private fun createLanguageChooser(): JPanel {
+        val languageLabel = JLabel("Completion evaluation for language:")
+        val languagePanel = JPanel(FlowLayout(FlowLayout.LEFT))
+        languagePanel.add(languageLabel)
+
+        if (languages.size == 1) {
+            languagePanel.add(JLabel(LanguageItem(languages.keys.first(), languages.values.first().size).toString()))
+        } else {
+            val languages = languages.map { LanguageItem(it.key, it.value.size) }.toTypedArray()
+            val languageComboBox = ComboBox<LanguageItem>(languages)
+            languageComboBox.selectedItem = languages.find { it.language == language }
+            languageComboBox.addItemListener { event ->
+                if (event.stateChange == ItemEvent.SELECTED) {
+                    language = (event.item as LanguageItem).language
+                }
+            }
+            languagePanel.add(languageComboBox)
+        }
+        return languagePanel
     }
 
     private fun createTypePanel(): JPanel {

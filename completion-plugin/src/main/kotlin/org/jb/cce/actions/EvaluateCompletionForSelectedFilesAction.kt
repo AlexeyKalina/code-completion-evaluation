@@ -8,6 +8,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ContentIterator
+import com.intellij.openapi.ui.showOkCancelDialog
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileFilter
@@ -25,20 +26,23 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val LOG = Logger.getInstance(EvaluateCompletionForSelectedFilesAction::class.java)
     }
     override fun actionPerformed(e: AnActionEvent) {
+        val project = e.project ?: return
+        val files = getFiles(e)
+        if (files.isEmpty()) {
+            showOkCancelDialog("Nothing to complete", "Languages of selected files aren't supported.", "OK")
+            return
+        }
 
-        val settingsDialog = CompletionSettingsDialogWrapper()
+        val settingsDialog = CompletionSettingsDialogWrapper(files)
         val result = settingsDialog.showAndGet()
         if (!result) return
 
-        val project = e.project ?: return
-        val containingFiles = getFiles(project, e)
         val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionStatement, settingsDialog.completionType, settingsDialog.completionContext)
-
-        val actions = generateActions(containingFiles, strategy)
+        val actions = generateActions(settingsDialog.language, files.getValue(settingsDialog.language).toList(), strategy)
         interpretActions(actions, project, settingsDialog.outputDir)
     }
 
-    private fun generateActions(files: List<VirtualFile>, strategy: CompletionStrategy): List<Action> {
+    private fun generateActions(language: Language, files: List<VirtualFile>, strategy: CompletionStrategy): List<Action> {
         val client = BabelFishClient()
         val converter = BabelFishConverter()
 
@@ -46,13 +50,6 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         var completed = 0
         var withError = 0
         for (file in files) {
-            val language = Language.resolve(file.extension)
-            if (language == Language.ANOTHER) {
-                completed++
-                LOG.warn("Unsupported language for file ${file.path}. File skipped. Done: $completed/${files.size}. With error: $withError")
-                continue
-            }
-
             LOG.info("Start actions generation for file ${file.path}. Done: $completed/${files.size}. With error: $withError")
             val fileText = file.text()
             try {
@@ -89,18 +86,25 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         })
     }
 
-    private fun getFiles(project: Project, e: AnActionEvent): List<VirtualFile> {
-        val selectedFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY) ?: return emptyList()
-        val files = mutableListOf<VirtualFile>()
-        for (it in selectedFiles) {
-            VfsUtilCore.iterateChildrenRecursively(it,  VirtualFileFilter.ALL, object: ContentIterator {
+    private fun getFiles(e: AnActionEvent): Map<Language, Set<VirtualFile>> {
+        val selectedFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY) ?: return emptyMap()
+        val files = mutableMapOf<Language, MutableSet<VirtualFile>>()
+        for (file in selectedFiles) {
+            VfsUtilCore.iterateChildrenRecursively(file,  VirtualFileFilter.ALL, object: ContentIterator {
                 override fun processFile(fileOrDir: VirtualFile): Boolean {
-                    if (!fileOrDir.isDirectory) files.add(fileOrDir)
+                    val extension = fileOrDir.extension
+                    if (fileOrDir.isDirectory || extension == null) return true
+
+                    val language = Language.resolve(extension)
+                    if (language != Language.ANOTHER) {
+                        if (files[language] == null) files[language] = mutableSetOf(fileOrDir)
+                        else files[language]!!.add(fileOrDir)
+                    }
                     return true
                 }
             })
         }
-        return files.distinct()
+        return files
     }
 
     private fun VirtualFile.text(): String {

@@ -4,11 +4,11 @@ enum class Language {
     JAVA, PYTHON, CSHARP, ANOTHER;
 
     companion object {
-        fun resolve(extension: String?): Language {
-            return when {
-                extension?.toLowerCase() == "java" -> JAVA
-                extension?.toLowerCase() == "py" -> PYTHON
-                extension?.toLowerCase() == "cs" -> CSHARP
+        fun resolve(extension: String): Language {
+            return when (extension) {
+                "java" -> JAVA
+                "py" -> PYTHON
+                "cs" -> CSHARP
                 else -> ANOTHER
             }
         }
