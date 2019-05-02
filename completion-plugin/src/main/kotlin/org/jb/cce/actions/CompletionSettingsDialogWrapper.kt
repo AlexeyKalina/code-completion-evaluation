@@ -16,11 +16,11 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 
-class CompletionSettingsDialogWrapper(private val languages: Map<Language, Set<VirtualFile>>) : DialogWrapper(true) {
+class CompletionSettingsDialogWrapper(private val language2files: Map<Language, Set<VirtualFile>>) : DialogWrapper(true) {
     private val properties = PropertiesComponent.getInstance()
     private val outputDirProperty = "org.jb.cce.output_dir"
     var outputDir = properties.getValue(outputDirProperty)?: ""
-    var language: Language = languages.maxBy { (_, filesForLanguage) -> filesForLanguage.size }!!.key
+    lateinit var language: Language
 
     init {
         init()
@@ -54,19 +54,21 @@ class CompletionSettingsDialogWrapper(private val languages: Map<Language, Set<V
         return null
     }
 
-    private class LanguageItem(val language: Language, private val count: Int) {
-        override fun toString(): String = "${language.name} ($count)"
+    private class LanguageItem(val language: Language, val count: Int) {
+        override fun toString(): String = "${language.displayName} ($count)"
     }
 
     private fun createLanguageChooser(): JPanel {
-        val languageLabel = JLabel("Completion evaluation for language:")
+        val languageLabel = JLabel("Language:")
         val languagePanel = JPanel(FlowLayout(FlowLayout.LEFT))
         languagePanel.add(languageLabel)
 
-        if (languages.size == 1) {
-            languagePanel.add(JLabel(LanguageItem(languages.keys.first(), languages.values.first().size).toString()))
+        val languages = language2files.map { LanguageItem(it.key, it.value.size) }
+                .sortedByDescending { it.count }.toTypedArray()
+        language = languages[0].language
+        if (language2files.size == 1) {
+            languagePanel.add(JLabel(languages.single().toString()))
         } else {
-            val languages = languages.map { LanguageItem(it.key, it.value.size) }.toTypedArray()
             val languageComboBox = ComboBox<LanguageItem>(languages)
             languageComboBox.selectedItem = languages.find { it.language == language }
             languageComboBox.addItemListener { event ->

@@ -8,7 +8,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ContentIterator
-import com.intellij.openapi.ui.showOkCancelDialog
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileFilter
@@ -27,29 +27,30 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
     }
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        val files = getFiles(e)
-        if (files.isEmpty()) {
-            showOkCancelDialog("Nothing to complete", "Languages of selected files aren't supported.", "OK")
+        val language2files = getFiles(e)
+        if (language2files.isEmpty()) {
+            Messages.showInfoMessage(project, "Languages of selected files aren't supported.", "Nothing to complete")
             return
         }
 
-        val settingsDialog = CompletionSettingsDialogWrapper(files)
+        val settingsDialog = CompletionSettingsDialogWrapper(language2files)
         val result = settingsDialog.showAndGet()
         if (!result) return
 
         val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionStatement, settingsDialog.completionType, settingsDialog.completionContext)
-        val actions = generateActions(settingsDialog.language, files.getValue(settingsDialog.language).toList(), strategy)
+        val actions = generateActions(settingsDialog.language, language2files.getValue(settingsDialog.language), strategy)
         interpretActions(actions, project, settingsDialog.outputDir)
     }
 
-    private fun generateActions(language: Language, files: List<VirtualFile>, strategy: CompletionStrategy): List<Action> {
+    private fun generateActions(language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy): List<Action> {
         val client = BabelFishClient()
         val converter = BabelFishConverter()
+        val sortedFiles = files.sortedBy { f -> f.path }
 
         val generatedActions = mutableListOf<List<Action>>()
         var completed = 0
         var withError = 0
-        for (file in files) {
+        for (file in sortedFiles) {
             LOG.info("Start actions generation for file ${file.path}. Done: $completed/${files.size}. With error: $withError")
             val fileText = file.text()
             try {
@@ -88,7 +89,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
 
     private fun getFiles(e: AnActionEvent): Map<Language, Set<VirtualFile>> {
         val selectedFiles = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY) ?: return emptyMap()
-        val files = mutableMapOf<Language, MutableSet<VirtualFile>>()
+        val language2files = mutableMapOf<Language, MutableSet<VirtualFile>>()
         for (file in selectedFiles) {
             VfsUtilCore.iterateChildrenRecursively(file,  VirtualFileFilter.ALL, object: ContentIterator {
                 override fun processFile(fileOrDir: VirtualFile): Boolean {
@@ -97,14 +98,13 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
 
                     val language = Language.resolve(extension)
                     if (language != Language.ANOTHER) {
-                        if (files[language] == null) files[language] = mutableSetOf(fileOrDir)
-                        else files[language]!!.add(fileOrDir)
+                        language2files.computeIfAbsent(language) { mutableSetOf() }.add(fileOrDir)
                     }
                     return true
                 }
             })
         }
-        return files
+        return language2files
     }
 
     private fun VirtualFile.text(): String {

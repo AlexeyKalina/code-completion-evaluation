@@ -13,4 +13,13 @@ enum class Language {
             }
         }
     }
+
+    val displayName: String
+        get() =
+            when (this) {
+                JAVA -> "Java"
+                PYTHON -> "Python"
+                CSHARP -> "C#"
+                else -> this.name
+            }
 }
