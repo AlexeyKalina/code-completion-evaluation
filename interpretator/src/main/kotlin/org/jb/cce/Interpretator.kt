@@ -53,7 +53,7 @@ class Interpretator(private val invoker: CompletionInvoker, private val actionSc
                             if (session == null) {
                                 session = Session(position, action.expectedText, action.tokenType)
                             }
-                            session.addLookup(Lookup(action.text, invoker.callCompletion(action.completionType)))
+                            session.addLookup(Lookup(action.prefix, invoker.callCompletion(action.completionType)))
                         }
                         is CancelSession -> {
                             if (session == null) {
