@@ -1,6 +1,6 @@
 package org.jb.cce.actions
 
-import com.intellij.ide.actions.ShowFilePathAction
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -17,7 +17,6 @@ import org.jb.cce.*
 import org.jb.cce.exceptions.BabelFishClientException
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.metrics.MetricsEvaluator
-import java.io.File
 import java.util.function.Consumer
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
@@ -32,7 +31,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             return
         }
 
-        val settingsDialog = CompletionSettingsDialogWrapper(language2files)
+        val settingsDialog = CompletionSettingsDialog(project, language2files)
         val result = settingsDialog.showAndGet()
         if (!result) return
 
@@ -69,17 +68,20 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
 
     private fun interpretActions(actions: List<Action>, project: Project, outputDir: String) {
         val completionInvoker = CompletionInvokerImpl(project)
-        val reportGenerator = HtmlReportGenerator()
+        val reportGenerator = HtmlReportGenerator(outputDir)
         val metricsEvaluator = MetricsEvaluator.withDefaultMetrics()
 
         val invokeLaterScheduler = Consumer<Runnable> { ApplicationManager.getApplication().invokeLater(it) }
         val interpreter = Interpreter(completionInvoker, invokeLaterScheduler)
         interpreter.interpret(actions, Consumer { (sessions, filePath, text) ->
-            metricsEvaluator.evaluate(sessions, filePath, System.out)
-            reportGenerator.generate(sessions, outputDir, filePath, text)
+            val evaluationResults = HtmlPrintStream()
+            metricsEvaluator.evaluate(sessions, evaluationResults)
+            reportGenerator.generate(sessions, filePath, text, evaluationResults.toString())
         }, Runnable {
-            metricsEvaluator.printResult(System.out)
-            if (OpenFolderDialogWrapper().showAndGet()) ShowFilePathAction.openDirectory(File(outputDir))
+            val evaluationResults = HtmlPrintStream()
+            metricsEvaluator.printResult(evaluationResults)
+            val reportPath = reportGenerator.generateGlobalReport(evaluationResults.toString())
+            if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
         })
     }
 

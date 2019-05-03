@@ -7,40 +7,83 @@ import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.*
 
-class HtmlReportGenerator {
-    private var reportTitle = "Code Completion Report"
+class HtmlReportGenerator(outputDir: String) {
+    companion object {
+        private const val middleCountLookups = 3
+        private const val goodColor = "#008800"
+        private const val middleColor = "#999900"
+        private const val badColor = "#BB0066"
+        private const val globalReportName = "index.html"
 
-    private val middleCountLookups = 3
-    private val goodColor = "#008800"
-    private val middleColor = "#999900"
-    private val badColor = "#BB0066"
+        private val script = HtmlReportGenerator::class.java.getResource("/script.js").readText()
+        private val style = HtmlReportGenerator::class.java.getResource("/style.css").readText()
+        private val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
+    }
 
-    private val script = HtmlReportGenerator::class.java.getResource("/script.js").readText()
-    private val style = HtmlReportGenerator::class.java.getResource("/style.css").readText()
-    private val sessionsFileName = "sessions.js"
-    private val reportFileName = "report.html"
+    private lateinit var reportTitle: String
 
-    private val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
+    private val reportsDir: String = Paths.get(outputDir, formatter.format(Date())).toString()
+    private val _resourcesDir = Paths.get(reportsDir, "res")
+    private val resourcesDir: String = _resourcesDir.toString()
 
-    fun generate(sessions: List<Session>, outputDir: String, filePath: String, text: String) {
+    private data class ResultPaths(val resourcePath: String, val reportPath: String)
+    private data class ReportInfo(val reportPath: String, val evaluationResults: String)
+    private val references: MutableMap<String, ReportInfo> = mutableMapOf()
+
+    init {
+        Files.createDirectories(_resourcesDir)
+    }
+
+    fun generate(sessions: List<Session>, filePath: String, text: String, evaluationResults: String) {
         val serializer = SessionSerializer()
         val json = serializer.serialize(sessions)
         val file = File(filePath)
-        val reportDir = "${file.name}_${formatter.format(Date())}"
-        val outputPath = Paths.get(outputDir, reportDir)
-        Files.createDirectories(outputPath)
-        FileWriter(Paths.get(outputPath.toString(), sessionsFileName).toString()).use { it.write("sessions = '$json'") }
-
-        val report = getHtml(sessions, file.name, text)
-
-        FileWriter(Paths.get(outputPath.toString(), reportFileName).toString()).use { it.write(report) }
+        val (resourcePath, reportPath) = getPaths(file.name)
+        FileWriter(resourcePath).use { it.write("sessions = '$json'") }
+        val report = getHtml(sessions, file.name, resourcePath, text)
+        FileWriter(reportPath).use { it.write(report) }
+        references[filePath] = ReportInfo(reportPath, evaluationResults)
     }
 
-    private fun getHtml(completions: List<Session>, fileName: String, text: String) : String {
+    fun generateGlobalReport(evaluationResults: String): String {
+        val sb = StringBuilder()
+        reportTitle = "Code Completion Report"
+        sb.appendln("<html><head><title>$reportTitle</title></head><body><h1>$reportTitle</h1>")
+        sb.appendln(evaluationResults)
+        sb.appendln("<h3>Reports for files:</h3><ul>")
+        for ((file, info) in references) {
+            sb.appendln("<li><a href=\"${info.reportPath}\">$file</a>${info.evaluationResults}</li>")
+        }
+        sb.appendln("</ul></body></html>")
+
+        val reportPath = Paths.get(reportsDir, globalReportName).toString()
+        FileWriter(reportPath).use { it.write(sb.toString()) }
+        return reportPath
+    }
+
+    private fun getPaths(fileName: String): ResultPaths {
+        return if (Files.exists(Paths.get(resourcesDir, "$fileName.js"))) {
+            return getNextFilePaths(Paths.get(resourcesDir, fileName).toString())
+        } else {
+            ResultPaths(Paths.get(resourcesDir, "$fileName.js").toString(),
+                    Paths.get(reportsDir, "$fileName.html").toString())
+        }
+    }
+
+    private fun getNextFilePaths(filePath: String): ResultPaths {
+        var index = 1
+        do {
+            index++
+            val nextFile = "$filePath-$index.js"
+        } while (File(nextFile).exists())
+        return ResultPaths("$filePath-$index.js", "$filePath-$index.html")
+    }
+
+    private fun getHtml(completions: List<Session>, fileName: String, resourcePath: String, text: String) : String {
         reportTitle = "Code Completion Report for file <b>$fileName</b>"
         val sb = StringBuilder()
         sb.append("<html>")
-        sb.append(getHead())
+        sb.append(getHead(resourcePath))
         setBody(sb, text, completions)
         sb.append("</html>")
 
@@ -57,9 +100,9 @@ class HtmlReportGenerator {
         sb.append("</body>")
     }
 
-    private fun getHead() =
+    private fun getHead(resourcePath: String) =
             """<head><title>$reportTitle</title>
-                <script type="text/javascript" src="$sessionsFileName"></script>
+                <script type="text/javascript" src="$resourcePath"></script>
                 <style>$style</style></head>"""
 
 

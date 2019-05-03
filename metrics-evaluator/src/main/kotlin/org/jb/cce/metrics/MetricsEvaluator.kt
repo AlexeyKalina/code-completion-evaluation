@@ -26,9 +26,7 @@ class MetricsEvaluator private constructor() {
         metrics.add(metric)
     }
 
-    fun evaluate(sessions: List<Session>, fileName: String,  out: PrintStream) {
-        out.println("Completion quality evaluation for file $fileName:")
-
+    fun evaluate(sessions: List<Session>, out: PrintStream) {
         if (metrics.isNullOrEmpty()) {
             out.println("No metrics to evaluate")
         }
@@ -39,8 +37,6 @@ class MetricsEvaluator private constructor() {
     }
 
     fun printResult(out: PrintStream) {
-        out.println("Completion quality evaluation results:")
-
         if (metrics.isNullOrEmpty()) {
             out.println("No evaluated metrics")
         }

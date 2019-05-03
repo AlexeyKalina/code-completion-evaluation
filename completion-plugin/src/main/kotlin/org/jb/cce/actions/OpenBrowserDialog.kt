@@ -5,7 +5,7 @@ import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
 
-class OpenFolderDialogWrapper() : DialogWrapper(true) {
+class OpenBrowserDialog : DialogWrapper(true) {
     init {
         init()
         title = "Quality evaluation completed"
@@ -13,7 +13,7 @@ class OpenFolderDialogWrapper() : DialogWrapper(true) {
 
     override fun createCenterPanel(): JComponent? {
         val dialogPanel = JPanel()
-        val typeLabel = JLabel("Do you want to open a folder with reports?")
+        val typeLabel = JLabel("Do you want to open reports in the browser?")
         dialogPanel.add(typeLabel)
         return dialogPanel
     }
