@@ -4,7 +4,10 @@ import com.google.gson.JsonObject
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.statements.declarations.ClassDeclarationNode
+import org.jb.cce.uast.statements.declarations.MethodDeclarationNode
+import org.jb.cce.uast.statements.declarations.MethodHeaderNode
 import org.jb.cce.uast.statements.declarations.VariableDeclarationNode
+import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
@@ -20,16 +23,36 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
     override fun visitChild(json: JsonObject, parentNode: UnifiedAstNode) {
         when {
             typeEquals(json, "java:TypeDeclaration") -> visitTypeDeclaration(json, parentNode)
-            typeEquals(json, "java:MethodInvocation") -> visitMethodCall(json, parentNode)
-            typeEquals(json, "java:ExpressionMethodReference") -> visitMethodCall(json, parentNode)
+            typeEquals(json, "java:MethodDeclaration") ||
+                    typeEquals(json, "java:Initializer") -> visitMethodDeclaration(json, parentNode)
+            typeEquals(json, "java:MethodInvocation") ||
+                typeEquals(json, "java:ExpressionMethodReference") -> visitMethodCall(json, parentNode)
+            //TODO: support lambda
+            typeEquals(json, "java:LambdaExpression") -> return
             typeEquals(json, "java:ClassInstanceCreation") -> visitInstanceCreation(json, parentNode)
-            typeEquals(json, "java:VariableDeclarationFragment") -> visitVariableDeclaration(json, parentNode)
+            typeEquals(json, "java:VariableDeclarationFragment") ||
+                typeEquals(json, "java:EnumConstantDeclaration") -> visitVariableDeclaration(json, parentNode)
             (roleExists(json, "Expression") || roleExists(json, "Argument") || roleExists(json, "Assignment"))
                 && (typeEquals(json, "uast:Identifier") ||
                     typeEquals(json, "uast:QualifiedIdentifier")) -> visitVariableAccess(json, parentNode)
             typeEquals(json, "java:FieldAccess") -> visitFieldAccess(json, parentNode)
             else -> super.visitChild(json, parentNode)
         }
+    }
+
+    private fun visitMethodDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {
+        val methodDeclaration = MethodDeclarationNode(getOffset(json), getLength(json))
+        if (json.has("name") && json["name"].isJsonObject) {
+            val name = json["name"].asJsonObject
+            methodDeclaration.setHeader(MethodHeaderNode(visitIdentifier(name), getOffset(name), getLength(name)))
+        }
+        if (json.has("body") && json["body"].isJsonObject) {
+            val bodyJson = json["body"].asJsonObject
+            val body = MethodBodyNode(getOffset(bodyJson), getLength(bodyJson))
+            methodDeclaration.setBody(body)
+            visitChildren(bodyJson, body)
+        }
+        addToParent(methodDeclaration, parentNode)
     }
 
     private fun visitInstanceCreation(json: JsonObject, parentNode: UnifiedAstNode) {
@@ -41,6 +64,7 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
 
     override fun visitVariableDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {
         val variableDeclaration = VariableDeclarationNode(visitIdentifier(json["name"].asJsonObject), getOffset(json), getLength(json))
+        visitChildren(json, variableDeclaration)
         addToParent(variableDeclaration, parentNode)
     }
 
