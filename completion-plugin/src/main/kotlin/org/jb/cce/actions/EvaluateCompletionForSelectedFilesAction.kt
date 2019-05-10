@@ -6,6 +6,10 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.openapi.progress.ProgressIndicator
+import com.intellij.openapi.progress.ProgressManager
+import com.intellij.openapi.progress.Task
+import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ContentIterator
 import com.intellij.openapi.ui.Messages
@@ -36,11 +40,19 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         if (!result) return
 
         val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionStatement, settingsDialog.completionType, settingsDialog.completionContext)
-        val actions = generateActions(settingsDialog.language, language2files.getValue(settingsDialog.language), strategy)
-        interpretActions(actions, project, settingsDialog.outputDir)
+        val task = object : Task.Backgroundable(project, "Actions generation for selected files", true) {
+            lateinit var actions: List<Action>
+            override fun run(indicator: ProgressIndicator) {
+                actions = generateActions(settingsDialog.language, language2files.getValue(settingsDialog.language), strategy, indicator)
+            }
+            override fun onSuccess() {
+                interpretActions(actions, project, settingsDialog.outputDir)
+            }
+        }
+        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    private fun generateActions(language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy): List<Action> {
+    private fun generateActions(language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy, indicator: ProgressIndicator): List<Action> {
         val client = BabelFishClient()
         val converter = BabelFishConverter()
         val sortedFiles = files.sortedBy { f -> f.name }
@@ -49,7 +61,12 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         var completed = 0
         var withError = 0
         for (file in sortedFiles) {
+            if (indicator.isCanceled) {
+                LOG.info("Actions generation is canceled by user. Done: $completed/${files.size}. With error: $withError")
+                break
+            }
             LOG.info("Start actions generation for file ${file.path}. Done: $completed/${files.size}. With error: $withError")
+            indicator.text2 = "${file.name} ($completed/${files.size})"
             val fileText = file.text()
             try {
                 val babelFishUast = client.parse(fileText, language)
