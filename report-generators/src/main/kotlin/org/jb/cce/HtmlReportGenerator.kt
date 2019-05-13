@@ -50,11 +50,11 @@ class HtmlReportGenerator(outputDir: String) {
         reportTitle = "Code Completion Report"
         sb.appendln("<html><head><title>$reportTitle</title></head><body><h1>$reportTitle</h1>")
         sb.appendln(evaluationResults)
-        sb.appendln("<h3>Reports for files:</h3><ul>")
+        sb.appendln("<h3>Reports for files:</h3><ol>")
         for ((file, info) in references) {
             sb.appendln("<li><a href=\"${info.reportPath}\">$file</a>${info.evaluationResults}</li>")
         }
-        sb.appendln("</ul></body></html>")
+        sb.appendln("</ol></body></html>")
 
         val reportPath = Paths.get(reportsDir, globalReportName).toString()
         FileWriter(reportPath).use { it.write(sb.toString()) }
