@@ -16,7 +16,7 @@ class MethodDeclarationNode(offset: Int,
         this.body = body
     }
 
-    override fun getName() = if (header != null) header!!.getName() else ""
+    override fun getName() = if (header != null) header!!.getName() else "<no_name>"
 
-    override fun getChildren() = (header?.let { listOf(it) } ?: listOf()) + (body?.let { listOf(it) } ?: listOf())
+    override fun getChildren() = listOfNotNull(header, body)
 }
