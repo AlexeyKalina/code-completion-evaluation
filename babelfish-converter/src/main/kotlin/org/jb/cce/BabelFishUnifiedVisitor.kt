@@ -7,16 +7,12 @@ import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.exceptions.UnifiedAstException
 import org.jb.cce.uast.statements.AssignmentNode
 import org.jb.cce.uast.statements.StatementNode
-import org.jb.cce.uast.statements.declarations.ClassDeclarationNode
-import org.jb.cce.uast.statements.declarations.DeclarationNode
-import org.jb.cce.uast.statements.declarations.MethodDeclarationNode
-import org.jb.cce.uast.statements.declarations.MethodHeaderNode
+import org.jb.cce.uast.statements.declarations.*
 import org.jb.cce.uast.statements.declarations.blocks.BlockNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 import org.jb.cce.uast.statements.expressions.ExpressionNode
 import org.jb.cce.uast.statements.expressions.NamedNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
-import org.jb.cce.uast.statements.expressions.references.ReferenceNode
 import java.util.logging.Logger
 
 open class BabelFishUnifiedVisitor {
@@ -100,6 +96,7 @@ open class BabelFishUnifiedVisitor {
                 }
             }
             is ClassDeclarationNode -> parentNode.addMember(node as DeclarationNode)
+            is VariableDeclarationNode -> parentNode.setInitExpression(node as ExpressionNode)
             is BlockNode -> parentNode.addStatement(node as StatementNode)
             is AssignmentNode -> parentNode.setAssigned(node as ExpressionNode)
             is MethodCallNode -> {
@@ -107,7 +104,7 @@ open class BabelFishUnifiedVisitor {
                     LOG.warning("$node is not Expression inside MethodCall")
                     return
                 }
-                if (parentNode.getOffset() > node.getOffset()) parentNode.prefix = node as ReferenceNode
+                if (parentNode.getOffset() > node.getOffset()) parentNode.prefix = node as NamedNode
                 else parentNode.addArgument(node)
             }
             else -> throw UnifiedAstException("Unexpected parent $parentNode for node $node")
@@ -121,7 +118,7 @@ open class BabelFishUnifiedVisitor {
             typeEquals(json, "uast:Identifier") -> nodes.add(factory(visitIdentifier(json), getOffset(json), getLength(json)))
             json.has("name") -> {
                 val nameObj = json["name"].asJsonObject
-                nodes.add(factory(visitIdentifier(nameObj), getOffset(nameObj), getLength(nameObj)))
+                nodes += visitNamedNodes(nameObj, factory) as MutableList<T>
             }
         }
         return nodes

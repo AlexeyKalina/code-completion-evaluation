@@ -5,7 +5,7 @@ import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 class MethodDeclarationNode(offset: Int,
                             length: Int) : DeclarationNode("", offset, length) {
 
-    private lateinit var header: MethodHeaderNode
+    private var header: MethodHeaderNode? = null
     private var body: MethodBodyNode? = null
 
     fun setHeader(header: MethodHeaderNode) {
@@ -16,7 +16,7 @@ class MethodDeclarationNode(offset: Int,
         this.body = body
     }
 
-    override fun getName() = header.getName()
+    override fun getName() = if (header != null) header!!.getName() else "<no_name>"
 
-    override fun getChildren() = listOf(header) + (body?.let { listOf(it) } ?: listOf())
+    override fun getChildren() = listOfNotNull(header, body)
 }
