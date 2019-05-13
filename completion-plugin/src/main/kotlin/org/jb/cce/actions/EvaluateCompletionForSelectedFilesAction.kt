@@ -40,7 +40,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         if (!result) return
 
         val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionStatement, settingsDialog.completionType, settingsDialog.completionContext)
-        val task = object : Task.Backgroundable(project, "Actions generation for selected files", true) {
+        val task = object : Task.Backgroundable(project, "Generating actions for selected files", true) {
             lateinit var actions: List<Action>
             override fun run(indicator: ProgressIndicator) {
                 actions = generateActions(settingsDialog.language, language2files.getValue(settingsDialog.language), strategy, indicator)
@@ -62,11 +62,12 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         var withError = 0
         for (file in sortedFiles) {
             if (indicator.isCanceled) {
-                LOG.info("Actions generation is canceled by user. Done: $completed/${files.size}. With error: $withError")
+                LOG.info("Generating actions is canceled by user. Done: $completed/${files.size}. With error: $withError")
                 break
             }
-            LOG.info("Start actions generation for file ${file.path}. Done: $completed/${files.size}. With error: $withError")
-            indicator.text2 = "${file.name} ($completed/${files.size})"
+            LOG.info("Start generating actions for file ${file.path}. Done: $completed/${files.size}. With error: $withError")
+            indicator.text2 = file.name
+            indicator.fraction = completed.toDouble() / files.size
             val fileText = file.text()
             try {
                 val babelFishUast = client.parse(fileText, language)
@@ -77,7 +78,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
                 LOG.error("Error for file ${file.path}. Message: ${e.message}")
             }
             completed++
-            LOG.info("Actions generation for file ${file.path} completed. Done: $completed/${files.size}. With error: $withError")
+            LOG.info("Generating actions for file ${file.path} completed. Done: $completed/${files.size}. With error: $withError")
         }
 
         return generatedActions.flatten()
