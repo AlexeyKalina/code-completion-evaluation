@@ -15,6 +15,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.LogicalPosition
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.fileEditor.FileEditorManager
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
@@ -91,12 +92,12 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
 
     override fun openFile(file: String) {
         ApplicationManager.getApplication().invokeAndWait {
-            runWriteAction {
-                LOG.info("Open file: $file")
-                val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(File(file))
-                val fileEditor = FileEditorManager.getInstance(project).openFile(virtualFile!!, false)[0]
-                editor = (fileEditor as TextEditor).editor
-            }
+            LOG.info("Open file: $file")
+            val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(File(file))
+            val descriptor = OpenFileDescriptor(project, virtualFile!!)
+            val fileEditor = FileEditorManager.getInstance(project).openTextEditor(descriptor, true) ?:
+            throw Exception("Can't open text editor for file: $file")
+            editor = fileEditor
         }
     }
 
