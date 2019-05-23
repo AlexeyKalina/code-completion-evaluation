@@ -84,7 +84,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
     }
 
     private fun interpretActions(actions: List<Action>, project: Project, outputDir: String) {
-        val completionInvoker = CompletionInvokerImpl(project)
+        val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project))
         val reportGenerator = HtmlReportGenerator(outputDir)
         val metricsEvaluator = MetricsEvaluator.withDefaultMetrics()
 
