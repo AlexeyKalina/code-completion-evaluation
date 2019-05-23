@@ -5,6 +5,8 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.runReadAction
+import com.intellij.openapi.application.runWriteAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -41,11 +43,8 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
 
         val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionStatement, settingsDialog.completionType, settingsDialog.completionContext)
         val task = object : Task.Backgroundable(project, "Generating actions for selected files", true) {
-            lateinit var actions: List<Action>
             override fun run(indicator: ProgressIndicator) {
-                actions = generateActions(settingsDialog.language, language2files.getValue(settingsDialog.language), strategy, indicator)
-            }
-            override fun onSuccess() {
+                val actions = generateActions(settingsDialog.language, language2files.getValue(settingsDialog.language), strategy, indicator)
                 interpretActions(actions, project, settingsDialog.outputDir)
             }
         }
@@ -89,8 +88,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val reportGenerator = HtmlReportGenerator(outputDir)
         val metricsEvaluator = MetricsEvaluator.withDefaultMetrics()
 
-        val invokeLaterScheduler = Consumer<Runnable> { ApplicationManager.getApplication().invokeLater(it) }
-        val interpreter = Interpreter(completionInvoker, invokeLaterScheduler)
+        val interpreter = Interpreter(completionInvoker)
         interpreter.interpret(actions, Consumer { (sessions, filePath, text) ->
             val evaluationResults = HtmlPrintStream()
             metricsEvaluator.evaluate(sessions, evaluationResults)
@@ -99,7 +97,9 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             val evaluationResults = HtmlPrintStream()
             metricsEvaluator.printResult(evaluationResults)
             val reportPath = reportGenerator.generateGlobalReport(evaluationResults.toString())
-            if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
+            ApplicationManager.getApplication().invokeAndWait {
+                if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
+            }
         })
     }
 
