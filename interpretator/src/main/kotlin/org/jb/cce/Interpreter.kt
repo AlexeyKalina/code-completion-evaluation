@@ -27,6 +27,7 @@ class Interpreter(private val invoker: CompletionInvoker) {
             override fun run() {
                 if (actions.isEmpty()) return
                 processActions(actions)
+                callbackPerFile.accept(Triple(result, currentOpenedFile, fileText))
                 callbackFinal.run()
             }
 

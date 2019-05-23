@@ -32,11 +32,9 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
 
     override fun moveCaret(offset: Int) {
         ApplicationManager.getApplication().invokeAndWait {
-            runWriteAction {
-                LOG.info("Move caret. ${positionToString(offset)}")
-                editor!!.caretModel.moveToOffset(offset)
-                editor!!.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
-            }
+            LOG.info("Move caret. ${positionToString(offset)}")
+            editor!!.caretModel.moveToOffset(offset)
+            editor!!.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
         }
     }
 
@@ -103,12 +101,10 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
 
     override fun closeFile(file: String) {
         ApplicationManager.getApplication().invokeAndWait {
-            runWriteAction {
-                LOG.info("Close file: $file")
-                val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(File(file))
-                FileEditorManager.getInstance(project).closeFile(virtualFile!!)
-                editor = null
-            }
+            LOG.info("Close file: $file")
+            val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(File(file))
+            FileEditorManager.getInstance(project).closeFile(virtualFile!!)
+            editor = null
         }
     }
 
