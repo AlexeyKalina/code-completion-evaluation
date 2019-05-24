@@ -8,8 +8,9 @@ import com.intellij.codeInsight.lookup.impl.LookupImpl
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.TextEditor
+import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -19,13 +20,15 @@ import java.io.File
 class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
     private companion object {
         val LOG = Logger.getInstance(CompletionInvokerImpl::class.java)
-        val LOG_MAX_LENGTH = 50
+        const val LOG_MAX_LENGTH = 50
     }
+
     private var editor: Editor? = null
 
     override fun moveCaret(offset: Int) {
         LOG.info("Move caret. ${positionToString(offset)}")
         editor!!.caretModel.moveToOffset(offset)
+        editor!!.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
     override fun callCompletion(type: org.jb.cce.actions.CompletionType): List<String> {
@@ -35,12 +38,14 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
             org.jb.cce.actions.CompletionType.BASIC -> CompletionType.BASIC
             org.jb.cce.actions.CompletionType.SMART -> CompletionType.SMART
         }
+
         CodeCompletionHandlerBase(completionType, false, false, true).invokeCompletion(project, editor)
         if (LookupManager.getActiveLookup(editor) == null) {
-            return ArrayList()
+            return emptyList()
+        } else {
+            val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
+            return lookup.items.toTypedArray().map(LookupElement::toString).toList()
         }
-        val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
-        return lookup.items.toTypedArray().map(LookupElement::toString).toList()
     }
 
     override fun printText(text: String) {
@@ -65,8 +70,10 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
     override fun openFile(file: String) {
         LOG.info("Open file: $file")
         val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(File(file))
-        val fileEditor = FileEditorManager.getInstance(project).openFile(virtualFile!!, false)[0]
-        editor = (fileEditor as TextEditor).editor
+        val descriptor = OpenFileDescriptor(project, virtualFile!!)
+        val fileEditor = FileEditorManager.getInstance(project).openTextEditor(descriptor, true)
+                ?: throw Exception("Can't open text editor for file: $file")
+        editor = fileEditor
     }
 
     override fun closeFile(file: String) {

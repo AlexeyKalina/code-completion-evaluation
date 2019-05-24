@@ -11,7 +11,7 @@ import org.jb.cce.exception.UnexpectedActionException
 import java.io.FileReader
 import java.util.function.Consumer
 
-class Interpreter(private val invoker: CompletionInvoker, private val actionScheduler: Consumer<Runnable>) {
+class Interpreter(private val invoker: CompletionInvoker) {
 
     fun interpret(actions: List<Action>, callbackPerFile: Consumer<Triple<List<Session>, String, String>>, callbackFinal: Runnable) {
 
@@ -26,18 +26,9 @@ class Interpreter(private val invoker: CompletionInvoker, private val actionSche
 
             override fun run() {
                 if (actions.isEmpty()) return
-
-                if(actions.size <= actionIndex) {
-                    callbackPerFile.accept(Triple(result, currentOpenedFile, fileText))
-                    callbackFinal.run()
-                }
-                else {
-                    val subActions = actions.subList(actionIndex,
-                            if (actionIndex + batchSize < actions.size) actionIndex + batchSize else actions.size)
-                    processActions(subActions)
-                    actionIndex += batchSize
-                    actionScheduler.accept(this)
-                }
+                processActions(actions)
+                callbackPerFile.accept(Triple(result, currentOpenedFile, fileText))
+                callbackFinal.run()
             }
 
             private fun processActions(actions: List<Action>) {
@@ -82,6 +73,6 @@ class Interpreter(private val invoker: CompletionInvoker, private val actionSche
             }
         }
 
-        actionScheduler.accept(task)
+        task.run()
     }
 }
