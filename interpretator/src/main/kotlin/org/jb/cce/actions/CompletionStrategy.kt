@@ -5,8 +5,8 @@ data class CompletionStrategy(val prefix: CompletionPrefix,
                               val context: CompletionContext)
 
 sealed class CompletionPrefix {
-    class NoPrefix : CompletionPrefix()
-    class CapitalizePrefix : CompletionPrefix()
+    object NoPrefix : CompletionPrefix()
+    object CapitalizePrefix : CompletionPrefix()
     class SimplePrefix(val n: Int) : CompletionPrefix()
 }
 

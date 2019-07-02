@@ -1,5 +1,6 @@
 package org.jb.cce.uast.statements
 
+import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.statements.expressions.ExpressionNode
 import org.jb.cce.uast.statements.expressions.references.ReferenceNode
 
@@ -18,4 +19,8 @@ class AssignmentNode(offset: Int,
     }
 
     override fun getChildren() = listOf(reference, assigned)
+
+    override fun accept(visitor: UnifiedAstVisitor) {
+        visitor.visitAssignmentNode(this)
+    }
 }

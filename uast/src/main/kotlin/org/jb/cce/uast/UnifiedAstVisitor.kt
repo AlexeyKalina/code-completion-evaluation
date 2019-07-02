@@ -1,94 +1,52 @@
 package org.jb.cce.uast
 
-import org.jb.cce.uast.statements.*
+import org.jb.cce.uast.statements.AssignmentNode
+import org.jb.cce.uast.statements.StatementNode
 import org.jb.cce.uast.statements.declarations.*
 import org.jb.cce.uast.statements.declarations.blocks.*
-import org.jb.cce.uast.statements.expressions.*
-import org.jb.cce.uast.statements.expressions.references.*
+import org.jb.cce.uast.statements.expressions.ExpressionNode
+import org.jb.cce.uast.statements.expressions.NamedNode
+import org.jb.cce.uast.statements.expressions.VariableAccessNode
+import org.jb.cce.uast.statements.expressions.references.ArrayAccessNode
+import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
+import org.jb.cce.uast.statements.expressions.references.MethodCallNode
+import org.jb.cce.uast.statements.expressions.references.ReferenceNode
 
 interface UnifiedAstVisitor {
 
     fun visitChildren(node: UnifiedAstNode) = node.getChildren().sortedBy { it.getOffset() }.forEach { visit(it) }
 
-    fun visit(node: UnifiedAstNode) {
-        when (node) {
-            is FileNode -> visitFileNode(node)
-            is StatementNode -> visitStatementNode(node)
-        }
-    }
+    fun visit(node: UnifiedAstNode) {}
 
-    fun visitStatementNode(node: StatementNode) {
-        when (node) {
-            is AssignmentNode -> visitAssignmentNode(node)
-            is ExpressionNode -> visitExpressionNode(node)
-            is DeclarationNode -> visitDeclarationNode(node)
-        }
-    }
+    fun visitStatementNode(node: StatementNode) = visit(node)
 
-    fun visitDeclarationNode(node: DeclarationNode) {
-        when (node) {
-            is ArrayDeclarationNode -> visitArrayDeclarationNode(node)
-            is ClassDeclarationNode -> visitClassDeclarationNode(node)
-            is MethodDeclarationNode -> visitMethodDeclarationNode(node)
-            is MethodHeaderNode -> visitMethodHeaderNode(node)
-            is VariableDeclarationNode -> visitVariableDeclarationNode(node)
-            is BlockNode -> visitBlockNode(node)
-        }
-    }
+    fun visitDeclarationNode(node: DeclarationNode) = visitStatementNode(node)
 
-    fun visitBlockNode(node: BlockNode) {
-        when (node) {
-            is ClassInitializerNode -> visitClassInitializerNode(node)
-            is GlobalNode -> visitGlobalNode(node)
-            is MethodBodyNode -> visitMethodBodyNode(node)
-            is NamedBlockNode -> visitNamedBlockNode(node)
-        }
-    }
+    fun visitBlockNode(node: BlockNode) = visitDeclarationNode(node)
 
-    fun visitExpressionNode(node: ExpressionNode) {
-        when (node) {
-            is NamedNode -> visitNamedNode(node)
-        }
-    }
+    fun visitExpressionNode(node: ExpressionNode) = visitStatementNode(node)
 
-    fun visitNamedNode(node: NamedNode) {
-        when (node) {
-            is ReferenceNode -> visitReferenceNode(node)
-            is VariableAccessNode -> visitVariableAccessNode(node)
-        }
-    }
+    fun visitNamedNode(node: NamedNode) = visitExpressionNode(node)
 
-    fun visitReferenceNode(node: ReferenceNode) {
-        when (node) {
-            is ArrayAccessNode -> visitArrayAccessNode(node)
-            is MethodCallNode -> visitMethodCallNode(node)
-            is FieldAccessNode -> visitFieldAccessNode(node)
-        }
-    }
+    fun visitReferenceNode(node: ReferenceNode) = visitNamedNode(node)
 
-    fun visitClassInitializerNode(node: ClassInitializerNode) = visit(node)
-    fun visitGlobalNode(node: GlobalNode) = visit(node)
-    fun visitMethodBodyNode(node: MethodBodyNode) = visit(node)
-    fun visitNamedBlockNode(node: NamedBlockNode) = visit(node)
+    fun visitClassInitializerNode(node: ClassInitializerNode) = visitBlockNode(node)
+    fun visitGlobalNode(node: GlobalNode) = visitBlockNode(node)
+    fun visitMethodBodyNode(node: MethodBodyNode) = visitBlockNode(node)
+    fun visitNamedBlockNode(node: NamedBlockNode) = visitBlockNode(node)
 
-    fun visitArrayDeclarationNode(node: ArrayDeclarationNode) = visitChildren(node)
-    fun visitClassDeclarationNode(node: ClassDeclarationNode) = visitChildren(node)
-    fun visitMethodDeclarationNode(node: MethodDeclarationNode) = visitChildren(node)
-    fun visitMethodHeaderNode(node: MethodHeaderNode) = visitChildren(node)
-    fun visitVariableDeclarationNode(node: VariableDeclarationNode) = visitChildren(node)
+    fun visitArrayDeclarationNode(node: ArrayDeclarationNode) = visitDeclarationNode(node)
+    fun visitClassDeclarationNode(node: ClassDeclarationNode) = visitDeclarationNode(node)
+    fun visitMethodDeclarationNode(node: MethodDeclarationNode) = visitDeclarationNode(node)
+    fun visitMethodHeaderNode(node: MethodHeaderNode) = visitDeclarationNode(node)
+    fun visitVariableDeclarationNode(node: VariableDeclarationNode) = visitDeclarationNode(node)
 
-    fun visitArrayAccessNode(node: ArrayAccessNode) = visitNodeWithPrefix(node)
-    fun visitMethodCallNode(node: MethodCallNode) = visitNodeWithPrefix(node)
-    fun visitFieldAccessNode(node: FieldAccessNode) = visitNodeWithPrefix(node)
+    fun visitArrayAccessNode(node: ArrayAccessNode) = visitReferenceNode(node)
+    fun visitMethodCallNode(node: MethodCallNode) = visitReferenceNode(node)
+    fun visitFieldAccessNode(node: FieldAccessNode) = visitReferenceNode(node)
 
-    fun visitAssignmentNode(node: AssignmentNode) = visitChildren(node)
-    fun visitVariableAccessNode(node: VariableAccessNode) = visitChildren(node)
+    fun visitAssignmentNode(node: AssignmentNode) = visitStatementNode(node)
+    fun visitVariableAccessNode(node: VariableAccessNode) = visitStatementNode(node)
 
-    fun visitFileNode(node: FileNode) = visitChildren(node)
-
-    private fun visitNodeWithPrefix(node: ReferenceNode) {
-        val prefix = node.prefix
-        if (prefix != null) visit(prefix)
-        visitChildren(node)
-    }
+    fun visitFileNode(node: FileNode) = visit(node)
 }

@@ -1,5 +1,6 @@
 package org.jb.cce.uast.statements.expressions.references
 
+import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.statements.expressions.ExpressionNode
 
 class ArrayAccessNode(name: String,
@@ -13,4 +14,8 @@ class ArrayAccessNode(name: String,
     }
 
     override fun getChildren() = indices
+
+    override fun accept(visitor: UnifiedAstVisitor) {
+        visitor.visitArrayAccessNode(this)
+    }
 }

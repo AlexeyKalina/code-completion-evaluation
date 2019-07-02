@@ -1,5 +1,6 @@
 package org.jb.cce.uast.statements.declarations
 
+import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 
 class MethodDeclarationNode(offset: Int,
@@ -19,4 +20,8 @@ class MethodDeclarationNode(offset: Int,
     override fun getName() = if (header != null) header!!.getName() else "<no_name>"
 
     override fun getChildren() = listOfNotNull(header, body)
+
+    override fun accept(visitor: UnifiedAstVisitor) {
+        visitor.visitMethodDeclarationNode(this)
+    }
 }

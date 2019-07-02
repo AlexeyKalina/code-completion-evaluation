@@ -1,13 +1,13 @@
 package org.jb.cce.actions
 
-import org.jb.cce.uast.*
+import org.jb.cce.uast.FileNode
 import org.jb.cce.visitors.*
 
 fun generateActions(filePath: String, fileText: String, tree: FileNode, strategy: CompletionStrategy): List<Action> {
 
     val deletionVisitor = DeleteMethodBodiesVisitor()
     if (strategy.context == CompletionContext.PREVIOUS) {
-        deletionVisitor.visit(tree)
+        tree.accept(deletionVisitor)
     }
 
     val completionVisitor = when (strategy.statement) {
@@ -17,7 +17,7 @@ fun generateActions(filePath: String, fileText: String, tree: FileNode, strategy
         CompletionStatement.VARIABLES -> VariableAccessVisitor(fileText, strategy)
     }
 
-    completionVisitor.visit(tree)
+    tree.accept(completionVisitor)
 
     return listOf(OpenFile(filePath)) + deletionVisitor.getActions().reversed() + completionVisitor.getActions()
 }

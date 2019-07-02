@@ -1,5 +1,7 @@
 package org.jb.cce.uast.statements.declarations
 
+import org.jb.cce.uast.UnifiedAstVisitor
+
 class ClassDeclarationNode(name: String,
                            offset: Int,
                            length: Int) : DeclarationNode(name, offset, length) {
@@ -11,4 +13,8 @@ class ClassDeclarationNode(name: String,
     }
 
     override fun getChildren() = members
+
+    override fun accept(visitor: UnifiedAstVisitor) {
+        visitor.visitClassDeclarationNode(this)
+    }
 }

@@ -1,5 +1,6 @@
 package org.jb.cce.uast.statements.declarations
 
+import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.statements.expressions.ExpressionNode
 
 class ArrayDeclarationNode(name: String,
@@ -13,4 +14,8 @@ class ArrayDeclarationNode(name: String,
     }
 
     override fun getChildren() = initExpresstions
+
+    override fun accept(visitor: UnifiedAstVisitor) {
+        visitor.visitArrayDeclarationNode(this)
+    }
 }

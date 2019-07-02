@@ -1,7 +1,7 @@
 package org.jb.cce.uast.statements.expressions.references
 
 import org.jb.cce.uast.Completable
-import org.jb.cce.uast.statements.StatementNode
+import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.statements.expressions.ExpressionNode
 
 class MethodCallNode(name: String,
@@ -16,4 +16,8 @@ class MethodCallNode(name: String,
     }
 
     override fun getChildren() = arguments
+
+    override fun accept(visitor: UnifiedAstVisitor) {
+        visitor.visitMethodCallNode(this)
+    }
 }

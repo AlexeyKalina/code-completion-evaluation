@@ -5,7 +5,6 @@ import org.jb.cce.uast.statements.declarations.DeclarationNode
 
 class FileNode(offset: Int,
                length: Int) : UnifiedAstNode(offset, length) {
-
     private val declarations = mutableListOf<DeclarationNode>()
     private val statements = mutableListOf<StatementNode>()
 
@@ -18,4 +17,8 @@ class FileNode(offset: Int,
     }
 
     override fun getChildren() = declarations + statements
+
+    override fun accept(visitor: UnifiedAstVisitor) {
+        visitor.visitFileNode(this)
+    }
 }

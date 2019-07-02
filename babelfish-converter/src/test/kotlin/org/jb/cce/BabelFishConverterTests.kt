@@ -63,13 +63,13 @@ class BabelFishConverterTests {
 
     @Test
     fun interpretJavaActionsWithAllContext() {
-        val strategy = CompletionStrategy(CompletionPrefix.CapitalizePrefix(), CompletionStatement.ALL, CompletionType.BASIC, CompletionContext.ALL)
+        val strategy = CompletionStrategy(CompletionPrefix.CapitalizePrefix, CompletionStatement.ALL, CompletionType.BASIC, CompletionContext.ALL)
         processActions(javaFilePath1, Language.JAVA, strategy)
     }
 
     @Test
     fun interpretJavaActionsWithPreviousContext() {
-        val strategy = CompletionStrategy(CompletionPrefix.CapitalizePrefix(), CompletionStatement.ALL, CompletionType.BASIC, CompletionContext.PREVIOUS)
+        val strategy = CompletionStrategy(CompletionPrefix.CapitalizePrefix, CompletionStatement.ALL, CompletionType.BASIC, CompletionContext.PREVIOUS)
         processActions(javaFilePath1, Language.JAVA, strategy)
     }
 }

@@ -1,5 +1,6 @@
 package org.jb.cce.uast.statements.declarations.blocks
 
+import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.statements.StatementNode
 import org.jb.cce.uast.statements.declarations.DeclarationNode
 
@@ -13,4 +14,8 @@ abstract class BlockNode(offset: Int,
     }
 
     override fun getChildren(): List<StatementNode> = bodyStatements
+
+    override fun accept(visitor: UnifiedAstVisitor) {
+        visitor.visitBlockNode(this)
+    }
 }

@@ -1,5 +1,6 @@
 package org.jb.cce.uast.statements.declarations
 
+import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.statements.expressions.ExpressionNode
 
 class VariableDeclarationNode(name: String,
@@ -13,4 +14,8 @@ class VariableDeclarationNode(name: String,
     }
 
     override fun getChildren() = initExpresstion?.let { listOf(it) } ?: listOf()
+
+    override fun accept(visitor: UnifiedAstVisitor) {
+        visitor.visitVariableDeclarationNode(this)
+    }
 }
