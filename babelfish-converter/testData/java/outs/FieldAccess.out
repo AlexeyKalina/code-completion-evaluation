@@ -1,0 +1,9 @@
+FileNode
+  ClassDeclarationNode
+    MethodDeclarationNode
+      MethodHeaderNode
+      MethodBodyNode
+        MethodCallNode
+          VariableAccessNode
+          VariableAccessNode
+NEED TO CHECK!

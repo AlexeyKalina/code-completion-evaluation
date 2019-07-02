@@ -1,0 +1,8 @@
+FileNode
+  ClassDeclarationNode
+    MethodDeclarationNode
+      MethodHeaderNode
+      MethodBodyNode
+        VariableDeclarationNode
+          MethodCallNode
+NEED TO CHECK!
