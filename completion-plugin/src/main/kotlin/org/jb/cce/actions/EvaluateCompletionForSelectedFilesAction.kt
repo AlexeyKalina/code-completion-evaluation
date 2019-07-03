@@ -41,7 +41,8 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val result = settingsDialog.showAndGet()
         if (!result) return
 
-        val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionStatement, settingsDialog.completionType, settingsDialog.completionContext)
+        val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionStatement, settingsDialog.completionContext)
+        val completionTypes = settingsDialog.completionTypes
         val task = object : Task.Backgroundable(project, "Generating actions for selected files", true) {
             private lateinit var actions: List<Action>
             override fun run(indicator: ProgressIndicator) {
@@ -49,7 +50,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             }
 
             override fun onSuccess() {
-                interpretUnderProgress(actions, project, settingsDialog.outputDir)
+                interpretUnderProgress(actions, completionTypes, project, settingsDialog.outputDir)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
@@ -87,34 +88,45 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         return generatedActions.flatten()
     }
 
-    private fun interpretUnderProgress(actions: List<Action>, project: Project, outputDir: String) {
+    private fun interpretUnderProgress(actions: List<Action>, completionTypes: List<CompletionType>, project: Project, outputDir: String) {
         val task = object : Task.Backgroundable(project, "Interpretation of the generated actions") {
             override fun run(indicator: ProgressIndicator) {
-                interpretActions(actions, project, outputDir)
+                interpretActions(actions, completionTypes, project, outputDir)
             }
         }
-
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    private fun interpretActions(actions: List<Action>, project: Project, outputDir: String) {
+    private fun interpretActions(actions: List<Action>, completionTypes: List<CompletionType>, project: Project, outputDir: String) {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project))
-        val reportGenerator = HtmlReportGenerator(outputDir)
         val metricsEvaluator = MetricsEvaluator.withDefaultMetrics()
-
         val interpreter = Interpreter(completionInvoker)
-        interpreter.interpret(actions, Consumer { (sessions, filePath, text) ->
-            val evaluationResults = HtmlPrintStream()
-            metricsEvaluator.evaluate(sessions, evaluationResults)
-            reportGenerator.generate(sessions, filePath, text, evaluationResults.toString())
+
+        interpretActionsRecursive(actions, completionTypes, 0, mutableListOf(), interpreter, metricsEvaluator, outputDir)
+    }
+
+    private fun interpretActionsRecursive(actions: List<Action>, completionTypes: List<CompletionType>, currentIndex: Int, results: MutableList<EvaluationInfo>,
+                                          interpreter: Interpreter, metricsEvaluator: MetricsEvaluator, outputDir: String) {
+        interpreter.interpret(actions, completionTypes[currentIndex], Consumer { (sessions, filePath) ->
+            if (results.size == currentIndex) results.add(EvaluationInfo(completionTypes[currentIndex].name))
+            results[currentIndex].addFileInfo(filePath, FileEvaluationInfo(sessions, metricsEvaluator.evaluate(sessions)))
         }, Runnable {
-            val evaluationResults = HtmlPrintStream()
-            metricsEvaluator.printResult(evaluationResults)
-            val reportPath = reportGenerator.generateGlobalReport(evaluationResults.toString())
-            ApplicationManager.getApplication().invokeAndWait {
-                if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
+            results[currentIndex].metrics = metricsEvaluator.result()
+            if (currentIndex == completionTypes.lastIndex) {
+                generateReports(outputDir, results)
+            } else {
+                interpretActionsRecursive(actions, completionTypes, currentIndex + 1, results, interpreter, metricsEvaluator, outputDir)
             }
         })
+    }
+
+    private fun generateReports(outputDir: String, results: List<EvaluationInfo>) {
+        val reportGenerator = HtmlReportGenerator(outputDir)
+        reportGenerator.generateFileReports(results)
+        val reportPath = reportGenerator.generateGlobalReport(results)
+        ApplicationManager.getApplication().invokeAndWait {
+            if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
+        }
     }
 
     private fun getFiles(e: AnActionEvent): Map<Language, Set<VirtualFile>> {

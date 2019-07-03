@@ -1,24 +1,18 @@
 package org.jb.cce
 
-import org.jb.cce.actions.Action
-import org.jb.cce.actions.CallCompletion
-import org.jb.cce.actions.CancelSession
-import org.jb.cce.actions.MoveCaret
-import org.jb.cce.actions.PrintText
-import org.jb.cce.actions.DeleteRange
-import org.jb.cce.actions.OpenFile
+import org.jb.cce.actions.*
 import org.jb.cce.exception.UnexpectedActionException
 import java.io.FileReader
 import java.util.function.Consumer
 
 class Interpreter(private val invoker: CompletionInvoker) {
 
-    fun interpret(actions: List<Action>, callbackPerFile: Consumer<Triple<List<Session>, String, String>>, callbackFinal: Runnable) {
+    fun interpret(actions: List<Action>, completionType: CompletionType, callbackPerFile: Consumer<Pair<List<Session>, String>>, callbackFinal: Runnable) {
 
         val task = object : Runnable {
             val result = mutableListOf<Session>()
             private var currentSession: Session? = null
-            private var actionIndex = 0
+            private var previousIndex = 0
             private var currentOpenedFile = ""
             private var fileText = ""
             private var currentPosition = 0
@@ -27,7 +21,7 @@ class Interpreter(private val invoker: CompletionInvoker) {
             override fun run() {
                 if (actions.isEmpty()) return
                 processActions(actions)
-                callbackPerFile.accept(Triple(result, currentOpenedFile, fileText))
+                callbackPerFile.accept(Pair(result, currentOpenedFile))
                 callbackFinal.run()
             }
 
@@ -44,7 +38,7 @@ class Interpreter(private val invoker: CompletionInvoker) {
                             if (session == null) {
                                 session = Session(position, action.expectedText, action.tokenType)
                             }
-                            session.addLookup(Lookup(action.prefix, invoker.callCompletion(action.completionType)))
+                            session.addLookup(Lookup(action.prefix, invoker.callCompletion(completionType)))
                         }
                         is CancelSession -> {
                             if (session == null) {
@@ -58,7 +52,7 @@ class Interpreter(private val invoker: CompletionInvoker) {
                         is OpenFile -> {
                             if (!currentOpenedFile.isEmpty()) {
                                 invoker.closeFile(currentOpenedFile)
-                                callbackPerFile.accept(Triple(result, currentOpenedFile, fileText))
+                                callbackPerFile.accept(Pair(result.toList(), currentOpenedFile))
                                 result.clear()
                             }
                             fileText = FileReader(action.file).use { it.readText() }

@@ -2,7 +2,6 @@ package org.jb.cce.actions
 
 data class CompletionStrategy(val prefix: CompletionPrefix,
                               val statement: CompletionStatement,
-                              val type: CompletionType,
                               val context: CompletionContext)
 
 sealed class CompletionPrefix {
