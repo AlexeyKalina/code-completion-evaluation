@@ -39,12 +39,17 @@ class HtmlReportGenerator(outputDir: String) {
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(_resourcesDir.toString(), tabulatorScript))
     }
 
-    fun generateFileReports(evaluationResults: List<EvaluationInfo>) {
+    fun generateReport(evaluationResults: List<EvaluationInfo>): String {
+        generateFileReports(evaluationResults)
+        return generateGlobalReport(evaluationResults)
+    }
+
+    private fun generateFileReports(evaluationResults: List<EvaluationInfo>) {
         if (evaluationResults.isEmpty()) return
 
         val serializer = SessionSerializer()
-        for (filePath in evaluationResults.first().filesInfo.keys) {
-            val sessions = evaluationResults.map { it.filesInfo.getValue(filePath).sessions }
+        for (filePath in evaluationResults.flatMap { it.filesInfo.keys }.distinct()) {
+            val sessions = evaluationResults.map { it.filesInfo[filePath]?.sessions ?: listOf() }
             val json = serializer.serialize(sessions.flatten())
             val file = File(filePath)
             val (resourcePath, reportPath) = getPaths(file.name)
@@ -55,7 +60,7 @@ class HtmlReportGenerator(outputDir: String) {
         }
     }
 
-    fun generateGlobalReport(evaluationResults: List<EvaluationInfo>): String {
+    private fun generateGlobalReport(evaluationResults: List<EvaluationInfo>): String {
         val sb = StringBuilder()
         reportTitle = "Code Completion Report"
         sb.appendln("<html><head><title>$reportTitle</title>")
@@ -113,9 +118,10 @@ class HtmlReportGenerator(outputDir: String) {
                 <script type="text/javascript" src="$resourcePath"></script>
                 <style>$style</style></head>"""
 
-    private fun prepareCode(text: String, sessions: List<List<Session>>) : String {
-        if (sessions.isEmpty()) return text
+    private fun prepareCode(text: String, _sessions: List<List<Session>>) : String {
+        if (_sessions.isEmpty() || _sessions.all { it.isEmpty() }) return text
 
+        val sessions = _sessions.filterNot { it.isEmpty() }
         val sb = StringBuilder(text)
         var offset = 0
         val delimiter = "&int;"
@@ -128,7 +134,8 @@ class HtmlReportGenerator(outputDir: String) {
                 sb.insert(offset + curOffset, delimiter)
                 offset += delimiter.length
             }
-            offset = writeDiv(sessions.last()[i], sb, offset, curOffset,sessions.first()[i].offset + sessions.first()[i].expectedText.length)
+            offset = writeDiv(sessions.last()[i], sb, offset, curOffset,
+                    sessions.first()[i].offset + sessions.first()[i].expectedText.length)
         }
         return sb.toString()
     }
@@ -161,9 +168,9 @@ class HtmlReportGenerator(outputDir: String) {
         for (metric in evaluationResults.flatMap { res -> res.metrics.map { Pair(it.name, res.evaluationType) } }.sortedBy { it.first })
             headerBuilder.appendln("<th>${metric.first} ${metric.second}</th>")
 
-        for (filePath in evaluationResults.first().filesInfo.keys)
+        for (filePath in evaluationResults.flatMap { it.filesInfo.keys }.distinct())
             writeRow(contentBuilder, "<a href=\"${references[filePath]!!.reportPath}\">${File(filePath).name}</a>",
-                evaluationResults.flatMap { it.filesInfo[filePath]!!.metrics }.sortedBy { it.name })
+                evaluationResults.flatMap { it.filesInfo[filePath]?.metrics ?: it.metrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name })
 
         writeRow(contentBuilder, "Summary", evaluationResults.flatMap { it.metrics }.sortedBy { it.name })
         contentBuilder.appendln("</tr>")
@@ -184,8 +191,9 @@ class HtmlReportGenerator(outputDir: String) {
 
     private fun writeRow(sb: StringBuilder, name: String, metrics: List<MetricInfo>) {
         sb.appendln("<tr><td>$name</td>")
-        for (value in metrics) {
-            sb.appendln("<td>%.3f</td>".format(value.value))
+        for (metric in metrics) {
+            if (metric.value == null) sb.appendln("<td>----</td>")
+            else sb.appendln("<td>%.3f</td>".format(metric.value))
         }
         sb.appendln("</tr>")
     }

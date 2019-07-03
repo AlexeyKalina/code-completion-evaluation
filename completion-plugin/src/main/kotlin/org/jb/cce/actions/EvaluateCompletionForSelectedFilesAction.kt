@@ -102,28 +102,20 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val metricsEvaluator = MetricsEvaluator.withDefaultMetrics()
         val interpreter = Interpreter(completionInvoker)
 
-        interpretActionsRecursive(actions, completionTypes, 0, mutableListOf(), interpreter, metricsEvaluator, outputDir)
-    }
-
-    private fun interpretActionsRecursive(actions: List<Action>, completionTypes: List<CompletionType>, currentIndex: Int, results: MutableList<EvaluationInfo>,
-                                          interpreter: Interpreter, metricsEvaluator: MetricsEvaluator, outputDir: String) {
-        interpreter.interpret(actions, completionTypes[currentIndex], Consumer { (sessions, filePath) ->
-            if (results.size == currentIndex) results.add(EvaluationInfo(completionTypes[currentIndex].name))
-            results[currentIndex].addFileInfo(filePath, FileEvaluationInfo(sessions, metricsEvaluator.evaluate(sessions)))
-        }, Runnable {
-            results[currentIndex].metrics = metricsEvaluator.result()
-            if (currentIndex == completionTypes.lastIndex) {
-                generateReports(outputDir, results)
-            } else {
-                interpretActionsRecursive(actions, completionTypes, currentIndex + 1, results, interpreter, metricsEvaluator, outputDir)
-            }
-        })
+        val results = mutableListOf<EvaluationInfo>()
+        for (completionType in completionTypes) {
+            val files = mutableMapOf<String, FileEvaluationInfo>()
+            interpreter.interpret(actions, completionType, Consumer { (sessions, filePath) ->
+                files[filePath] = FileEvaluationInfo(sessions, metricsEvaluator.evaluate(sessions))
+            })
+            results.add(EvaluationInfo(completionType.name, files, metricsEvaluator.result()))
+        }
+        generateReports(outputDir, results)
     }
 
     private fun generateReports(outputDir: String, results: List<EvaluationInfo>) {
         val reportGenerator = HtmlReportGenerator(outputDir)
-        reportGenerator.generateFileReports(results)
-        val reportPath = reportGenerator.generateGlobalReport(results)
+        val reportPath = reportGenerator.generateReport(results)
         ApplicationManager.getApplication().invokeAndWait {
             if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
         }

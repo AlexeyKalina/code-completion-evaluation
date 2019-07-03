@@ -7,22 +7,19 @@ import java.util.function.Consumer
 
 class Interpreter(private val invoker: CompletionInvoker) {
 
-    fun interpret(actions: List<Action>, completionType: CompletionType, callbackPerFile: Consumer<Pair<List<Session>, String>>, callbackFinal: Runnable) {
+    fun interpret(actions: List<Action>, completionType: CompletionType, callbackPerFile: Consumer<Pair<List<Session>, String>>) {
 
         val task = object : Runnable {
             val result = mutableListOf<Session>()
             private var currentSession: Session? = null
-            private var previousIndex = 0
             private var currentOpenedFile = ""
             private var fileText = ""
             private var currentPosition = 0
-            private val batchSize = 30
 
             override fun run() {
                 if (actions.isEmpty()) return
                 processActions(actions)
                 callbackPerFile.accept(Pair(result, currentOpenedFile))
-                callbackFinal.run()
             }
 
             private fun processActions(actions: List<Action>) {
