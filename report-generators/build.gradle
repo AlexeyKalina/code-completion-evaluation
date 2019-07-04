@@ -15,6 +15,7 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile "org.apache.commons:commons-text:1.6"
     compile project(':interpretator')
+    compile project(':metrics-evaluator')
 }
 
 

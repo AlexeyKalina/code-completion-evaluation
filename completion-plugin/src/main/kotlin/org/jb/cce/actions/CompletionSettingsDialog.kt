@@ -4,6 +4,7 @@ import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
+import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.Language
 import java.awt.FlowLayout
@@ -19,13 +20,12 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     private val properties = PropertiesComponent.getInstance(project)
     private val outputDirProperty = "org.jb.cce.output_dir"
     var outputDir = properties.getValue(outputDirProperty) ?: project.basePath ?: ""
+    var completionTypes = arrayListOf(CompletionType.BASIC)
 
     init {
         init()
         title = "Completion evaluation settings"
     }
-
-    var completionType = CompletionType.BASIC
     var completionContext = CompletionContext.ALL
     var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix()
     var completionStatement = CompletionStatement.METHOD_CALLS
@@ -41,6 +41,12 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         dialogPanel.add(createOutputDirChooser())
 
         return dialogPanel
+    }
+
+    override fun doValidate(): ValidationInfo? {
+        if (completionTypes.isEmpty())
+            return ValidationInfo("Select at least one of the completion types.")
+        return super.doValidate()
     }
 
     private class LanguageItem(val language: Language, val count: Int) {
@@ -73,21 +79,18 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     private fun createTypePanel(): JPanel {
         val typeLabel = JLabel("Completion type:")
         val completionTypePanel = JPanel(FlowLayout(FlowLayout.LEFT))
-        val basicCompletionButton =  JRadioButton("Basic")
+        val basicCompletionButton =  JCheckBox("Basic")
         basicCompletionButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED) completionType = CompletionType.BASIC
+            if (event.stateChange == ItemEvent.SELECTED && !completionTypes.contains(CompletionType.BASIC)) completionTypes.add(CompletionType.BASIC)
+            else if (event.stateChange == ItemEvent.DESELECTED) completionTypes.removeIf { it == CompletionType.BASIC }
         }
-        val smartCompletionButton =  JRadioButton("Smart")
+        val smartCompletionButton =  JCheckBox("Smart")
         smartCompletionButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED) completionType = CompletionType.SMART
+            if (event.stateChange == ItemEvent.SELECTED && !completionTypes.contains(CompletionType.SMART)) completionTypes.add(CompletionType.SMART)
+            else if (event.stateChange == ItemEvent.DESELECTED) completionTypes.removeIf { it == CompletionType.SMART }
         }
 
         basicCompletionButton.isSelected = true
-
-        val completionTypeGroup =  ButtonGroup()
-
-        completionTypeGroup.add(basicCompletionButton)
-        completionTypeGroup.add(smartCompletionButton)
 
         completionTypePanel.add(typeLabel)
         completionTypePanel.add(basicCompletionButton)

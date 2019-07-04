@@ -9,8 +9,7 @@ sealed class Action(val type: ActionType) {
 }
 
 data class MoveCaret(val offset: Int) : Action(ActionType.MOVE_CARET)
-data class CallCompletion(val prefix: String, val expectedText: String,
-                     val completionType: CompletionType, val tokenType: TokenType) : Action(ActionType.CALL_COMPLETION)
+data class CallCompletion(val prefix: String, val expectedText: String, val tokenType: TokenType) : Action(ActionType.CALL_COMPLETION)
 class CancelSession : Action(ActionType.CANCEL_SESSION)
 data class PrintText(val text: String) : Action(ActionType.PRINT_TEXT)
 data class DeleteRange(val begin: Int, val end: Int) : Action(ActionType.DELETE_RANGE)
