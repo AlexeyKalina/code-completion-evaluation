@@ -16,13 +16,13 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileFilter
+import com.intellij.psi.PsiManager
 import org.apache.commons.io.input.UnixLineEndingInputStream
 import org.jb.cce.*
 import org.jb.cce.exceptions.BabelFishClientException
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.interpretator.DelegationCompletionInvoker
 import org.jb.cce.metrics.MetricsEvaluator
-import java.util.function.Consumer
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
     private companion object {
@@ -105,9 +105,9 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val results = mutableListOf<EvaluationInfo>()
         for (completionType in completionTypes) {
             val files = mutableMapOf<String, FileEvaluationInfo>()
-            interpreter.interpret(actions, completionType, Consumer { (sessions, filePath) ->
+            interpreter.interpret(actions, completionType) { sessions, filePath ->
                 files[filePath] = FileEvaluationInfo(sessions, metricsEvaluator.evaluate(sessions))
-            })
+            }
             results.add(EvaluationInfo(completionType.name, files, metricsEvaluator.result()))
         }
         generateReports(outputDir, results)

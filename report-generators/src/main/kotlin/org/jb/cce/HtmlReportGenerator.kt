@@ -14,6 +14,7 @@ class HtmlReportGenerator(outputDir: String) {
         private const val goodColor = "#008800"
         private const val middleColor = "#999900"
         private const val badColor = "#BB0066"
+        private const val absentColor = "#70AAFF"
         private const val globalReportName = "index.html"
         private const val tabulatorScript = "/tabulator.min.js"
         private const val tabulatorStyle = "/tabulator.min.css"
@@ -125,23 +126,23 @@ class HtmlReportGenerator(outputDir: String) {
         val sb = StringBuilder(text)
         var offset = 0
         val delimiter = "&int;"
-        for (i in sessions.first().indices) {
-            val center = sessions.first()[i].expectedText.length / sessions.size
-            var curOffset = sessions.first()[i].offset
+        for (session in sessions.flatten().distinctBy { it.offset }) {
+            val center = session.expectedText.length / sessions.size
+            var curOffset = session.offset
             for (j in 0 until sessions.lastIndex) {
-                offset = writeDiv(sessions[j][i], sb, offset, curOffset, curOffset + center)
+                offset = writeDiv(sessions[j].find { it.offset == session.offset }, sb, offset, curOffset, curOffset + center)
                 curOffset += center
                 sb.insert(offset + curOffset, delimiter)
                 offset += delimiter.length
             }
-            offset = writeDiv(sessions.last()[i], sb, offset, curOffset,
-                    sessions.first()[i].offset + sessions.first()[i].expectedText.length)
+            offset = writeDiv(sessions.last().find { it.offset == session.offset }, sb, offset, curOffset,
+                    session.offset + session.expectedText.length)
         }
         return sb.toString()
     }
 
-    private fun writeDiv(session: Session, sb: StringBuilder, offset_: Int, startPosition: Int, endPosition: Int) : Int {
-        val opened = "<div class=\"completion\" id=\"${session.id}\" style=\"color: ${getColor(session)}; font-weight: bold\">"
+    private fun writeDiv(session: Session?, sb: StringBuilder, offset_: Int, startPosition: Int, endPosition: Int) : Int {
+        val opened = "<div class=\"completion\" id=\"${session?.id}\" style=\"color: ${getColor(session)}; font-weight: bold\">"
         val closed = "</div>"
         var offset = offset_
         sb.insert(offset + startPosition, opened)
@@ -151,8 +152,9 @@ class HtmlReportGenerator(outputDir: String) {
         return offset
     }
 
-    private fun getColor(session: Session): String {
+    private fun getColor(session: Session?): String {
         return when {
+            session == null -> absentColor
             !session.lookups.last().suggests.contains(session.expectedText) -> badColor
             session.lookups.last().suggests.size < middleCountLookups ||
                     session.lookups.last().suggests.subList(0, middleCountLookups).contains(session.expectedText) -> goodColor

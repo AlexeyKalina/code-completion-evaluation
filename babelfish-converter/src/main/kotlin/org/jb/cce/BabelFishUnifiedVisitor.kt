@@ -1,5 +1,6 @@
 package org.jb.cce
 
+import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
 import org.jb.cce.uast.FileNode
@@ -27,8 +28,13 @@ open class BabelFishUnifiedVisitor {
         return FileNode(-1, -1)
     }
 
-    protected fun visitChildren(json: JsonObject, parentNode: UnifiedAstNode) {
-        for ((_, value) in json.entrySet()) {
+    protected fun visitChildren(json: JsonElement, parentNode: UnifiedAstNode) {
+        val values = when {
+            json.isJsonObject -> json.asJsonObject.entrySet().map { it.value }
+            json.isJsonArray -> json.asJsonArray
+            else -> listOf()
+        }
+        for (value in values) {
             if (value.isJsonObject) {
                 visitChild(value.asJsonObject, parentNode)
             }
