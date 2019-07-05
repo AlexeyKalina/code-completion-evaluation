@@ -4,7 +4,7 @@ import org.jb.cce.TokenType
 import org.jb.cce.actions.*
 import org.jb.cce.exception.UnexpectedActionException
 import org.jb.cce.uast.Completable
-import org.jb.cce.uast.UnifiedAstVisitor
+import org.jb.cce.uast.UnifiedAstRecursiveVisitor
 import org.jb.cce.uast.statements.declarations.blocks.BlockNode
 import org.jb.cce.uast.statements.declarations.blocks.ClassInitializerNode
 import org.jb.cce.uast.statements.declarations.blocks.GlobalNode
@@ -14,7 +14,7 @@ import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 
 abstract class CallCompletionsVisitor(protected open val text: String,
-                                      private val strategy: CompletionStrategy) : UnifiedAstVisitor {
+                                      private val strategy: CompletionStrategy) : UnifiedAstRecursiveVisitor() {
 
     private val actions = mutableListOf<Action>()
     private val bracketSize = 1
