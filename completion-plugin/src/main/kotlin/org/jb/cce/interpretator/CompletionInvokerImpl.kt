@@ -44,7 +44,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
             return emptyList()
         } else {
             val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
-            return lookup.items.toTypedArray().map(LookupElement::toString).toList()
+            return lookup.items.toTypedArray().map { it.lookupString }.toList()
         }
     }
 

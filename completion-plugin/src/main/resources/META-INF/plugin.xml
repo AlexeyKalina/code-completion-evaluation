@@ -26,4 +26,6 @@
             <add-to-group group-id="ProjectViewPopupMenu" anchor="first"/>
         </action>
     </actions>
+
+    <depends optional="true" >PythonCore</depends>
 </idea-plugin>

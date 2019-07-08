@@ -1,0 +1,15 @@
+FileNode
+  ClassDeclarationNode
+    MethodDeclarationNode
+      MethodBodyNode
+        VariableAccessNode
+        VariableAccessNode
+        VariableAccessNode
+        VariableAccessNode
+  MethodCallNode
+  MethodCallNode
+    VariableAccessNode
+    VariableAccessNode
+  MethodCallNode
+    VariableAccessNode
+    VariableAccessNode

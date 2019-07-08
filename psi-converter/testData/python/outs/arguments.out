@@ -1,0 +1,5 @@
+FileNode
+  MethodCallNode
+    MethodCallNode
+      MethodCallNode
+        VariableAccessNode

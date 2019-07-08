@@ -1,6 +1,7 @@
 package org.jb.cce
 
 import com.google.gson.JsonObject
+import org.jb.cce.uast.util.ConverterHelper.addToParent
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.statements.declarations.ClassDeclarationNode

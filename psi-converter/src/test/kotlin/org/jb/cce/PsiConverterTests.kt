@@ -1,10 +1,14 @@
 package org.jb.cce
 
+import com.intellij.configurationStore.getOrCreateVirtualFile
+import com.intellij.openapi.application.ReadAction
+import com.intellij.testFramework.LightPlatformTestCase
+import org.jb.cce.psi.PsiConverter
+import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.Language
 import org.jb.cce.uast.util.UastPrinter
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.extension.ExtensionContext
-import org.junit.jupiter.api.fail
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
 import org.junit.jupiter.params.provider.ArgumentsProvider
@@ -13,7 +17,8 @@ import java.io.File
 import java.nio.file.Paths
 import java.util.stream.Stream
 
-class ConverterTests {
+
+class PsiConverterTests: LightPlatformTestCase() {
     companion object {
         private const val TEST_DATA_PATH = "testData"
         private const val OUTPUTS_NAME = "outs"
@@ -23,12 +28,10 @@ class ConverterTests {
     @ParameterizedTest(name = "{0}")
     fun doTest(testName: String, language: Language, testFile: File, testOutput: File) {
         println(testName)
-        val client = BabelFishClient()
-        val fileText = testFile.readText()
-        val uast = client.parse(fileText, language)
-        val convertedUast = BabelFishConverter().convert(uast, language)
+        val virtualFile = getOrCreateVirtualFile(testFile.toPath(), null)
+        val uast = ReadAction.compute<FileNode, Exception> { PsiConverter().convert(virtualFile, getProject(), language) }
         val printer = UastPrinter()
-        convertedUast.accept(printer)
+        uast.accept(printer)
         val text = printer.getText()
         if (testOutput.exists()) {
             Assertions.assertEquals(text, testOutput.readText(), "Expected and actual uast structure mismatched")
@@ -48,7 +51,7 @@ class ConverterTests {
 
             val unsupportedFiles = language2files[Language.UNSUPPORTED]
             if (!unsupportedFiles.isNullOrEmpty()) {
-                fail("Unsupported languages found in the test data")
+                org.junit.jupiter.api.fail("Unsupported languages found in the test data")
             }
 
             fun asArguments(language: Language, testFiles: List<File>): Stream<Arguments> {

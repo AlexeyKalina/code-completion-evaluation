@@ -6,7 +6,7 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.VirtualFile
-import org.jb.cce.Language
+import org.jb.cce.uast.Language
 import java.awt.FlowLayout
 import java.awt.GridLayout
 import java.awt.event.ItemEvent

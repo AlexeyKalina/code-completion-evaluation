@@ -3,21 +3,15 @@ package org.jb.cce
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
+import org.jb.cce.uast.util.ConverterHelper.addToParent
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
-import org.jb.cce.uast.exceptions.UnifiedAstException
-import org.jb.cce.uast.statements.AssignmentNode
-import org.jb.cce.uast.statements.StatementNode
 import org.jb.cce.uast.statements.declarations.*
-import org.jb.cce.uast.statements.declarations.blocks.BlockNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
-import org.jb.cce.uast.statements.expressions.ExpressionNode
 import org.jb.cce.uast.statements.expressions.NamedNode
-import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 import java.util.logging.Logger
 
 open class BabelFishUnifiedVisitor {
-
     private val LOG = Logger.getLogger(this.javaClass.name)!!
 
     fun getUast(json: JsonObject): FileNode {
@@ -91,30 +85,6 @@ open class BabelFishUnifiedVisitor {
     }
 
     protected open fun visitVariableDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {
-    }
-
-    protected fun addToParent(node: UnifiedAstNode, parentNode: UnifiedAstNode) {
-        when (parentNode) {
-            is FileNode -> {
-                when (node) {
-                    is DeclarationNode -> parentNode.addDeclaration(node)
-                    is StatementNode -> parentNode.addStatement(node)
-                }
-            }
-            is ClassDeclarationNode -> parentNode.addMember(node as DeclarationNode)
-            is VariableDeclarationNode -> parentNode.setInitExpression(node as ExpressionNode)
-            is BlockNode -> parentNode.addStatement(node as StatementNode)
-            is AssignmentNode -> parentNode.setAssigned(node as ExpressionNode)
-            is MethodCallNode -> {
-                if (node !is ExpressionNode) {
-                    LOG.warning("$node is not Expression inside MethodCall")
-                    return
-                }
-                if (parentNode.getOffset() > node.getOffset()) parentNode.prefix = node as NamedNode
-                else parentNode.addArgument(node)
-            }
-            else -> throw UnifiedAstException("Unexpected parent $parentNode for node $node")
-        }
     }
 
     protected open fun <T: NamedNode> visitNamedNodes (json: JsonObject, factory : (String, Int, Int) -> T): List<NamedNode> {

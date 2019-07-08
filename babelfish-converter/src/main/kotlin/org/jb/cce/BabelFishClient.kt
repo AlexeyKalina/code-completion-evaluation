@@ -2,6 +2,7 @@ package org.jb.cce
 
 import com.sun.jna.*
 import org.jb.cce.exceptions.BabelFishClientException
+import org.jb.cce.uast.Language
 import java.util.*
 
 class BabelFishClient(private val endpoint: String = "0.0.0.0:9432") {

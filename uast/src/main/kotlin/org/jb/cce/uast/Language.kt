@@ -1,4 +1,4 @@
-package org.jb.cce
+package org.jb.cce.uast
 
 enum class Language(val displayName: String, private val extension: String) {
     JAVA("Java", "java"),
