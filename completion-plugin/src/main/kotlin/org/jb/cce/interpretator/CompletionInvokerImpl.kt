@@ -30,7 +30,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         editor!!.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
-    override fun callCompletion(type: org.jb.cce.actions.CompletionType): List<String> {
+    override fun callCompletion(type: org.jb.cce.actions.CompletionType, expectedText: String): List<String> {
         LOG.info("Call completion. Type: $type. ${positionToString(editor!!.caretModel.offset)}")
         LookupManager.getInstance(project).hideActiveLookup()
         val completionType = when (type) {
@@ -43,6 +43,10 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
             return emptyList()
         } else {
             val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
+            val expectedItem = lookup.items.firstOrNull { it.lookupString == expectedText }
+            if (expectedItem != null && completionType != CompletionType.SMART) {
+                lookup.finishLookup(Char.MIN_VALUE, expectedItem)
+            }
             return lookup.items.map { it.lookupString }
         }
     }

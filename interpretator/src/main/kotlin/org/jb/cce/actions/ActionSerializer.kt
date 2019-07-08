@@ -21,9 +21,9 @@ class ActionSerializer {
             Action.ActionType.CALL_COMPLETION.name -> CallCompletion(action["prefix"] as String, action["expectedText"] as String,
                     TokenType.valueOf(action["tokenType"] as String))
             Action.ActionType.CANCEL_SESSION.name -> CancelSession()
-            Action.ActionType.PRINT_TEXT.name -> PrintText(action["text"] as String)
+            Action.ActionType.PRINT_TEXT.name -> PrintText(action["text"] as String, action["completable"] as Boolean)
             Action.ActionType.DELETE_RANGE.name ->
-                DeleteRange((action["begin"] as Double).toInt(), (action["end"] as Double).toInt())
+            DeleteRange((action["begin"] as Double).toInt(), (action["end"] as Double).toInt(), action["completable"] as Boolean)
             Action.ActionType.OPEN_FILE.name -> OpenFile(action["path"] as String, action["text"] as String)
             else -> throw UnexpectedActionException("Incorrect action type")
         }
