@@ -30,6 +30,10 @@ class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : Comp
         invoker.closeFile(file)
     }
 
+    override fun isOpen(file: String) = readAction {
+        invoker.isOpen(file)
+    }
+
     private fun <T> readAction(runnable: () -> T): T {
         var result: T? = null
         ApplicationManager.getApplication().invokeAndWait {

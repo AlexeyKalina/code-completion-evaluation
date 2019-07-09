@@ -93,6 +93,10 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         editor = null
     }
 
+    override fun isOpen(file: String): Boolean {
+        return FileEditorManager.getInstance(project).openFiles.any { it.path == file }
+    }
+
     private fun positionToString(offset: Int): String {
         val logicalPosition = editor!!.offsetToLogicalPosition(offset)
         return "Offset: $offset, Line: ${logicalPosition.line}, Column: ${logicalPosition.column}."

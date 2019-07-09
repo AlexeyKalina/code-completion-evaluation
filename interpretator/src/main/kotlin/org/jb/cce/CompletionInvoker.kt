@@ -9,4 +9,5 @@ interface CompletionInvoker {
     fun deleteRange(begin: Int, end: Int)
     fun openFile(file: String)
     fun closeFile(file: String)
+    fun isOpen(file: String): Boolean
 }

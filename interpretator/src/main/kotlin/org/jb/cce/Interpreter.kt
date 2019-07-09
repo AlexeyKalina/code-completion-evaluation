@@ -11,6 +11,7 @@ class Interpreter(private val invoker: CompletionInvoker) {
         val result = mutableListOf<Session>()
         var currentOpenedFilePath = ""
         var currentOpenedFileText = ""
+        var needToClose = false
         var session: Session? = null
         var position = 0
         var completionSuccess = false
@@ -48,13 +49,14 @@ class Interpreter(private val invoker: CompletionInvoker) {
                 }
                 is OpenFile -> {
                     if (!currentOpenedFilePath.isEmpty()) {
-                        invoker.closeFile(currentOpenedFilePath)
+                        if (needToClose) invoker.closeFile(currentOpenedFilePath)
                         val isCanceled = BooleanHolder()
                         callbackPerFile(result.toList(), currentOpenedFilePath, currentOpenedFileText, isCanceled)
                         if (isCanceled.value) return
                         result.clear()
 
                     }
+                    needToClose = !invoker.isOpen(action.path)
                     invoker.openFile(action.path)
                     currentOpenedFilePath = action.path
                     currentOpenedFileText = action.text
