@@ -21,7 +21,7 @@ class PrecisionMetric : Metric {
 
         var relevantRecommendationsCount = 0
         for (completion in listOfCompletions) {
-            val indexOfNecessaryCompletion = completion.first.indexOf(completion.second)
+            val indexOfNecessaryCompletion = completion.first.map { it.text }.indexOf(completion.second)
             if (indexOfNecessaryCompletion in 0..3) {
                 relevantRecommendationsCount++
                 sample.add(1.0)

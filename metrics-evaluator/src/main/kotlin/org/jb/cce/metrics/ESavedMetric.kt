@@ -13,7 +13,7 @@ class ESavedMetric : Metric {
         var eSavedSum = 0.0
         sessions.forEach {
             var rank = it.lookups.map { lookup -> Pair(lookup.suggests, it.expectedText) }.indexOfFirst {
-                (suggests, expectedText) -> suggests.isNotEmpty() && suggests.first() == expectedText
+                (suggests, expectedText) -> suggests.isNotEmpty() && suggests.first().text == expectedText
             }
             if (rank < 0) {
                 rank = it.lookups.size

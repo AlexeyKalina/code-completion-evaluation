@@ -18,7 +18,7 @@ class RecallMetric : Metric {
         var recommendationsMadeCount = 0
         listOfCompletions.stream()
                 .forEach { (suggests, expectedText) ->
-                    if (suggests.contains(expectedText)) {
+                    if (suggests.any { it.text == expectedText }) {
                         sample.add(1.0)
                         recommendationsMadeCount++
                     } else
