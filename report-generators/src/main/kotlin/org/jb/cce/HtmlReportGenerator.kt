@@ -22,25 +22,29 @@ class HtmlReportGenerator(outputDir: String) {
         private val script = HtmlReportGenerator::class.java.getResource("/script.js").readText()
         private val style = HtmlReportGenerator::class.java.getResource("/style.css").readText()
         private val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
+
+        private val serializer = SessionSerializer()
     }
 
     private lateinit var reportTitle: String
 
     private val reportsDir: String = Paths.get(outputDir, formatter.format(Date())).toString()
-    private val _resourcesDir = Paths.get(reportsDir, "res")
-    private val resourcesDir: String = _resourcesDir.toString()
+    private val resourcesDir = Paths.get(reportsDir, "res")
+    private val resultsDir = Paths.get(reportsDir, "data")
 
     private data class ResultPaths(val resourcePath: String, val reportPath: String)
     private data class ReportInfo(val reportPath: String, val evaluationResults: List<FileEvaluationInfo>)
     private val references: MutableMap<String, ReportInfo> = mutableMapOf()
 
     init {
-        Files.createDirectories(_resourcesDir)
-        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorStyle), Paths.get(_resourcesDir.toString(), tabulatorStyle))
-        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(_resourcesDir.toString(), tabulatorScript))
+        Files.createDirectories(resourcesDir)
+        Files.createDirectories(resultsDir)
+        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorStyle), Paths.get(resourcesDir.toString(), tabulatorStyle))
+        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(resourcesDir.toString(), tabulatorScript))
     }
 
     fun generateReport(evaluationResults: List<EvaluationInfo>): String {
+        saveEvaluationResults(evaluationResults)
         generateFileReports(evaluationResults)
         return generateGlobalReport(evaluationResults)
     }
@@ -48,7 +52,6 @@ class HtmlReportGenerator(outputDir: String) {
     private fun generateFileReports(evaluationResults: List<EvaluationInfo>) {
         if (evaluationResults.isEmpty()) return
 
-        val serializer = SessionSerializer()
         for (filePath in evaluationResults.flatMap { it.filesInfo.keys }.distinct()) {
             val sessions = evaluationResults.map { it.filesInfo[filePath]?.sessions ?: listOf() }
             val json = serializer.serialize(sessions.flatten())
@@ -75,11 +78,19 @@ class HtmlReportGenerator(outputDir: String) {
         return reportPath
     }
 
+    private fun saveEvaluationResults(evaluationResults: List<EvaluationInfo>) {
+        for (results in evaluationResults) {
+            val json = serializer.serialize(results)
+            val dataPath = Paths.get(resultsDir.toString(), "${results.evaluationType}.json").toString()
+            FileWriter(dataPath).use { it.write(json) }
+        }
+    }
+
     private fun getPaths(fileName: String): ResultPaths {
-        return if (Files.exists(Paths.get(resourcesDir, "$fileName.js"))) {
-            return getNextFilePaths(Paths.get(resourcesDir, fileName).toString())
+        return if (Files.exists(Paths.get(resourcesDir.toString(), "$fileName.js"))) {
+            return getNextFilePaths(Paths.get(resourcesDir.toString(), fileName).toString())
         } else {
-            ResultPaths(Paths.get(resourcesDir, "$fileName.js").toString(),
+            ResultPaths(Paths.get(resourcesDir.toString(), "$fileName.js").toString(),
                     Paths.get(reportsDir, "$fileName.html").toString())
         }
     }

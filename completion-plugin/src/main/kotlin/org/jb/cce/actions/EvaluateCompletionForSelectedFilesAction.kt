@@ -49,7 +49,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             }
 
             override fun onSuccess() {
-                interpretUnderProgress(actions, completionTypes, project, settingsDialog.outputDir)
+                interpretUnderProgress(actions, completionTypes, strategy, project, settingsDialog.outputDir)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
@@ -85,16 +85,18 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         return generatedActions.flatten()
     }
 
-    private fun interpretUnderProgress(actions: List<Action>, completionTypes: List<CompletionType>, project: Project, outputDir: String) {
+    private fun interpretUnderProgress(actions: List<Action>, completionTypes: List<CompletionType>, strategy: CompletionStrategy,
+                                       project: Project, outputDir: String) {
         val task = object : Task.Backgroundable(project, "Interpretation of the generated actions") {
             override fun run(indicator: ProgressIndicator) {
-                interpretActions(actions, completionTypes, project, outputDir)
+                interpretActions(actions, completionTypes, strategy, project, outputDir)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    private fun interpretActions(actions: List<Action>, completionTypes: List<CompletionType>, project: Project, outputDir: String) {
+    private fun interpretActions(actions: List<Action>, completionTypes: List<CompletionType>, strategy: CompletionStrategy,
+                                 project: Project, outputDir: String) {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project))
         val metricsEvaluator = MetricsEvaluator.withDefaultMetrics()
         val interpreter = Interpreter(completionInvoker)
@@ -107,7 +109,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
                 files[filePath] = FileEvaluationInfo(sessions, metricsEvaluator.evaluate(sessions), fileText)
             }
             if (completionType == CompletionType.ML) setMLCompletion(false)
-            results.add(EvaluationInfo(completionType.name, files, metricsEvaluator.result()))
+            results.add(EvaluationInfo(completionType.name, strategy, files, metricsEvaluator.result()))
         }
         generateReports(outputDir, results)
     }

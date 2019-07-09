@@ -4,12 +4,17 @@ import com.google.gson.Gson
 import java.util.*
 
 class SessionSerializer {
+    private val gson = Gson()
 
-    fun serialize(sessions: List<Session>) : String {
+    fun serialize(results: EvaluationInfo): String {
+        return gson.toJson(results)
+    }
+
+    fun serialize(sessions: List<Session>): String {
         val map = HashMap<UUID, Session>()
         for (session in sessions) {
             map[session.id] = session
         }
-        return Gson().toJson(map)
+        return gson.toJson(map)
     }
 }
