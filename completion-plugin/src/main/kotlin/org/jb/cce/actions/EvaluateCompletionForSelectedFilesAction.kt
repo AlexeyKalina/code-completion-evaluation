@@ -13,10 +13,10 @@ import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ContentIterator
 import com.intellij.openapi.ui.Messages
+import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileFilter
-import org.apache.commons.io.input.UnixLineEndingInputStream
 import org.jb.cce.*
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.interpretator.DelegationCompletionInvoker
@@ -101,10 +101,12 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
 
         val results = mutableListOf<EvaluationInfo>()
         for (completionType in completionTypes) {
+            if (completionType == CompletionType.ML) setMLCompletion(true)
             val files = mutableMapOf<String, FileEvaluationInfo>()
             interpreter.interpret(actions, completionType) { sessions, filePath, fileText ->
                 files[filePath] = FileEvaluationInfo(sessions, metricsEvaluator.evaluate(sessions), fileText)
             }
+            if (completionType == CompletionType.ML) setMLCompletion(false)
             results.add(EvaluationInfo(completionType.name, files, metricsEvaluator.result()))
         }
         generateReports(outputDir, results)
@@ -136,5 +138,9 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             })
         }
         return language2files
+    }
+
+    private fun setMLCompletion(start: Boolean) {
+        Registry.get(PropertKey@ "completion.stats.enable.ml.ranking").setValue(start)
     }
 }

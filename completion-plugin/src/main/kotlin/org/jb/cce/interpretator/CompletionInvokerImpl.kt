@@ -37,6 +37,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         val completionType = when (type) {
             org.jb.cce.actions.CompletionType.BASIC -> CompletionType.BASIC
             org.jb.cce.actions.CompletionType.SMART -> CompletionType.SMART
+            org.jb.cce.actions.CompletionType.ML -> CompletionType.BASIC
         }
 
         CodeCompletionHandlerBase(completionType, false, false, true).invokeCompletion(project, editor)

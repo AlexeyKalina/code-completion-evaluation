@@ -19,7 +19,8 @@ enum class CompletionStatement {
 
 enum class CompletionType {
     BASIC,
-    SMART
+    SMART,
+    ML
 }
 
 enum class CompletionContext {
