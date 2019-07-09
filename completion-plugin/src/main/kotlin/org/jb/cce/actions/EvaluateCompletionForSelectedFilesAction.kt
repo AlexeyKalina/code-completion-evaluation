@@ -98,11 +98,11 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
     private fun interpretActions(actions: List<Action>, completionTypes: List<CompletionType>, strategy: CompletionStrategy,
                                  project: Project, outputDir: String) {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project))
-        val metricsEvaluator = MetricsEvaluator.withDefaultMetrics()
         val interpreter = Interpreter(completionInvoker)
 
         val results = mutableListOf<EvaluationInfo>()
         for (completionType in completionTypes) {
+            val metricsEvaluator = MetricsEvaluator.withDefaultMetrics()
             if (completionType == CompletionType.ML) setMLCompletion(true)
             val files = mutableMapOf<String, FileEvaluationInfo>()
             interpreter.interpret(actions, completionType) { sessions, filePath, fileText ->
