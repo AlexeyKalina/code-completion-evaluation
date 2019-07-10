@@ -25,7 +25,12 @@ object ConverterHelper {
                     is StatementNode -> parentNode.addStatement(node)
                 }
             }
-            is ClassDeclarationNode -> parentNode.addMember(node as DeclarationNode)
+            is ClassDeclarationNode -> {
+                when (node) {
+                    is DeclarationNode -> parentNode.addMember(node)
+                    is StatementNode -> parentNode.addStatement(node)
+                }
+            }
             is VariableDeclarationNode -> parentNode.setInitExpression(node as ExpressionNode)
             is BlockNode -> parentNode.addStatement(node as StatementNode)
             is AssignmentNode -> parentNode.setAssigned(node as ExpressionNode)

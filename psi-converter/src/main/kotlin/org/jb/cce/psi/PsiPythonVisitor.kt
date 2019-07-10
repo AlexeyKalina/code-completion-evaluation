@@ -32,6 +32,10 @@ class PsiPythonVisitor: PyRecursiveElementVisitor() {
 
     override fun visitPyCallExpression(node: PyCallExpression?) {
         val callee = node?.callee ?: return
+        if (callee !is PyReferenceExpression) {
+            super.visitPyCallExpression(node)
+            return
+        }
         val methodCall = visitReferenceExpression(callee) { name, offset, length -> MethodCallNode(name, offset, length) }
         stackOfNodes.addLast(methodCall)
         super.visitPyArgumentList(node.argumentList)

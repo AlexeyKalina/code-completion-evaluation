@@ -16,10 +16,8 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileFilter
-import com.intellij.psi.PsiManager
 import org.apache.commons.io.input.UnixLineEndingInputStream
 import org.jb.cce.*
-import org.jb.cce.exceptions.BabelFishClientException
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.interpretator.DelegationCompletionInvoker
 import org.jb.cce.metrics.MetricsEvaluator
@@ -83,8 +81,9 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
                     val babelFishUast = client.parse(fileText, language)
                     babelFishConverter.convert(babelFishUast, language)
                 }
-                generatedActions.add(generateActions(file.path, fileText, tree, strategy))
-            } catch (e: BabelFishClientException) {
+                val fileActions = generateActions(file.path, fileText, tree, strategy)
+                if (fileActions.size > 2) generatedActions.add(fileActions)
+            } catch (e: Exception) {
                 withError++
                 LOG.error("Error for file ${file.path}. Message: ${e.message}")
             }
