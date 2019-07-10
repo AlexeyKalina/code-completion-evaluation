@@ -63,6 +63,7 @@ class Interpreter(private val invoker: CompletionInvoker) {
                 }
             }
         }
+        if (needToClose) invoker.closeFile(currentOpenedFilePath)
         callbackPerFile(result, currentOpenedFilePath, currentOpenedFileText, BooleanHolder())
     }
 }
