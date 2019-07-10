@@ -9,4 +9,3 @@ FileNode
         VariableAccessNode
         MethodCallNode
           VariableAccessNode
-NEED TO CHECK!

@@ -87,6 +87,9 @@ open class BabelFishUnifiedVisitor {
     protected open fun visitVariableDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {
     }
 
+    protected open fun visitArrayAccess(json: JsonObject, parentNode: UnifiedAstNode) {
+    }
+
     protected open fun <T: NamedNode> visitNamedNodes (json: JsonObject, factory : (String, Int, Int) -> T): List<NamedNode> {
         val nodes = mutableListOf<T>()
         when {
@@ -130,7 +133,7 @@ open class BabelFishUnifiedVisitor {
     protected fun getOffset(json: JsonObject): Int {
         if (!json.has("@pos") || !json["@pos"].asJsonObject.has("start")) {
             LOG.warning("Empty Offset")
-            return -1
+            return 0
         }
         return json["@pos"].asJsonObject["start"].asJsonObject["offset"].asInt
     }
@@ -138,7 +141,7 @@ open class BabelFishUnifiedVisitor {
     protected fun getLength(json: JsonObject): Int {
         if (!json.has("@pos") || !json["@pos"].asJsonObject.has("end")) {
             LOG.warning("Empty Offset")
-            return -1
+            return 0
         }
         return json["@pos"].asJsonObject["end"].asJsonObject["offset"].asInt -
                 json["@pos"].asJsonObject["start"].asJsonObject["offset"].asInt

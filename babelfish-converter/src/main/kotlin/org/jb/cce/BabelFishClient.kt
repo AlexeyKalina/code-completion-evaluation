@@ -11,6 +11,7 @@ class BabelFishClient(private val endpoint: String = "0.0.0.0:9432") {
     }
 
     fun parse(text: String, language: Language): String {
+        if (text.isBlank()) return "{}"
         val result = client.Parse(getGoStr(text), getGoStr(language.name), getGoStr(endpoint)).getString(0)
         checkErrors(result)
         return result

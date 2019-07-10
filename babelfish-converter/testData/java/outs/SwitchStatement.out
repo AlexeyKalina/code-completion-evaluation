@@ -7,5 +7,5 @@ FileNode
         VariableAccessNode
         MethodCallNode
         MethodCallNode
+          ArrayAccessNode
         MethodCallNode
-NEED TO CHECK!

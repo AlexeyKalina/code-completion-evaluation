@@ -1,7 +1,6 @@
 package org.jb.cce
 
 import com.google.gson.JsonObject
-import org.jb.cce.uast.util.ConverterHelper.addToParent
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.statements.declarations.ClassDeclarationNode
@@ -12,6 +11,8 @@ import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
+import org.jb.cce.uast.statements.expressions.references.ArrayAccessNode
+import org.jb.cce.uast.util.ConverterHelper.addToParent
 
 class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
 
@@ -31,6 +32,7 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
             //TODO: support lambda
             typeEquals(json, "java:LambdaExpression") -> return
             typeEquals(json, "java:ClassInstanceCreation") -> visitInstanceCreation(json, parentNode)
+            typeEquals(json, "java:ArrayAccess") -> visitArrayAccess(json, parentNode)
             typeEquals(json, "java:VariableDeclarationFragment") ||
                 typeEquals(json, "java:EnumConstantDeclaration") -> visitVariableDeclaration(json, parentNode)
             (roleExists(json, "Expression") || roleExists(json, "Argument") || roleExists(json, "Assignment"))
@@ -59,7 +61,8 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
     private fun visitInstanceCreation(json: JsonObject, parentNode: UnifiedAstNode) {
         val typeObj = json["type"].asJsonObject
         if (typeEquals(typeObj, "java:SimpleType")) {
-            visitMethodCall(typeObj, parentNode)
+            val instanceCreationCall = visitCall(typeObj, parentNode)
+            visitChildren(json["arguments"], instanceCreationCall)
         }
     }
 
@@ -84,13 +87,8 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
     }
 
     override fun visitMethodCall(json: JsonObject, parentNode: UnifiedAstNode) {
-        val methodCallNodes = visitNamedNodes(json) { name, offset, length -> MethodCallNode(name, offset, length) }
-        for (node in methodCallNodes) {
-            addToParent(node, parentNode)
-        }
-        val lastNode = methodCallNodes.last()
-
-        visitChildren(json, lastNode)
+        val methodCallNode = visitCall(json, parentNode)
+        visitChildren(json, methodCallNode)
     }
 
     override fun visitTypeDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {
@@ -100,5 +98,20 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
         visitChildren(json, classDeclaration)
 
         addToParent(classDeclaration, parentNode)
+    }
+
+    override fun visitArrayAccess(json: JsonObject, parentNode: UnifiedAstNode) {
+        val arrayAccessNodes = visitNamedNodes(json["array"].asJsonObject) { name, offset, length -> ArrayAccessNode(name, offset, length) }
+        for (node in arrayAccessNodes) {
+            addToParent(node, parentNode)
+        }
+    }
+
+    private fun visitCall(json: JsonObject, parentNode: UnifiedAstNode): MethodCallNode {
+        val methodCallNodes = visitNamedNodes(json) { name, offset, length -> MethodCallNode(name, offset, length) }
+        for (node in methodCallNodes) {
+            addToParent(node, parentNode)
+        }
+        return methodCallNodes.last() as MethodCallNode
     }
 }
