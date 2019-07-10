@@ -88,7 +88,7 @@ abstract class CallCompletionsVisitor(protected open val text: String,
     }
 
     private fun preparePreviousContext(node: Completable) {
-        if (previousTextStart < node.getOffset()) {
+        if (previousTextStart <= node.getOffset()) {
             actions += MoveCaret(previousTextStart)
             actions += PrintText(text.substring(IntRange(previousTextStart, node.getOffset() - 1)))
             previousTextStart = node.getOffset() + node.getLength()

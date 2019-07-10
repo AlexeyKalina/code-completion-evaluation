@@ -1,12 +1,12 @@
 package org.jb.cce.visitors
 
 import org.jb.cce.actions.DeleteRange
-import org.jb.cce.uast.UnifiedAstVisitor
+import org.jb.cce.uast.UnifiedAstRecursiveVisitor
 import org.jb.cce.uast.statements.declarations.blocks.ClassInitializerNode
 import org.jb.cce.uast.statements.declarations.blocks.GlobalNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 
-class DeleteMethodBodiesVisitor : UnifiedAstVisitor {
+class DeleteMethodBodiesVisitor : UnifiedAstRecursiveVisitor() {
 
     private val actions = mutableListOf<DeleteRange>()
     private val bracketSize = 1

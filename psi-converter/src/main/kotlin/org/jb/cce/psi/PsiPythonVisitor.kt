@@ -66,7 +66,7 @@ class PsiPythonVisitor: PyRecursiveElementVisitor() {
     override fun visitPyFunction(node: PyFunction?) {
         if (node == null) return
         val function = MethodDeclarationNode(node.textOffset, node.textLength)
-        val body = MethodBodyNode(node.statementList.textOffset, node.textLength)
+        val body = MethodBodyNode(node.statementList.textOffset, node.statementList.textLength)
         function.setBody(body)
         addToParent(function)
         stackOfNodes.addLast(body)
