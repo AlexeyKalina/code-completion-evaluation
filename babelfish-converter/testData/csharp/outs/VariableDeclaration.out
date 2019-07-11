@@ -1,0 +1,6 @@
+FileNode
+  ClassDeclarationNode
+    MethodDeclarationNode
+      MethodHeaderNode
+      MethodBodyNode
+        VariableDeclarationNode
