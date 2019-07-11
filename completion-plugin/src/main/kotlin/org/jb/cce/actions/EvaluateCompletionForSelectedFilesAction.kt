@@ -18,10 +18,7 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileFilter
 import org.jb.cce.*
-import org.jb.cce.info.EvaluationInfo
-import org.jb.cce.info.FileEvaluationInfo
-import org.jb.cce.info.MetricsEvaluationInfo
-import org.jb.cce.info.SessionsEvaluationInfo
+import org.jb.cce.info.*
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.interpretator.DelegationCompletionInvoker
 import org.jb.cce.metrics.MetricInfo
@@ -50,50 +47,54 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val completionTypes = settingsDialog.completionTypes
         val task = object : Task.Backgroundable(project, "Generating actions for selected files", true) {
             private lateinit var actions: List<Action>
+            private lateinit var errors: List<FileErrorInfo>
             private val files = language2files.getValue(settingsDialog.language)
 
             override fun run(indicator: ProgressIndicator) {
-                actions = generateActions(project, settingsDialog.language, files, strategy, indicator)
+                val results = generateActions(project, settingsDialog.language, files, strategy, indicator)
+                actions = results.first
+                errors = results.second
             }
 
             override fun onSuccess() {
-                interpretUnderProgress(actions, files.size, completionTypes, strategy, project, settingsDialog.outputDir)
+                interpretUnderProgress(actions, errors, files.size - errors.size, completionTypes, strategy, project, settingsDialog.outputDir)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    private fun generateActions(project: Project, language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy, indicator: ProgressIndicator): List<Action> {
+    private fun generateActions(project: Project, language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy,
+                                indicator: ProgressIndicator): Pair<List<Action>, List<FileErrorInfo>> {
         val actionsGenerator = ActionsGenerator(strategy)
         val uastBuilder = UastBuilder.create(project, language)
 
         val sortedFiles = files.sortedBy { f -> f.name }
         val generatedActions = mutableListOf<List<Action>>()
+        val errors = mutableListOf<FileErrorInfo>()
         var completed = 0
-        var withError = 0
         for (file in sortedFiles) {
             if (indicator.isCanceled) {
-                LOG.info("Generating actions is canceled by user. Done: $completed/${files.size}. With error: $withError")
+                LOG.info("Generating actions is canceled by user. Done: $completed/${files.size}. With error: ${errors.size}")
                 break
             }
-            LOG.info("Start generating actions for file ${file.path}. Done: $completed/${files.size}. With error: $withError")
+            LOG.info("Start generating actions for file ${file.path}. Done: $completed/${files.size}. With error: ${errors.size}")
             indicator.text2 = file.name
             indicator.fraction = completed.toDouble() / files.size
             try {
                 val uast = uastBuilder.build(file)
                 generatedActions.add(actionsGenerator.generate(uast))
             } catch (e: Exception) {
-                withError++
+                errors.add(FileErrorInfo(file.path, e))
                 LOG.error("Error for file ${file.path}. Message: ${e.message}")
             }
             completed++
-            LOG.info("Generating actions for file ${file.path} completed. Done: $completed/${files.size}. With error: $withError")
+            LOG.info("Generating actions for file ${file.path} completed. Done: $completed/${files.size}. With error: ${errors.size}")
         }
 
-        return generatedActions.flatten()
+        return Pair(generatedActions.flatten(), errors)
     }
 
-    private fun interpretUnderProgress(actions: List<Action>, filesCount: Int, completionTypes: List<CompletionType>,
+    private fun interpretUnderProgress(actions: List<Action>, errors: List<FileErrorInfo>, filesCount: Int, completionTypes: List<CompletionType>,
                                        strategy: CompletionStrategy, project: Project, outputDir: String) {
         val task = object : Task.Backgroundable(project, "Interpretation of the generated actions") {
             private var sessionsInfo: List<SessionsEvaluationInfo>? = null
@@ -105,7 +106,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             override fun onSuccess() {
                 if (sessionsInfo == null) return
                 val metricsInfo = evaluateMetrics(sessionsInfo!!)
-                generateReports(outputDir, sessionsInfo!!, metricsInfo)
+                generateReports(outputDir, sessionsInfo!!, metricsInfo, errors)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
@@ -154,9 +155,10 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         return metricsInfo
     }
 
-    private fun generateReports(outputDir: String, sessions: List<SessionsEvaluationInfo>, metrics: List<MetricsEvaluationInfo>) {
+    private fun generateReports(outputDir: String, sessions: List<SessionsEvaluationInfo>, metrics: List<MetricsEvaluationInfo>,
+                                errors: List<FileErrorInfo>) {
         val reportGenerator = HtmlReportGenerator(outputDir)
-        val reportPath = reportGenerator.generateReport(sessions, metrics)
+        val reportPath = reportGenerator.generateReport(sessions, metrics, errors)
         ApplicationManager.getApplication().invokeAndWait {
             if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
         }

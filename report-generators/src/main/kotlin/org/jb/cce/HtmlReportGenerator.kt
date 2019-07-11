@@ -1,6 +1,7 @@
 package org.jb.cce
 
 import org.jb.cce.info.FileEvaluationInfo
+import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.MetricsEvaluationInfo
 import org.jb.cce.info.SessionsEvaluationInfo
 import org.jb.cce.metrics.MetricInfo
@@ -46,10 +47,11 @@ class HtmlReportGenerator(outputDir: String) {
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(resourcesDir.toString(), tabulatorScript))
     }
 
-    fun generateReport(sessions: List<SessionsEvaluationInfo>, metrics: List<MetricsEvaluationInfo>): String {
+    fun generateReport(sessions: List<SessionsEvaluationInfo>, metrics: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {
         saveEvaluationResults(sessions)
         generateFileReports(sessions)
-        return generateGlobalReport(metrics)
+        generateErrorReports(errors)
+        return generateGlobalReport(metrics, errors)
     }
 
     private fun generateFileReports(evaluationResults: List<SessionsEvaluationInfo>) {
@@ -68,14 +70,29 @@ class HtmlReportGenerator(outputDir: String) {
         }
     }
 
-    private fun generateGlobalReport(evaluationResults: List<MetricsEvaluationInfo>): String {
+    private fun generateErrorReports(errors: List<FileErrorInfo>) {
+        for (fileError in errors) {
+            val file = File(fileError.path)
+            val (_, reportPath) = getPaths(file.name)
+            reportTitle = "Error on actions generation for file <b>${file.name}</b>"
+            val report = """<html><head><title>$reportTitle</title></head><body><h1>$reportTitle</h1>
+                            <h2>Message:</h2>${fileError.exception.message}
+                            <h2>StackTrace:</h2>${fileError.exception.stackTrace?.contentToString()}</body></html>"""
+            FileWriter(reportPath).use { it.write(report) }
+            references[file.path] = ReportInfo(reportPath, listOf())
+        }
+    }
+
+    private fun generateGlobalReport(evaluationResults: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {
         val sb = StringBuilder()
         reportTitle = "Code Completion Report"
         sb.appendln("<html><head><title>$reportTitle</title>")
         sb.appendln("<script src=\"res/tabulator.min.js\"></script>")
         sb.appendln("<link href=\"res/tabulator.min.css\" rel=\"stylesheet\"></head>")
         sb.appendln("<body><h1>$reportTitle</h1>")
-        sb.appendln(getMetricsTable(evaluationResults))
+        sb.append("<h3>${ getDistinctFiles(evaluationResults).size } file(s) successfully processed; ")
+        if (errors.isEmpty()) sb.appendln("no errors occurred</h3>") else sb.appendln("${errors.size} with errors</h3>")
+        sb.appendln(getMetricsTable(evaluationResults, errors))
         sb.appendln("<script>var table = new Tabulator(\"#metrics-table\", {layout:\"fitColumns\"});</script></body></html>")
         val reportPath = Paths.get(reportsDir, globalReportName).toString()
         FileWriter(reportPath).use { it.write(sb.toString()) }
@@ -177,7 +194,7 @@ class HtmlReportGenerator(outputDir: String) {
         }
     }
 
-    private fun getMetricsTable(evaluationResults: List<MetricsEvaluationInfo>): String {
+    private fun getMetricsTable(evaluationResults: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {
         val headerBuilder = StringBuilder()
         val contentBuilder = StringBuilder()
 
@@ -185,7 +202,12 @@ class HtmlReportGenerator(outputDir: String) {
         for (metric in evaluationResults.flatMap { res -> res.globalMetrics.map { Pair(it.name, res.info.evaluationType) } }.sortedBy { it.first })
             headerBuilder.appendln("<th>${metric.first} ${metric.second}</th>")
 
-        for (filePath in evaluationResults.flatMap { it.fileMetrics.map { it.filePath } }.distinct())
+        for (fileError in errors) {
+            writeRow(contentBuilder, "<a href=\"${references[fileError.path]!!.reportPath}\" style=\"color:red;\">${File(fileError.path).name}</a>",
+                    evaluationResults.flatMap { it.globalMetrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name })
+        }
+
+        for (filePath in getDistinctFiles(evaluationResults))
             writeRow(contentBuilder, "<a href=\"${references[filePath]!!.reportPath}\">${File(filePath).name}</a>",
                 evaluationResults.flatMap { it.fileMetrics.find { it.filePath == filePath }?.results ?:
                 it.globalMetrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name })
@@ -214,5 +236,9 @@ class HtmlReportGenerator(outputDir: String) {
             else sb.appendln("<td>%.3f</td>".format(metric.value))
         }
         sb.appendln("</tr>")
+    }
+
+    private fun getDistinctFiles(results: List<MetricsEvaluationInfo>): List<String> {
+        return results.flatMap { it.fileMetrics.map { it.filePath } }.distinct()
     }
 }
