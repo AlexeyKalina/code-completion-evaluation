@@ -1,12 +1,13 @@
 package org.jb.cce
 
 import com.google.gson.Gson
+import org.jb.cce.info.SessionsEvaluationInfo
 import java.util.*
 
 class SessionSerializer {
     private val gson = Gson()
 
-    fun serialize(results: EvaluationInfo): String {
+    fun serialize(results: SessionsEvaluationInfo): String {
         return gson.toJson(results)
     }
 

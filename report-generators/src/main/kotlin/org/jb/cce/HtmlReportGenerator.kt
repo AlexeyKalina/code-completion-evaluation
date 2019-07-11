@@ -1,5 +1,8 @@
 package org.jb.cce
 
+import org.jb.cce.info.FileEvaluationInfo
+import org.jb.cce.info.MetricsEvaluationInfo
+import org.jb.cce.info.SessionsEvaluationInfo
 import org.jb.cce.metrics.MetricInfo
 import java.io.File
 import java.io.FileWriter
@@ -33,7 +36,7 @@ class HtmlReportGenerator(outputDir: String) {
     private val resultsDir = Paths.get(reportsDir, "data")
 
     private data class ResultPaths(val resourcePath: String, val reportPath: String)
-    private data class ReportInfo(val reportPath: String, val evaluationResults: List<FileEvaluationInfo>)
+    private data class ReportInfo(val reportPath: String, val sessions: List<FileEvaluationInfo<Session>>)
     private val references: MutableMap<String, ReportInfo> = mutableMapOf()
 
     init {
@@ -43,28 +46,29 @@ class HtmlReportGenerator(outputDir: String) {
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(resourcesDir.toString(), tabulatorScript))
     }
 
-    fun generateReport(evaluationResults: List<EvaluationInfo>): String {
-        saveEvaluationResults(evaluationResults)
-        generateFileReports(evaluationResults)
-        return generateGlobalReport(evaluationResults)
+    fun generateReport(sessions: List<SessionsEvaluationInfo>, metrics: List<MetricsEvaluationInfo>): String {
+        saveEvaluationResults(sessions)
+        generateFileReports(sessions)
+        return generateGlobalReport(metrics)
     }
 
-    private fun generateFileReports(evaluationResults: List<EvaluationInfo>) {
+    private fun generateFileReports(evaluationResults: List<SessionsEvaluationInfo>) {
         if (evaluationResults.isEmpty()) return
 
-        for (filePath in evaluationResults.flatMap { it.filesInfo.keys }.distinct()) {
-            val sessions = evaluationResults.map { it.filesInfo[filePath]?.sessions ?: listOf() }
+        for (filePath in evaluationResults.flatMap { it.sessions.map { it.filePath } }.distinct()) {
+            val sessions = evaluationResults.map { it.sessions.find { it.filePath == filePath }?.results ?: listOf() }
             val json = serializer.serialize(sessions.flatten())
             val file = File(filePath)
             val (resourcePath, reportPath) = getPaths(file.name)
             FileWriter(resourcePath).use { it.write("sessions = '$json'") }
-            val report = getHtml(sessions, file.name, resourcePath, evaluationResults.mapNotNull { it.filesInfo[filePath]?.text }.first() )
+            val report = getHtml(sessions, file.name, resourcePath,
+                    evaluationResults.mapNotNull { it.sessions.find { it.filePath == filePath }?.text }.first() )
             FileWriter(reportPath).use { it.write(report) }
-            references[filePath] = ReportInfo(reportPath, evaluationResults.map { it.filesInfo.getValue(filePath) })
+            references[filePath] = ReportInfo(reportPath, evaluationResults.mapNotNull { it.sessions.find { it.filePath == filePath } })
         }
     }
 
-    private fun generateGlobalReport(evaluationResults: List<EvaluationInfo>): String {
+    private fun generateGlobalReport(evaluationResults: List<MetricsEvaluationInfo>): String {
         val sb = StringBuilder()
         reportTitle = "Code Completion Report"
         sb.appendln("<html><head><title>$reportTitle</title>")
@@ -78,10 +82,10 @@ class HtmlReportGenerator(outputDir: String) {
         return reportPath
     }
 
-    private fun saveEvaluationResults(evaluationResults: List<EvaluationInfo>) {
+    private fun saveEvaluationResults(evaluationResults: List<SessionsEvaluationInfo>) {
         for (results in evaluationResults) {
             val json = serializer.serialize(results)
-            val dataPath = Paths.get(resultsDir.toString(), "${results.evaluationType}.json").toString()
+            val dataPath = Paths.get(resultsDir.toString(), "${results.info.evaluationType}.json").toString()
             FileWriter(dataPath).use { it.write(json) }
         }
     }
@@ -173,19 +177,20 @@ class HtmlReportGenerator(outputDir: String) {
         }
     }
 
-    private fun getMetricsTable(evaluationResults: List<EvaluationInfo>): String {
+    private fun getMetricsTable(evaluationResults: List<MetricsEvaluationInfo>): String {
         val headerBuilder = StringBuilder()
         val contentBuilder = StringBuilder()
 
         headerBuilder.appendln("<th tabulator-formatter=\"html\">File Report</th>")
-        for (metric in evaluationResults.flatMap { res -> res.metrics.map { Pair(it.name, res.evaluationType) } }.sortedBy { it.first })
+        for (metric in evaluationResults.flatMap { res -> res.globalMetrics.map { Pair(it.name, res.info.evaluationType) } }.sortedBy { it.first })
             headerBuilder.appendln("<th>${metric.first} ${metric.second}</th>")
 
-        for (filePath in evaluationResults.flatMap { it.filesInfo.keys }.distinct())
+        for (filePath in evaluationResults.flatMap { it.fileMetrics.map { it.filePath } }.distinct())
             writeRow(contentBuilder, "<a href=\"${references[filePath]!!.reportPath}\">${File(filePath).name}</a>",
-                evaluationResults.flatMap { it.filesInfo[filePath]?.metrics ?: it.metrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name })
+                evaluationResults.flatMap { it.fileMetrics.find { it.filePath == filePath }?.results ?:
+                it.globalMetrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name })
 
-        writeRow(contentBuilder, "Summary", evaluationResults.flatMap { it.metrics }.sortedBy { it.name })
+        writeRow(contentBuilder, "Summary", evaluationResults.flatMap { it.globalMetrics }.sortedBy { it.name })
         contentBuilder.appendln("</tr>")
 
         return """
