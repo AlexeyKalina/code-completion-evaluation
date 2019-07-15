@@ -34,6 +34,12 @@ You need to install [Babelfish](https://doc.bblf.sh) service with language drive
   - Context of completion token (previous and all)
   - Prefix of completion token (empty, first characters and uppercase characters)
   - Type of completion tokens (method calls, variables and method arguments)
+- Different metrics:
+  - Precision
+  - Recall
+  - F-measure
+  - Mean Reciprocal Rank
+  - [eSaved](http://terrierteam.dcs.gla.ac.uk/publications/kharitonov-sigir2013.pdf)
 - HTML-reports:
   - Global report with metrics and links to file reports
   - Reports for files with all completions
