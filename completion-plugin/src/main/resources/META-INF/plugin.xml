@@ -1,22 +1,29 @@
 <idea-plugin>
-    <id>com.intellij.completion.evaluation.completion-evaluation-plugin</id>
-    <name>Plugin display name here</name>
-    <vendor email="support@yourcompany.com" url="http://www.yourcompany.com">YourCompany</vendor>
+    <id>com.intellij.completion.evaluation</id>
+    <name>Code Completion Quality Evaluation</name>
+    <version>0.0.1</version>
+    <vendor url="https://www.jetbrains.com">JetBrains</vendor>
 
     <description><![CDATA[
-    Enter short description for your plugin here.<br>
-    <em>most HTML tags may be used</em>
+           <p>The plugin deals with the quality evaluation of code completion based on artificial queries.</p>
+           <p>Usage:</p>
+           <ul>
+                <li>Select files and/or directories for code completion evaluation.</li>
+                <li>Right click and select "Evaluate Completion For Selected Files"</li>
+                <li>Select strategy for actions generation in opened dialog.</li>
+                <li>After generation and interpretation of actions you will be asked to open the report in the browser.</li>
+           </ul>
     ]]></description>
 
-    <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
-         on how to target different products -->
-    <!-- uncomment to enable plugin in all products
-    <depends>com.intellij.modules.lang</depends>
-    -->
-
-    <extensions defaultExtensionNs="com.intellij">
-        <!-- Add your extensions here -->
-    </extensions>
+    <change-notes><![CDATA[
+      0.0.1 <br>
+        <ul>
+            <li>Support Java, Python and C#</li>
+            <li>Support different strategies of queries generation: token types, context and prefix</li>
+            <li>Support different quality metrics: Precision, Recall, F-Measure, Mean Reciprocal Rank and E-saved</li>
+        </ul>
+    ]]>
+    </change-notes>
 
     <actions>
         <action id="org.jb.cce.actions.EvaluateCompletionForSelectedFilesAction"
