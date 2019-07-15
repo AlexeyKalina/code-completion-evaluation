@@ -18,7 +18,7 @@ You need to install [Babelfish](https://doc.bblf.sh) service with language drive
 1. Select files and/or directories for code completion evaluation.
 2. Right click and select `Evaluate Completion For Selected Files`
 3. Select strategy for actions generation in opened dialog.
-4. After generaton and interpretation of actions you will be asked to open the report in the browser.
+4. After generation and interpretation of actions you will be asked to open the report in the browser.
 
 ## Features
 
