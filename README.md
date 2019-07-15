@@ -12,7 +12,9 @@ The plugin deals with the quality evaluation of code completion based on artific
 
 You need to install [Babelfish](https://doc.bblf.sh) service with language drivers. The easiest way to do this is using [Docker](https://docs.docker.com). Run the following command:
 
-`docker run -d --name bblfshd --privileged -p 9432:9432 bblfsh/bblfshd:latest-drivers`
+`docker run -d --name bblfshd --privileged -p 9432:9432 bblfsh/bblfshd:latest-drivers`.
+
+Note: for python files Babelfish service is not needed.
 
 ## Usage
 1. Select files and/or directories for code completion evaluation.
