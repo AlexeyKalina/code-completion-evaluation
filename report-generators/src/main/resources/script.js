@@ -17,12 +17,10 @@ elementsArray.forEach(function(elem) {
         this.appendChild(a);
         for (i = 0; i < suggests.length; i++) {
             b = document.createElement("DIV");
-            var parametersString = completions[elem.id].tokenType === "METHOD_CALL"
-                ? '(' + suggests[i].parameters.join(", ") + ')' : "";
             if (completions[elem.id].expectedText === suggests[i].text) {
-                b.innerHTML = "<b>" + suggests[i].text + parametersString + "</b>"
+                b.innerHTML = "<b>" + suggests[i].presentationText + "</b>"
             } else {
-                b.innerHTML = suggests[i].text + parametersString
+                b.innerHTML = suggests[i].presentationText
             }
             a.appendChild(b);
         }

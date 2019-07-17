@@ -6,7 +6,7 @@ import org.omg.CORBA.BooleanHolder
 
 class Interpreter(private val invoker: CompletionInvoker) {
 
-    fun interpret(actions: List<Action>, completionType: CompletionType, callbackPerFile: (List<Session>, String, String, BooleanHolder) -> Unit) {
+    fun interpret(actions: List<Action>, completionType: CompletionType, callbackPerFile: (List<Session>, String, String, Int, BooleanHolder) -> Unit) {
         if (actions.isEmpty()) return
         val result = mutableListOf<Session>()
         var currentOpenedFilePath = ""
@@ -15,6 +15,7 @@ class Interpreter(private val invoker: CompletionInvoker) {
         var session: Session? = null
         var position = 0
         var completionSuccess = false
+        var actionsDone = 0
 
         iterateActions@
         for (action in actions) {
@@ -51,10 +52,10 @@ class Interpreter(private val invoker: CompletionInvoker) {
                     if (!currentOpenedFilePath.isEmpty()) {
                         if (needToClose) invoker.closeFile(currentOpenedFilePath)
                         val isCanceled = BooleanHolder()
-                        callbackPerFile(result.toList(), currentOpenedFilePath, currentOpenedFileText, isCanceled)
+                        callbackPerFile(result.toList(), currentOpenedFilePath, currentOpenedFileText, actionsDone, isCanceled)
                         if (isCanceled.value) return
                         result.clear()
-
+                        actionsDone = 0
                     }
                     needToClose = !invoker.isOpen(action.path)
                     invoker.openFile(action.path)
@@ -62,8 +63,9 @@ class Interpreter(private val invoker: CompletionInvoker) {
                     currentOpenedFileText = action.text
                 }
             }
+            actionsDone++
         }
         if (needToClose) invoker.closeFile(currentOpenedFilePath)
-        callbackPerFile(result, currentOpenedFilePath, currentOpenedFileText, BooleanHolder())
+        callbackPerFile(result, currentOpenedFilePath, currentOpenedFileText, actionsDone, BooleanHolder())
     }
 }

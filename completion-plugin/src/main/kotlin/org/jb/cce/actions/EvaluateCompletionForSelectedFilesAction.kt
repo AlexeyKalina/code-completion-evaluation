@@ -57,7 +57,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             }
 
             override fun onSuccess() {
-                interpretUnderProgress(actions, errors, files.size - errors.size, completionTypes, strategy, project, settingsDialog.outputDir)
+                interpretUnderProgress(actions, errors, completionTypes, strategy, project, settingsDialog.outputDir)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
@@ -94,50 +94,51 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         return Pair(generatedActions.flatten(), errors)
     }
 
-    private fun interpretUnderProgress(actions: List<Action>, errors: List<FileErrorInfo>, filesCount: Int, completionTypes: List<CompletionType>,
+    private fun interpretUnderProgress(actions: List<Action>, errors: List<FileErrorInfo>, completionTypes: List<CompletionType>,
                                        strategy: CompletionStrategy, project: Project, outputDir: String) {
         val task = object : Task.Backgroundable(project, "Interpretation of the generated actions") {
             private var sessionsInfo: List<SessionsEvaluationInfo>? = null
 
             override fun run(indicator: ProgressIndicator) {
-                sessionsInfo = interpretActions(actions, filesCount, completionTypes, strategy, project, indicator)
+                sessionsInfo = interpretActions(actions, completionTypes, strategy, project, indicator)
             }
 
             override fun onSuccess() {
-                if (sessionsInfo == null) return
-                val metricsInfo = evaluateMetrics(sessionsInfo!!)
-                generateReports(outputDir, sessionsInfo!!, metricsInfo, errors)
+                val session = sessionsInfo ?: return
+                val metricsInfo = evaluateMetrics(session)
+                generateReports(outputDir, session, metricsInfo, errors)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    private fun interpretActions(actions: List<Action>, filesCount: Int, completionTypes: List<CompletionType>,
+    private fun interpretActions(actions: List<Action>, completionTypes: List<CompletionType>,
                                  strategy: CompletionStrategy, project: Project, indicator: ProgressIndicator): List<SessionsEvaluationInfo> {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project))
         val interpreter = Interpreter(completionInvoker)
 
         val sessionsInfo = mutableListOf<SessionsEvaluationInfo>()
-        var completed = 0
+        val mlCompletionFlag = getMLCompletion()
         LOG.info("Start interpreting actions")
+        var completed = 0
         for (completionType in completionTypes) {
-            if (completionType == CompletionType.ML) setMLCompletion(true)
+            setMLCompletion(completionType == CompletionType.ML)
             val fileSessions = mutableListOf<FileEvaluationInfo<Session>>()
-            interpreter.interpret(actions, completionType) { sessions, filePath, fileText, isCanceled ->
+            interpreter.interpret(actions, completionType) { sessions, filePath, fileText, actionsDone, isCanceled ->
                 if (indicator.isCanceled) {
                     LOG.info("Interpreting actions is canceled by user.")
                     isCanceled.value = true
                     return@interpret
                 }
+                completed += actionsDone
                 fileSessions.add(FileEvaluationInfo(filePath, sessions, fileText))
-                completed++
                 indicator.text2 = "$completionType ${File(filePath).name}"
-                indicator.fraction = completed.toDouble() / (filesCount * completionTypes.size)
-                LOG.info("Interpreting actions for file $filePath ($completionType completion) completed. Done: $completed/${filesCount * completionTypes.size}")
+                indicator.fraction = completed.toDouble() / (actions.size * completionTypes.size)
+                LOG.info("Interpreting actions for file $filePath ($completionType completion) completed. Done: $completed/${actions.size * completionTypes.size}")
             }
-            if (completionType == CompletionType.ML) setMLCompletion(false)
             sessionsInfo.add(SessionsEvaluationInfo(fileSessions, EvaluationInfo(completionType.name, strategy)))
         }
+        setMLCompletion(mlCompletionFlag)
         if (!indicator.isCanceled) return sessionsInfo
         return emptyList()
     }
@@ -184,7 +185,6 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         return language2files
     }
 
-    private fun setMLCompletion(start: Boolean) {
-        Registry.get(PropertKey@ "completion.stats.enable.ml.ranking").setValue(start)
-    }
+    private fun getMLCompletion() = Registry.get(PropertKey@ "completion.stats.enable.ml.ranking").asBoolean()
+    private fun setMLCompletion(value: Boolean) = Registry.get(PropertKey@ "completion.stats.enable.ml.ranking").setValue(value)
 }

@@ -4,9 +4,9 @@ import com.intellij.codeInsight.completion.CodeCompletionHandlerBase
 import com.intellij.codeInsight.completion.CompletionType
 import com.intellij.codeInsight.lookup.Lookup
 import com.intellij.codeInsight.lookup.LookupElement
+import com.intellij.codeInsight.lookup.LookupElementPresentation
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.codeInsight.lookup.impl.LookupImpl
-import com.intellij.lang.jvm.JvmParameter
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
@@ -16,8 +16,6 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.psi.PsiType
-import com.intellij.psi.impl.compiled.ClsMethodImpl
 import org.jb.cce.CompletionInvoker
 import org.jb.cce.Suggest
 import java.io.File
@@ -54,7 +52,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
             if (expectedItem != null && completionType != CompletionType.SMART) {
                 lookup.finishLookup(Lookup.AUTO_INSERT_SELECT_CHAR, expectedItem)
             }
-            return lookup.items.map { Suggest(it.toString(), getParameters(it)) }
+            return lookup.items.map { Suggest(it.toString(), lookupElementText(it)) }
         }
     }
 
@@ -102,13 +100,9 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         return "Offset: $offset, Line: ${logicalPosition.line}, Column: ${logicalPosition.column}."
     }
 
-    private fun getParameters(element: LookupElement): List<String> {
-        val psi = element.psiElement as? ClsMethodImpl ?: return listOf()
-        return psi.parameters.map { getParameterPresentation(it) }
-    }
-
-    private fun getParameterPresentation(parameter: JvmParameter): String {
-        val typeString = (parameter.type as? PsiType)?.presentableText ?: parameter.type.toString()
-        return listOf(typeString, parameter.name).joinToString(" ")
+    private fun lookupElementText(element: LookupElement): String {
+        val presentation = LookupElementPresentation()
+        element.renderElement(presentation)
+        return "${presentation.itemText} ${presentation.typeText} ${presentation.tailText}"
     }
 }

@@ -1,3 +1,3 @@
 package org.jb.cce
 
-class Suggest(val text: String, val parameters: List<String>)
+class Suggest(val text: String, val presentationText: String)
