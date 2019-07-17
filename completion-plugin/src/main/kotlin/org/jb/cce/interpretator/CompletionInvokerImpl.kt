@@ -2,6 +2,7 @@ package org.jb.cce.interpretator
 
 import com.intellij.codeInsight.completion.CodeCompletionHandlerBase
 import com.intellij.codeInsight.completion.CompletionType
+import com.intellij.codeInsight.lookup.Lookup
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.codeInsight.lookup.impl.LookupImpl
 import com.intellij.openapi.command.WriteCommandAction
@@ -30,7 +31,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         editor!!.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
-    override fun callCompletion(type: org.jb.cce.actions.CompletionType): List<String> {
+    override fun callCompletion(type: org.jb.cce.actions.CompletionType, expectedText: String): List<String> {
         LOG.info("Call completion. Type: $type. ${positionToString(editor!!.caretModel.offset)}")
         LookupManager.getInstance(project).hideActiveLookup()
         val completionType = when (type) {
@@ -43,6 +44,10 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
             return emptyList()
         } else {
             val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
+            val expectedItem = lookup.items.firstOrNull { it.lookupString == expectedText }
+            if (expectedItem != null && completionType != CompletionType.SMART) {
+                lookup.finishLookup(Lookup.AUTO_INSERT_SELECT_CHAR, expectedItem)
+            }
             return lookup.items.map { it.lookupString }
         }
     }

@@ -12,7 +12,9 @@ class Interpreter(private val invoker: CompletionInvoker) {
         var currentOpenedFileText = ""
         var session: Session? = null
         var position = 0
+        var completionSuccess = false
 
+        iterateActions@
         for (action in actions) {
             when (action) {
                 is MoveCaret -> {
@@ -20,20 +22,29 @@ class Interpreter(private val invoker: CompletionInvoker) {
                     position = action.offset
                 }
                 is CallCompletion -> {
+                    if (completionType != CompletionType.SMART && completionSuccess) continue@iterateActions
                     if (session == null) {
                         session = Session(position, action.expectedText, action.tokenType)
                     }
-                    session.addLookup(Lookup(action.prefix, invoker.callCompletion(completionType)))
+                    session.addLookup(Lookup(action.prefix, invoker.callCompletion(completionType, action.expectedText)))
+                    completionSuccess = session.lookups.last().suggests.contains(action.expectedText)
                 }
-                is CancelSession -> {
+                is FinishSession -> {
                     if (session == null) {
                         throw UnexpectedActionException("Session canceled before created")
                     }
+                    completionSuccess = false
                     result.add(session)
                     session = null
                 }
-                is PrintText -> invoker.printText(action.text)
-                is DeleteRange -> invoker.deleteRange(action.begin, action.end)
+                is PrintText -> {
+                    if (completionType != CompletionType.SMART && action.completable && completionSuccess) continue@iterateActions
+                    invoker.printText(action.text)
+                }
+                is DeleteRange -> {
+                    if (completionType != CompletionType.SMART && action.completable && completionSuccess) continue@iterateActions
+                    invoker.deleteRange(action.begin, action.end)
+                }
                 is OpenFile -> {
                     if (!currentOpenedFilePath.isEmpty()) {
                         invoker.closeFile(currentOpenedFilePath)

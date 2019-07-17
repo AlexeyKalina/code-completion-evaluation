@@ -70,16 +70,16 @@ abstract class CallCompletionsVisitor(protected open val text: String,
         var currentPrefix = ""
         for (symbol in prefix) {
             actions += CallCompletion(currentPrefix, node.getText(), tokenType)
-            actions += PrintText(symbol.toString())
+            actions += PrintText(symbol.toString(), true)
             currentPrefix += symbol
         }
         actions += CallCompletion(prefix, node.getText(), tokenType)
 
         if (!prefix.isEmpty())
-            actions += DeleteRange(node.getOffset(), node.getOffset() + prefix.length)
-        actions += PrintText(node.getText())
+            actions += DeleteRange(node.getOffset(), node.getOffset() + prefix.length, true)
+        actions += PrintText(node.getText(), true)
 
-        actions += CancelSession()
+        actions += FinishSession()
     }
 
     private fun prepareAllContext(node: Completable) {

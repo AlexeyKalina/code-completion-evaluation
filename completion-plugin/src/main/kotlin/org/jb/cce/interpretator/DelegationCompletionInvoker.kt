@@ -9,8 +9,8 @@ class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : Comp
         invoker.moveCaret(offset)
     }
 
-    override fun callCompletion(type: CompletionType): List<String> = readAction {
-        invoker.callCompletion(type)
+    override fun callCompletion(type: CompletionType, expectedText: String): List<String> = readAction {
+        invoker.callCompletion(type, expectedText)
     }
 
     override fun printText(text: String) = writeAction {
