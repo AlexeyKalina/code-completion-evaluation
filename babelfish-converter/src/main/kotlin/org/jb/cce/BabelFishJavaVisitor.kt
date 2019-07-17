@@ -85,7 +85,7 @@ class BabelFishJavaVisitor(path: String, text: String): BabelFishUnifiedVisitor(
     }
 
     override fun visitFieldAccess(json: JsonObject, parentNode: UnifiedAstNode) {
-        val fieldAccessNodes = visitNamedNodes(json) { name, offset, length, first -> FieldAccessNode(name, offset, length) }
+        val fieldAccessNodes = visitNamedNodes(json) { name, offset, length, _ -> FieldAccessNode(name, offset, length) }
         for (node in fieldAccessNodes) {
             addToParent(node, parentNode)
         }
@@ -146,7 +146,7 @@ class BabelFishJavaVisitor(path: String, text: String): BabelFishUnifiedVisitor(
     }
 
     private fun visitCall(json: JsonObject, parentNode: UnifiedAstNode): MethodCallNode {
-        val methodCallNodes = visitNamedNodes(json) { name, offset, length, first -> MethodCallNode(name, offset, length) }
+        val methodCallNodes = visitNamedNodes(json) { name, offset, length, _ -> MethodCallNode(name, offset, length) }
         for (node in methodCallNodes) {
             addToParent(node, parentNode)
         }

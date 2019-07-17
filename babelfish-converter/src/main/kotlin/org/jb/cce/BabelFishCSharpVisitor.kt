@@ -40,7 +40,7 @@ class BabelFishCSharpVisitor(path: String, text: String): BabelFishUnifiedVisito
             typeObj = typeObj["Identifier"].asJsonObject
         }
 
-        val methodCallNodes = visitNamedNodes(typeObj) { name, offset, length, first -> MethodCallNode(name, offset, length) }
+        val methodCallNodes = visitNamedNodes(typeObj) { name, offset, length, _ -> MethodCallNode(name, offset, length) }
         for (node in methodCallNodes) {
             addToParent(node, parentNode)
         }
@@ -93,7 +93,7 @@ class BabelFishCSharpVisitor(path: String, text: String): BabelFishUnifiedVisito
             nameObj = nameObj["Identifier"].asJsonObject
         }
 
-        val methodCallNodes = visitNamedNodes(nameObj) { name, offset, length, first -> MethodCallNode(name, offset, length) }
+        val methodCallNodes = visitNamedNodes(nameObj) { name, offset, length, _ -> MethodCallNode(name, offset, length) }
         for (node in methodCallNodes) {
             addToParent(node, parentNode)
         }

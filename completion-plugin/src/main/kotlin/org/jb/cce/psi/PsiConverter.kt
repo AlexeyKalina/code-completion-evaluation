@@ -14,7 +14,7 @@ class PsiConverter(val project: Project, val language: Language) : UastBuilder()
     override fun build(file: VirtualFile): FileNode {
         val psi = ApplicationManager.getApplication().runReadAction<PsiFile> {
             PsiManager.getInstance(project).findFile(file)
-        } ?: throw PsiConverterException("Cannot get PSI of file")
+        } ?: throw PsiConverterException("Cannot get PSI of file ${file.path}")
 
         return when (language) {
             Language.PYTHON -> {

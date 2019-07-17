@@ -137,8 +137,4 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         }
         return language2files
     }
-
-    fun VirtualFile.text(): String {
-        return UnixLineEndingInputStream(this.inputStream, false).bufferedReader().use { it.readText() }
-    }
 }
