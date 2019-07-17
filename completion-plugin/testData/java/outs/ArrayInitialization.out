@@ -1,0 +1,12 @@
+FileNode
+  ClassDeclarationNode (ArrayInitialization)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        VariableDeclarationNode (a)
+          VariableAccessNode (args)
+          FieldAccessNode (length)
+          MethodCallNode (value)
+    MethodDeclarationNode (value)
+      MethodHeaderNode (value)
+      MethodBodyNode

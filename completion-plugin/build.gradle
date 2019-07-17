@@ -19,6 +19,9 @@ dependencies {
     compile project(':metrics-evaluator')
     compile project(':babelfish-converter')
     compile project(':report-generators')
+    testCompile("org.junit.jupiter:junit-jupiter-params:5.4.2")
+    testCompile("org.junit.jupiter:junit-jupiter-api:5.4.2")
+    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.4.2")
 }
 
 compileKotlin {
@@ -29,6 +32,7 @@ compileTestKotlin {
 }
 intellij {
     version '2019.1'
+    plugins "PythonCore:2019.1.191.6183.53"
 }
 runIde {
     jvmArgs '-Xmx1G'
@@ -37,4 +41,8 @@ patchPluginXml {
     changeNotes """
       Add change notes here.<br>
       <em>most HTML tags may be used</em>"""
+}
+
+test {
+    useJUnitPlatform()
 }

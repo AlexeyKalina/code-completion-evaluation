@@ -16,13 +16,12 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileFilter
-import com.intellij.psi.PsiManager
 import org.apache.commons.io.input.UnixLineEndingInputStream
 import org.jb.cce.*
-import org.jb.cce.exceptions.BabelFishClientException
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.interpretator.DelegationCompletionInvoker
 import org.jb.cce.metrics.MetricsEvaluator
+import org.jb.cce.uast.Language
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
     private companion object {
@@ -46,7 +45,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val task = object : Task.Backgroundable(project, "Generating actions for selected files", true) {
             private lateinit var actions: List<Action>
             override fun run(indicator: ProgressIndicator) {
-                actions = generateActions(settingsDialog.language, language2files.getValue(settingsDialog.language), strategy, indicator)
+                actions = generateActions(project, settingsDialog.language, language2files.getValue(settingsDialog.language), strategy, indicator)
             }
 
             override fun onSuccess() {
@@ -56,11 +55,11 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    private fun generateActions(language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy, indicator: ProgressIndicator): List<Action> {
-        val client = BabelFishClient()
-        val converter = BabelFishConverter()
-        val sortedFiles = files.sortedBy { f -> f.name }
+    private fun generateActions(project: Project, language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy, indicator: ProgressIndicator): List<Action> {
+        val actionsGenerator = ActionsGenerator(strategy)
+        val uastBuilder = UastBuilder.create(project, language)
 
+        val sortedFiles = files.sortedBy { f -> f.name }
         val generatedActions = mutableListOf<List<Action>>()
         var completed = 0
         var withError = 0
@@ -72,12 +71,10 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             LOG.info("Start generating actions for file ${file.path}. Done: $completed/${files.size}. With error: $withError")
             indicator.text2 = file.name
             indicator.fraction = completed.toDouble() / files.size
-            val fileText = file.text()
             try {
-                val babelFishUast = client.parse(fileText, language)
-                val tree = converter.convert(babelFishUast, language)
-                generatedActions.add(generateActions(file.path, fileText, tree, strategy))
-            } catch (e: BabelFishClientException) {
+                val uast = uastBuilder.build(file)
+                generatedActions.add(actionsGenerator.generate(uast))
+            } catch (e: Exception) {
                 withError++
                 LOG.error("Error for file ${file.path}. Message: ${e.message}")
             }
@@ -105,8 +102,8 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val results = mutableListOf<EvaluationInfo>()
         for (completionType in completionTypes) {
             val files = mutableMapOf<String, FileEvaluationInfo>()
-            interpreter.interpret(actions, completionType) { sessions, filePath ->
-                files[filePath] = FileEvaluationInfo(sessions, metricsEvaluator.evaluate(sessions))
+            interpreter.interpret(actions, completionType) { sessions, filePath, fileText ->
+                files[filePath] = FileEvaluationInfo(sessions, metricsEvaluator.evaluate(sessions), fileText)
             }
             results.add(EvaluationInfo(completionType.name, files, metricsEvaluator.result()))
         }
@@ -139,9 +136,5 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             })
         }
         return language2files
-    }
-
-    private fun VirtualFile.text(): String {
-        return UnixLineEndingInputStream(this.inputStream, false).bufferedReader().use { it.readText() }
     }
 }

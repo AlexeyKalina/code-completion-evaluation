@@ -13,4 +13,4 @@ data class CallCompletion(val prefix: String, val expectedText: String, val toke
 class CancelSession : Action(ActionType.CANCEL_SESSION)
 data class PrintText(val text: String) : Action(ActionType.PRINT_TEXT)
 data class DeleteRange(val begin: Int, val end: Int) : Action(ActionType.DELETE_RANGE)
-data class OpenFile(val file: String) : Action(ActionType.OPEN_FILE)
+data class OpenFile(val path: String, val text: String) : Action(ActionType.OPEN_FILE)

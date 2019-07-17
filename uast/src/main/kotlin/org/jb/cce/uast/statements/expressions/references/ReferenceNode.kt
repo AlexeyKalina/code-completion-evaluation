@@ -1,5 +1,6 @@
 package org.jb.cce.uast.statements.expressions.references
 
+import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.statements.expressions.NamedNode
 
 abstract class ReferenceNode(name: String,
@@ -7,4 +8,8 @@ abstract class ReferenceNode(name: String,
                              length: Int) : NamedNode(name, offset, length) {
 
     var prefix: NamedNode? = null
+
+    override fun accept(visitor: UnifiedAstVisitor) {
+       visitor.visitReferenceNode(this)
+    }
 }

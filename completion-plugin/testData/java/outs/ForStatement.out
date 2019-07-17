@@ -1,0 +1,11 @@
+FileNode
+  ClassDeclarationNode (ForStatement)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        VariableDeclarationNode (i)
+        VariableAccessNode (i)
+        VariableAccessNode (args)
+        FieldAccessNode (length)
+        MethodCallNode (println)
+          VariableAccessNode (i)

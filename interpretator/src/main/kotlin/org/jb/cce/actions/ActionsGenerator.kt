@@ -1,23 +1,26 @@
 package org.jb.cce.actions
 
-import org.jb.cce.uast.*
+import org.jb.cce.uast.FileNode
 import org.jb.cce.visitors.*
 
-fun generateActions(filePath: String, fileText: String, tree: FileNode, strategy: CompletionStrategy): List<Action> {
+class ActionsGenerator(val strategy: CompletionStrategy) {
 
-    val deletionVisitor = DeleteMethodBodiesVisitor()
-    if (strategy.context == CompletionContext.PREVIOUS) {
-        deletionVisitor.visit(tree)
+    fun generate(file: FileNode): List<Action> {
+        val deletionVisitor = DeleteMethodBodiesVisitor()
+        if (strategy.context == CompletionContext.PREVIOUS) {
+            file.accept(deletionVisitor)
+        }
+
+        val completionVisitor = when (strategy.statement) {
+            CompletionStatement.ALL -> AllCompletableVisitor(file.text, strategy)
+            CompletionStatement.METHOD_CALLS -> MethodCallsVisitor(file.text, strategy)
+            CompletionStatement.ARGUMENTS -> MethodArgumentsVisitor(file.text, strategy)
+            CompletionStatement.VARIABLES -> VariableAccessVisitor(file.text, strategy)
+        }
+
+        file.accept(completionVisitor)
+
+        return if (completionVisitor.getActions().isEmpty()) emptyList() else
+            listOf(OpenFile(file.path, file.text)) + deletionVisitor.getActions().reversed() + completionVisitor.getActions()
     }
-
-    val completionVisitor = when (strategy.statement) {
-        CompletionStatement.ALL -> AllCompletableVisitor(fileText, strategy)
-        CompletionStatement.METHOD_CALLS -> MethodCallsVisitor(fileText, strategy)
-        CompletionStatement.ARGUMENTS -> MethodArgumentsVisitor(fileText, strategy)
-        CompletionStatement.VARIABLES -> VariableAccessVisitor(fileText, strategy)
-    }
-
-    completionVisitor.visit(tree)
-
-    return listOf(OpenFile(filePath)) + deletionVisitor.getActions().reversed() + completionVisitor.getActions()
 }

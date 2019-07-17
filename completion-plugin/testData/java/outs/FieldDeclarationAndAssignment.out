@@ -1,0 +1,3 @@
+FileNode
+  ClassDeclarationNode (FieldDeclarationAndAssignment)
+    VariableDeclarationNode (field)

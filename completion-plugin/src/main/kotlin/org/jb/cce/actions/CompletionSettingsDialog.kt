@@ -6,7 +6,7 @@ import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.VirtualFile
-import org.jb.cce.Language
+import org.jb.cce.uast.Language
 import java.awt.FlowLayout
 import java.awt.GridLayout
 import java.awt.event.ItemEvent
@@ -27,7 +27,7 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         title = "Completion evaluation settings"
     }
     var completionContext = CompletionContext.ALL
-    var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix()
+    var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix
     var completionStatement = CompletionStatement.METHOD_CALLS
 
     override fun createCenterPanel(): JComponent? {
@@ -133,7 +133,7 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         val simplePrefixSpinner = JSpinner(model)
         noPrefixButton.addItemListener { event ->
             if (event.stateChange == ItemEvent.SELECTED) {
-                completionPrefix = CompletionPrefix.NoPrefix()
+                completionPrefix = CompletionPrefix.NoPrefix
                 simplePrefixSpinner.isEnabled = false
             }
         }
@@ -151,7 +151,7 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         val capitalizePrefixButton =  JRadioButton("Capitalize prefix")
         capitalizePrefixButton.addItemListener { event ->
             if (event.stateChange == ItemEvent.SELECTED) {
-                completionPrefix = CompletionPrefix.CapitalizePrefix()
+                completionPrefix = CompletionPrefix.CapitalizePrefix
                 simplePrefixSpinner.isEnabled = false
             }
         }

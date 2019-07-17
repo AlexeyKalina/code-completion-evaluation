@@ -1,0 +1,7 @@
+FileNode
+  ClassDeclarationNode (ConstructorInvocation)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        VariableDeclarationNode (a)
+          MethodCallNode (ConstructorInvocation)

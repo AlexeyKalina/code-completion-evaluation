@@ -55,9 +55,9 @@ class HtmlReportGenerator(outputDir: String) {
             val file = File(filePath)
             val (resourcePath, reportPath) = getPaths(file.name)
             FileWriter(resourcePath).use { it.write("sessions = '$json'") }
-            val report = getHtml(sessions, file.name, resourcePath, file.readText())
+            val report = getHtml(sessions, file.name, resourcePath, evaluationResults.mapNotNull { it.filesInfo[filePath]?.text }.first() )
             FileWriter(reportPath).use { it.write(report) }
-            references[filePath] = ReportInfo(reportPath, evaluationResults.map { it.filesInfo.getValue(filePath) })//evaluationResults)
+            references[filePath] = ReportInfo(reportPath, evaluationResults.map { it.filesInfo.getValue(filePath) })
         }
     }
 

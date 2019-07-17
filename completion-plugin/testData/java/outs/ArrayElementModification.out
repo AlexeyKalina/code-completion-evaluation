@@ -1,0 +1,9 @@
+FileNode
+  ClassDeclarationNode (ArrayElementModification)
+    VariableDeclarationNode (i)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        ArrayAccessNode (args)
+          VariableAccessNode (i)
+        VariableAccessNode (i)

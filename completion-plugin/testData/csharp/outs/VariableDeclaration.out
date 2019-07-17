@@ -1,0 +1,7 @@
+FileNode
+  ClassDeclarationNode (VariableDeclaration)
+    MethodDeclarationNode (Main)
+      MethodHeaderNode (Main)
+      MethodBodyNode
+        VariableDeclarationNode (a)
+          MethodCallNode (ToUnixTimeMilliseconds)

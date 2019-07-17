@@ -1,0 +1,11 @@
+FileNode
+  ClassDeclarationNode (SwitchStatement)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        VariableAccessNode (args)
+        FieldAccessNode (length)
+        MethodCallNode (println)
+        MethodCallNode (println)
+          ArrayAccessNode (args)
+        MethodCallNode (println)

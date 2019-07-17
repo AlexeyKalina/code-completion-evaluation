@@ -1,0 +1,12 @@
+FileNode
+  ClassDeclarationNode (FieldAssignment)
+    VariableDeclarationNode (field)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        VariableDeclarationNode (fieldAssignment)
+          MethodCallNode (FieldAssignment)
+        VariableAccessNode (fieldAssignment)
+        FieldAccessNode (field)
+        MethodCallNode (println)
+          VariableAccessNode (fieldAssignment)

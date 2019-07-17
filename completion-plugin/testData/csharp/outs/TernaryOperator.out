@@ -1,0 +1,11 @@
+FileNode
+  ClassDeclarationNode (TernaryOperator)
+    MethodDeclarationNode (Main)
+      MethodHeaderNode (Main)
+      MethodBodyNode
+        VariableDeclarationNode (value)
+          MethodCallNode (ToUnixTimeMilliseconds)
+          MethodCallNode (five)
+    MethodDeclarationNode (five)
+      MethodHeaderNode (five)
+      MethodBodyNode

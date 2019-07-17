@@ -1,15 +1,20 @@
 package org.jb.cce
 
-import com.sun.jna.*
+import com.sun.jna.Library
+import com.sun.jna.Native
+import com.sun.jna.Pointer
+import com.sun.jna.Structure
 import org.jb.cce.exceptions.BabelFishClientException
+import org.jb.cce.uast.Language
 import java.util.*
 
-class BabelFishClient(private val endpoint: String = "0.0.0.0:9432") {
+class BabelFishClient(private val language: Language, private val endpoint: String = "0.0.0.0:9432") {
     private companion object {
         private val client = Native.loadLibrary("bblfsh_client", GoBabelFishClient::class.java) as GoBabelFishClient
     }
 
-    fun parse(text: String, language: Language): String {
+    fun parse(text: String): String {
+        if (text.isBlank()) return "{}"
         val result = client.Parse(getGoStr(text), getGoStr(language.name), getGoStr(endpoint)).getString(0)
         checkErrors(result)
         return result

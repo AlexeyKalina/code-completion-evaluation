@@ -1,0 +1,13 @@
+FileNode
+  ClassDeclarationNode (MethodCallAsArgument)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        MethodCallNode (method)
+          MethodCallNode (method2)
+    MethodDeclarationNode (method)
+      MethodHeaderNode (method)
+      MethodBodyNode
+    MethodDeclarationNode (method2)
+      MethodHeaderNode (method2)
+      MethodBodyNode

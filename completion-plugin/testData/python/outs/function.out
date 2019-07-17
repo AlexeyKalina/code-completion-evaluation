@@ -1,0 +1,9 @@
+FileNode
+  MethodDeclarationNode (greet)
+    MethodHeaderNode (greet)
+    MethodBodyNode
+      MethodCallNode (write)
+        VariableAccessNode (name)
+  MethodCallNode (greet)
+  MethodCallNode (greet)
+  MethodCallNode (greet)
