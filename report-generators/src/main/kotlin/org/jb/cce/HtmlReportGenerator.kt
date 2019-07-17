@@ -1,5 +1,9 @@
 package org.jb.cce
 
+import org.jb.cce.info.FileEvaluationInfo
+import org.jb.cce.info.FileErrorInfo
+import org.jb.cce.info.MetricsEvaluationInfo
+import org.jb.cce.info.SessionsEvaluationInfo
 import org.jb.cce.metrics.MetricInfo
 import java.io.File
 import java.io.FileWriter
@@ -22,64 +26,91 @@ class HtmlReportGenerator(outputDir: String) {
         private val script = HtmlReportGenerator::class.java.getResource("/script.js").readText()
         private val style = HtmlReportGenerator::class.java.getResource("/style.css").readText()
         private val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
+
+        private val serializer = SessionSerializer()
     }
 
     private lateinit var reportTitle: String
 
     private val reportsDir: String = Paths.get(outputDir, formatter.format(Date())).toString()
-    private val _resourcesDir = Paths.get(reportsDir, "res")
-    private val resourcesDir: String = _resourcesDir.toString()
+    private val resourcesDir = Paths.get(reportsDir, "res")
+    private val resultsDir = Paths.get(reportsDir, "data")
 
     private data class ResultPaths(val resourcePath: String, val reportPath: String)
-    private data class ReportInfo(val reportPath: String, val evaluationResults: List<FileEvaluationInfo>)
-    private val references: MutableMap<String, ReportInfo> = mutableMapOf()
+    private val references: MutableMap<String, String> = mutableMapOf()
 
     init {
-        Files.createDirectories(_resourcesDir)
-        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorStyle), Paths.get(_resourcesDir.toString(), tabulatorStyle))
-        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(_resourcesDir.toString(), tabulatorScript))
+        Files.createDirectories(resourcesDir)
+        Files.createDirectories(resultsDir)
+        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorStyle), Paths.get(resourcesDir.toString(), tabulatorStyle))
+        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(resourcesDir.toString(), tabulatorScript))
     }
 
-    fun generateReport(evaluationResults: List<EvaluationInfo>): String {
-        generateFileReports(evaluationResults)
-        return generateGlobalReport(evaluationResults)
+    fun generateReport(sessions: List<SessionsEvaluationInfo>, metrics: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {
+        saveEvaluationResults(sessions)
+        generateFileReports(sessions)
+        generateErrorReports(errors)
+        return generateGlobalReport(metrics, errors)
     }
 
-    private fun generateFileReports(evaluationResults: List<EvaluationInfo>) {
+    private fun generateFileReports(evaluationResults: List<SessionsEvaluationInfo>) {
         if (evaluationResults.isEmpty()) return
 
-        val serializer = SessionSerializer()
-        for (filePath in evaluationResults.flatMap { it.filesInfo.keys }.distinct()) {
-            val sessions = evaluationResults.map { it.filesInfo[filePath]?.sessions ?: listOf() }
+        for (filePath in evaluationResults.flatMap { it.sessions.map { it.filePath } }.distinct()) {
+            val sessions = evaluationResults.map { it.sessions.find { it.filePath == filePath }?.results ?: listOf() }
             val json = serializer.serialize(sessions.flatten())
             val file = File(filePath)
             val (resourcePath, reportPath) = getPaths(file.name)
             FileWriter(resourcePath).use { it.write("sessions = '$json'") }
-            val report = getHtml(sessions, file.name, resourcePath, evaluationResults.mapNotNull { it.filesInfo[filePath]?.text }.first() )
+            val report = getHtml(sessions, file.name, resourcePath,
+                    evaluationResults.mapNotNull { it.sessions.find { it.filePath == filePath }?.text }.first() )
             FileWriter(reportPath).use { it.write(report) }
-            references[filePath] = ReportInfo(reportPath, evaluationResults.map { it.filesInfo.getValue(filePath) })
+            references[filePath] = reportPath
         }
     }
 
-    private fun generateGlobalReport(evaluationResults: List<EvaluationInfo>): String {
+    private fun generateErrorReports(errors: List<FileErrorInfo>) {
+        for (fileError in errors) {
+            val file = File(fileError.path)
+            val (_, reportPath) = getPaths(file.name)
+            reportTitle = "Error on actions generation for file <b>${file.name}</b>"
+            val report = """<html><head><title>$reportTitle</title></head><body><h1>$reportTitle</h1>
+                            <h2>Message:</h2>${fileError.exception.message}
+                            <h2>StackTrace:</h2>${fileError.exception.stackTrace?.contentToString()}</body></html>"""
+            FileWriter(reportPath).use { it.write(report) }
+            references[file.path] = reportPath
+        }
+    }
+
+    private fun generateGlobalReport(evaluationResults: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {
         val sb = StringBuilder()
         reportTitle = "Code Completion Report"
         sb.appendln("<html><head><title>$reportTitle</title>")
         sb.appendln("<script src=\"res/tabulator.min.js\"></script>")
         sb.appendln("<link href=\"res/tabulator.min.css\" rel=\"stylesheet\"></head>")
         sb.appendln("<body><h1>$reportTitle</h1>")
-        sb.appendln(getMetricsTable(evaluationResults))
+        sb.append("<h3>${ getDistinctFiles(evaluationResults).size } file(s) successfully processed; ")
+        if (errors.isEmpty()) sb.appendln("no errors occurred</h3>") else sb.appendln("${errors.size} with errors</h3>")
+        sb.appendln(getMetricsTable(evaluationResults, errors))
         sb.appendln("<script>var table = new Tabulator(\"#metrics-table\", {layout:\"fitColumns\"});</script></body></html>")
         val reportPath = Paths.get(reportsDir, globalReportName).toString()
         FileWriter(reportPath).use { it.write(sb.toString()) }
         return reportPath
     }
 
+    private fun saveEvaluationResults(evaluationResults: List<SessionsEvaluationInfo>) {
+        for (results in evaluationResults) {
+            val json = serializer.serialize(results)
+            val dataPath = Paths.get(resultsDir.toString(), "${results.info.evaluationType}.json").toString()
+            FileWriter(dataPath).use { it.write(json) }
+        }
+    }
+
     private fun getPaths(fileName: String): ResultPaths {
-        return if (Files.exists(Paths.get(resourcesDir, "$fileName.js"))) {
-            return getNextFilePaths(Paths.get(resourcesDir, fileName).toString())
+        return if (Files.exists(Paths.get(resourcesDir.toString(), "$fileName.js"))) {
+            return getNextFilePaths(Paths.get(resourcesDir.toString(), fileName).toString())
         } else {
-            ResultPaths(Paths.get(resourcesDir, "$fileName.js").toString(),
+            ResultPaths(Paths.get(resourcesDir.toString(), "$fileName.js").toString(),
                     Paths.get(reportsDir, "$fileName.html").toString())
         }
     }
@@ -155,26 +186,32 @@ class HtmlReportGenerator(outputDir: String) {
     private fun getColor(session: Session?): String {
         return when {
             session == null -> absentColor
-            !session.lookups.last().suggests.contains(session.expectedText) -> badColor
+            !session.lookups.last().suggests.any{ it.text == session.expectedText } -> badColor
             session.lookups.last().suggests.size < middleCountLookups ||
-                    session.lookups.last().suggests.subList(0, middleCountLookups).contains(session.expectedText) -> goodColor
+                    session.lookups.last().suggests.subList(0, middleCountLookups).any{ it.text == session.expectedText } -> goodColor
             else -> middleColor
         }
     }
 
-    private fun getMetricsTable(evaluationResults: List<EvaluationInfo>): String {
+    private fun getMetricsTable(evaluationResults: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {
         val headerBuilder = StringBuilder()
         val contentBuilder = StringBuilder()
 
         headerBuilder.appendln("<th tabulator-formatter=\"html\">File Report</th>")
-        for (metric in evaluationResults.flatMap { res -> res.metrics.map { Pair(it.name, res.evaluationType) } }.sortedBy { it.first })
+        for (metric in evaluationResults.flatMap { res -> res.globalMetrics.map { Pair(it.name, res.info.evaluationType) } }.sortedBy { it.first })
             headerBuilder.appendln("<th>${metric.first} ${metric.second}</th>")
 
-        for (filePath in evaluationResults.flatMap { it.filesInfo.keys }.distinct())
-            writeRow(contentBuilder, "<a href=\"${references[filePath]!!.reportPath}\">${File(filePath).name}</a>",
-                evaluationResults.flatMap { it.filesInfo[filePath]?.metrics ?: it.metrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name })
+        for (fileError in errors) {
+            writeRow(contentBuilder, "<a href=\"${references[fileError.path]!!}\" style=\"color:red;\">${File(fileError.path).name}</a>",
+                    evaluationResults.flatMap { it.globalMetrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name })
+        }
 
-        writeRow(contentBuilder, "Summary", evaluationResults.flatMap { it.metrics }.sortedBy { it.name })
+        for (filePath in getDistinctFiles(evaluationResults))
+            writeRow(contentBuilder, "<a href=\"${references[filePath]!!}\">${File(filePath).name}</a>",
+                evaluationResults.flatMap { it.fileMetrics.find { it.filePath == filePath }?.results ?:
+                it.globalMetrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name })
+
+        writeRow(contentBuilder, "Summary", evaluationResults.flatMap { it.globalMetrics }.sortedBy { it.name })
         contentBuilder.appendln("</tr>")
 
         return """
@@ -198,5 +235,9 @@ class HtmlReportGenerator(outputDir: String) {
             else sb.appendln("<td>%.3f</td>".format(metric.value))
         }
         sb.appendln("</tr>")
+    }
+
+    private fun getDistinctFiles(results: List<MetricsEvaluationInfo>): List<String> {
+        return results.flatMap { it.fileMetrics.map { it.filePath } }.distinct()
     }
 }

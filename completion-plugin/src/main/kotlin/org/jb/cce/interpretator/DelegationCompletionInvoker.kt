@@ -2,6 +2,7 @@ package org.jb.cce.interpretator
 
 import com.intellij.openapi.application.ApplicationManager
 import org.jb.cce.CompletionInvoker
+import org.jb.cce.Suggest
 import org.jb.cce.actions.CompletionType
 
 class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : CompletionInvoker {
@@ -9,7 +10,7 @@ class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : Comp
         invoker.moveCaret(offset)
     }
 
-    override fun callCompletion(type: CompletionType, expectedText: String): List<String> = readAction {
+    override fun callCompletion(type: CompletionType, expectedText: String): List<Suggest> = readAction {
         invoker.callCompletion(type, expectedText)
     }
 
@@ -27,6 +28,10 @@ class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : Comp
 
     override fun closeFile(file: String) = onEdt {
         invoker.closeFile(file)
+    }
+
+    override fun isOpen(file: String) = readAction {
+        invoker.isOpen(file)
     }
 
     private fun <T> readAction(runnable: () -> T): T {

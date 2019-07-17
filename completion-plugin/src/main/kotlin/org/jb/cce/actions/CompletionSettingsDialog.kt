@@ -79,24 +79,27 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     private fun createTypePanel(): JPanel {
         val typeLabel = JLabel("Completion type:")
         val completionTypePanel = JPanel(FlowLayout(FlowLayout.LEFT))
-        val basicCompletionButton =  JCheckBox("Basic")
-        basicCompletionButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED && !completionTypes.contains(CompletionType.BASIC)) completionTypes.add(CompletionType.BASIC)
-            else if (event.stateChange == ItemEvent.DESELECTED) completionTypes.removeIf { it == CompletionType.BASIC }
-        }
-        val smartCompletionButton =  JCheckBox("Smart")
-        smartCompletionButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED && !completionTypes.contains(CompletionType.SMART)) completionTypes.add(CompletionType.SMART)
-            else if (event.stateChange == ItemEvent.DESELECTED) completionTypes.removeIf { it == CompletionType.SMART }
-        }
+        val basicCompletionCheckbox = completionTypeCheckbox("Basic", CompletionType.BASIC)
+        val smartCompletionCheckbox = completionTypeCheckbox("Smart", CompletionType.SMART)
+        val mlCompletionCheckbox = completionTypeCheckbox("ML", CompletionType.ML)
 
-        basicCompletionButton.isSelected = true
+        basicCompletionCheckbox.isSelected = true
 
         completionTypePanel.add(typeLabel)
-        completionTypePanel.add(basicCompletionButton)
-        completionTypePanel.add(smartCompletionButton)
+        completionTypePanel.add(basicCompletionCheckbox)
+        completionTypePanel.add(smartCompletionCheckbox)
+        completionTypePanel.add(mlCompletionCheckbox)
 
         return completionTypePanel
+    }
+
+    private fun completionTypeCheckbox(name: String, type: CompletionType): JCheckBox {
+       val checkBox = JCheckBox(name)
+        checkBox.addItemListener { event ->
+            if (event.stateChange == ItemEvent.SELECTED && !completionTypes.contains(type)) completionTypes.add(type)
+            else if (event.stateChange == ItemEvent.DESELECTED) completionTypes.removeIf { it == type }
+        }
+        return checkBox
     }
 
     private fun createContextPanel(): JPanel {

@@ -17,10 +17,10 @@ elementsArray.forEach(function(elem) {
         this.appendChild(a);
         for (i = 0; i < suggests.length; i++) {
             b = document.createElement("DIV");
-            if (elem.firstChild.data == suggests[i]) {
-                b.innerHTML = "<b>" + suggests[i] + "</b>"
+            if (completions[elem.id].expectedText === suggests[i].text) {
+                b.innerHTML = "<b>" + suggests[i].presentationText + "</b>"
             } else {
-                b.innerHTML = suggests[i]
+                b.innerHTML = suggests[i].presentationText
             }
             a.appendChild(b);
         }

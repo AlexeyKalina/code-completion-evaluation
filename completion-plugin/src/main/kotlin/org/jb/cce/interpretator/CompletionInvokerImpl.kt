@@ -3,6 +3,8 @@ package org.jb.cce.interpretator
 import com.intellij.codeInsight.completion.CodeCompletionHandlerBase
 import com.intellij.codeInsight.completion.CompletionType
 import com.intellij.codeInsight.lookup.Lookup
+import com.intellij.codeInsight.lookup.LookupElement
+import com.intellij.codeInsight.lookup.LookupElementPresentation
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.codeInsight.lookup.impl.LookupImpl
 import com.intellij.openapi.command.WriteCommandAction
@@ -15,6 +17,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
 import org.jb.cce.CompletionInvoker
+import org.jb.cce.Suggest
 import java.io.File
 
 class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
@@ -31,12 +34,13 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         editor!!.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
-    override fun callCompletion(type: org.jb.cce.actions.CompletionType, expectedText: String): List<String> {
+    override fun callCompletion(type: org.jb.cce.actions.CompletionType, expectedText: String): List<Suggest> {
         LOG.info("Call completion. Type: $type. ${positionToString(editor!!.caretModel.offset)}")
         LookupManager.getInstance(project).hideActiveLookup()
         val completionType = when (type) {
             org.jb.cce.actions.CompletionType.BASIC -> CompletionType.BASIC
             org.jb.cce.actions.CompletionType.SMART -> CompletionType.SMART
+            org.jb.cce.actions.CompletionType.ML -> CompletionType.BASIC
         }
 
         CodeCompletionHandlerBase(completionType, false, false, true).invokeCompletion(project, editor)
@@ -48,7 +52,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
             if (expectedItem != null && completionType != CompletionType.SMART) {
                 lookup.finishLookup(Lookup.AUTO_INSERT_SELECT_CHAR, expectedItem)
             }
-            return lookup.items.map { it.lookupString }
+            return lookup.items.map { Suggest(it.lookupString, lookupElementText(it)) }
         }
     }
 
@@ -87,8 +91,18 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         editor = null
     }
 
+    override fun isOpen(file: String): Boolean {
+        return FileEditorManager.getInstance(project).openFiles.any { it.path == file }
+    }
+
     private fun positionToString(offset: Int): String {
         val logicalPosition = editor!!.offsetToLogicalPosition(offset)
         return "Offset: $offset, Line: ${logicalPosition.line}, Column: ${logicalPosition.column}."
+    }
+
+    private fun lookupElementText(element: LookupElement): String {
+        val presentation = LookupElementPresentation()
+        element.renderElement(presentation)
+        return "${presentation.itemText} ${presentation.typeText} ${presentation.tailText}"
     }
 }
