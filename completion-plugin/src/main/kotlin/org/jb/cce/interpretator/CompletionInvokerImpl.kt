@@ -52,7 +52,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
             if (expectedItem != null && completionType != CompletionType.SMART) {
                 lookup.finishLookup(Lookup.AUTO_INSERT_SELECT_CHAR, expectedItem)
             }
-            return lookup.items.map { Suggest(it.toString(), lookupElementText(it)) }
+            return lookup.items.map { Suggest(it.lookupString, lookupElementText(it)) }
         }
     }
 

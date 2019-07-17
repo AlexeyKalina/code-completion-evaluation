@@ -118,7 +118,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val interpreter = Interpreter(completionInvoker)
 
         val sessionsInfo = mutableListOf<SessionsEvaluationInfo>()
-        val mlCompletionFlag = getMLCompletion()
+        val mlCompletionFlag = isMLCompletionEnabled()
         LOG.info("Start interpreting actions")
         var completed = 0
         for (completionType in completionTypes) {
@@ -185,6 +185,6 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         return language2files
     }
 
-    private fun getMLCompletion() = Registry.get(PropertKey@ "completion.stats.enable.ml.ranking").asBoolean()
+    private fun isMLCompletionEnabled() = Registry.get(PropertKey@ "completion.stats.enable.ml.ranking").asBoolean()
     private fun setMLCompletion(value: Boolean) = Registry.get(PropertKey@ "completion.stats.enable.ml.ranking").setValue(value)
 }
