@@ -21,7 +21,6 @@ import org.jb.cce.*
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.interpretator.DelegationCompletionInvoker
 import org.jb.cce.metrics.MetricsEvaluator
-import org.jb.cce.psi.PsiConverter
 import org.jb.cce.uast.Language
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
@@ -57,11 +56,10 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
     }
 
     private fun generateActions(project: Project, language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy, indicator: ProgressIndicator): List<Action> {
-        val client = BabelFishClient()
-        val babelFishConverter = BabelFishConverter()
-        val psiConverter = PsiConverter()
-        val sortedFiles = files.sortedBy { f -> f.name }
+        val actionsGenerator = ActionsGenerator(strategy)
+        val uastBuilder = UastBuilder.create(project, language)
 
+        val sortedFiles = files.sortedBy { f -> f.name }
         val generatedActions = mutableListOf<List<Action>>()
         var completed = 0
         var withError = 0
@@ -73,16 +71,9 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             LOG.info("Start generating actions for file ${file.path}. Done: $completed/${files.size}. With error: $withError")
             indicator.text2 = file.name
             indicator.fraction = completed.toDouble() / files.size
-            val fileText = file.text()
             try {
-                val tree = if (language == Language.PYTHON) {
-                    psiConverter.convert(file, project, language)
-                } else {
-                    val babelFishUast = client.parse(fileText, language)
-                    babelFishConverter.convert(babelFishUast, language)
-                }
-                val fileActions = generateActions(file.path, fileText, tree, strategy)
-                if (fileActions.size > 2) generatedActions.add(fileActions)
+                val uast = uastBuilder.build(file)
+                generatedActions.add(actionsGenerator.generate(uast))
             } catch (e: Exception) {
                 withError++
                 LOG.error("Error for file ${file.path}. Message: ${e.message}")
@@ -111,8 +102,8 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val results = mutableListOf<EvaluationInfo>()
         for (completionType in completionTypes) {
             val files = mutableMapOf<String, FileEvaluationInfo>()
-            interpreter.interpret(actions, completionType) { sessions, filePath ->
-                files[filePath] = FileEvaluationInfo(sessions, metricsEvaluator.evaluate(sessions))
+            interpreter.interpret(actions, completionType) { sessions, filePath, fileText ->
+                files[filePath] = FileEvaluationInfo(sessions, metricsEvaluator.evaluate(sessions), fileText)
             }
             results.add(EvaluationInfo(completionType.name, files, metricsEvaluator.result()))
         }
@@ -147,7 +138,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         return language2files
     }
 
-    private fun VirtualFile.text(): String {
+    fun VirtualFile.text(): String {
         return UnixLineEndingInputStream(this.inputStream, false).bufferedReader().use { it.readText() }
     }
 }

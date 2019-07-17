@@ -1,0 +1,8 @@
+FileNode
+  ClassDeclarationNode (PropertyDeclaration)
+    MethodDeclarationNode (<no_name>)
+      MethodBodyNode
+        MethodCallNode (ToUnixTimeMilliseconds)
+    MethodDeclarationNode (Main)
+      MethodHeaderNode (Main)
+      MethodBodyNode

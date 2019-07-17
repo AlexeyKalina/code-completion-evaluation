@@ -1,6 +1,0 @@
-FileNode
-  ClassDeclarationNode
-    ClassDeclarationNode
-      MethodDeclarationNode
-        MethodHeaderNode
-        MethodBodyNode

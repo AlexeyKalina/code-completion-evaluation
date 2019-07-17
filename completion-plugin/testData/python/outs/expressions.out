@@ -1,0 +1,12 @@
+FileNode
+  VariableDeclarationNode (prices)
+  VariableDeclarationNode (my_purchase)
+  VariableDeclarationNode (grocery_bill)
+  MethodCallNode (sum)
+    VariableAccessNode (prices)
+    VariableAccessNode (fruit)
+    VariableAccessNode (my_purchase)
+    VariableAccessNode (fruit)
+    VariableAccessNode (my_purchase)
+  MethodCallNode (repr)
+    VariableAccessNode (grocery_bill)

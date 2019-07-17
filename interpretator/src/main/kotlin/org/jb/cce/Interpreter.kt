@@ -2,15 +2,14 @@ package org.jb.cce
 
 import org.jb.cce.actions.*
 import org.jb.cce.exception.UnexpectedActionException
-import java.io.FileReader
-import java.util.function.Consumer
 
 class Interpreter(private val invoker: CompletionInvoker) {
 
-    fun interpret(actions: List<Action>, completionType: CompletionType, callbackPerFile: (List<Session>, String) -> Unit) {
+    fun interpret(actions: List<Action>, completionType: CompletionType, callbackPerFile: (List<Session>, String, String) -> Unit) {
         if (actions.isEmpty()) return
         val result = mutableListOf<Session>()
-        var currentOpenedFile = ""
+        var currentOpenedFilePath = ""
+        var currentOpenedFileText = ""
         var session: Session? = null
         var position = 0
 
@@ -36,16 +35,17 @@ class Interpreter(private val invoker: CompletionInvoker) {
                 is PrintText -> invoker.printText(action.text)
                 is DeleteRange -> invoker.deleteRange(action.begin, action.end)
                 is OpenFile -> {
-                    if (!currentOpenedFile.isEmpty()) {
-                        invoker.closeFile(currentOpenedFile)
-                        callbackPerFile(result.toList(), currentOpenedFile)
+                    if (!currentOpenedFilePath.isEmpty()) {
+                        invoker.closeFile(currentOpenedFilePath)
+                        callbackPerFile(result.toList(), currentOpenedFilePath, currentOpenedFileText)
                         result.clear()
                     }
-                    invoker.openFile(action.file)
-                    currentOpenedFile = action.file
+                    invoker.openFile(action.path)
+                    currentOpenedFilePath = action.path
+                    currentOpenedFileText = action.text
                 }
             }
         }
-        callbackPerFile(result, currentOpenedFile)
+        callbackPerFile(result, currentOpenedFilePath, currentOpenedFileText)
     }
 }

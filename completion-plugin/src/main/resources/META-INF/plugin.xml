@@ -27,5 +27,5 @@
         </action>
     </actions>
 
-    <depends optional="true" >PythonCore</depends>
+    <depends optional="true">PythonCore</depends>
 </idea-plugin>

@@ -1,0 +1,8 @@
+FileNode
+  ClassDeclarationNode (IfStatement)
+    MethodDeclarationNode (Main)
+      MethodHeaderNode (Main)
+      MethodBodyNode
+        MethodCallNode (ToUnixTimeMilliseconds)
+        MethodCallNode (WriteLine)
+        MethodCallNode (WriteLine)

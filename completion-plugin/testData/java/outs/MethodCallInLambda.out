@@ -1,0 +1,9 @@
+FileNode
+  ClassDeclarationNode (MethodCallInLambda)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        VariableDeclarationNode (r)
+          LambdaExpressionNode
+            MethodCallNode (println)
+        MethodCallNode (run)

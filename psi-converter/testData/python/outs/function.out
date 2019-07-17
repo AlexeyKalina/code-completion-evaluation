@@ -1,9 +1,0 @@
-FileNode
-  VariableAccessNode
-  MethodDeclarationNode
-    MethodBodyNode
-      MethodCallNode
-        VariableAccessNode
-  MethodCallNode
-  MethodCallNode
-  MethodCallNode

@@ -24,7 +24,7 @@ class ActionSerializer {
             Action.ActionType.PRINT_TEXT.name -> PrintText(action["text"] as String)
             Action.ActionType.DELETE_RANGE.name ->
                 DeleteRange((action["begin"] as Double).toInt(), (action["end"] as Double).toInt())
-            Action.ActionType.OPEN_FILE.name -> OpenFile(action["file"] as String)
+            Action.ActionType.OPEN_FILE.name -> OpenFile(action["path"] as String, action["text"] as String)
             else -> throw UnexpectedActionException("Incorrect action type")
         }
     }

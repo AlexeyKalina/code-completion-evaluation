@@ -1,0 +1,8 @@
+FileNode
+  ClassDeclarationNode (IfStatement)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        MethodCallNode (currentTimeMillis)
+        MethodCallNode (println)
+        MethodCallNode (println)

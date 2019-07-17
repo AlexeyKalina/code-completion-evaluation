@@ -1,19 +1,20 @@
 package org.jb.cce
 
 import com.google.gson.JsonObject
-import org.jb.cce.uast.util.ConverterHelper.addToParent
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.statements.declarations.ClassDeclarationNode
 import org.jb.cce.uast.statements.declarations.MethodDeclarationNode
 import org.jb.cce.uast.statements.declarations.VariableDeclarationNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
-import org.jb.cce.uast.statements.expressions.references.MethodCallNode
+import org.jb.cce.uast.statements.expressions.NamedNode
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
+import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
+import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 
-class BabelFishCSharpVisitor: BabelFishUnifiedVisitor() {
+class BabelFishCSharpVisitor(path: String, text: String): BabelFishUnifiedVisitor(path, text) {
     override fun visitFileNode(json: JsonObject): FileNode {
-        val file = FileNode(getOffset(json), getLength(json))
+        val file = FileNode(getOffset(json), getLength(json), path, text)
         visitChildren(json, file)
         return file
     }
@@ -39,7 +40,7 @@ class BabelFishCSharpVisitor: BabelFishUnifiedVisitor() {
             typeObj = typeObj["Identifier"].asJsonObject
         }
 
-        val methodCallNodes = visitNamedNodes(typeObj) { name, offset, length -> MethodCallNode(name, offset, length) }
+        val methodCallNodes = visitNamedNodes(typeObj) { name, offset, length, first -> MethodCallNode(name, offset, length) }
         for (node in methodCallNodes) {
             addToParent(node, parentNode)
         }
@@ -73,7 +74,10 @@ class BabelFishCSharpVisitor: BabelFishUnifiedVisitor() {
 
     override fun visitVariableAccess(json: JsonObject, parentNode: UnifiedAstNode) {
         val nameObj = if (typeEquals(json, "csharp:GenericName")) json["Identifier"].asJsonObject else json
-        val variableAccessNodes = visitNamedNodes(nameObj) { name, offset, length -> VariableAccessNode(name, offset, length) }
+        val variableAccessNodes = visitNamedNodes(nameObj) { name, offset, length, first ->
+            if (first) VariableAccessNode(name, offset, length) as NamedNode
+            else FieldAccessNode(name, offset, length)
+        }
         for (node in variableAccessNodes) {
             addToParent(node, parentNode)
         }
@@ -89,7 +93,7 @@ class BabelFishCSharpVisitor: BabelFishUnifiedVisitor() {
             nameObj = nameObj["Identifier"].asJsonObject
         }
 
-        val methodCallNodes = visitNamedNodes(nameObj) { name, offset, length -> MethodCallNode(name, offset, length) }
+        val methodCallNodes = visitNamedNodes(nameObj) { name, offset, length, first -> MethodCallNode(name, offset, length) }
         for (node in methodCallNodes) {
             addToParent(node, parentNode)
         }

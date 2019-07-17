@@ -1,0 +1,9 @@
+FileNode
+  ClassDeclarationNode (ForEachStatement)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        VariableDeclarationNode (arg)
+        VariableAccessNode (args)
+        MethodCallNode (println)
+          VariableAccessNode (arg)

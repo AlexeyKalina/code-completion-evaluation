@@ -3,15 +3,18 @@ package org.jb.cce
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
 import com.google.gson.JsonPrimitive
-import org.jb.cce.uast.util.ConverterHelper.addToParent
+import org.jb.cce.uast.CompositeNode
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
+import org.jb.cce.uast.exceptions.UnifiedAstException
 import org.jb.cce.uast.statements.declarations.*
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 import org.jb.cce.uast.statements.expressions.NamedNode
+import org.jb.cce.uast.statements.expressions.VariableAccessNode
+import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
 import java.util.logging.Logger
 
-open class BabelFishUnifiedVisitor {
+open class BabelFishUnifiedVisitor(protected val path: String, protected val text: String) {
     private val LOG = Logger.getLogger(this.javaClass.name)!!
 
     fun getUast(json: JsonObject): FileNode {
@@ -19,7 +22,7 @@ open class BabelFishUnifiedVisitor {
     }
 
     protected open fun visitFileNode(json: JsonObject):FileNode {
-        return FileNode(-1, -1)
+        return FileNode(-1, -1, path, text)
     }
 
     protected fun visitChildren(json: JsonElement, parentNode: UnifiedAstNode) {
@@ -90,11 +93,11 @@ open class BabelFishUnifiedVisitor {
     protected open fun visitArrayAccess(json: JsonObject, parentNode: UnifiedAstNode) {
     }
 
-    protected open fun <T: NamedNode> visitNamedNodes (json: JsonObject, factory : (String, Int, Int) -> T): List<NamedNode> {
+    protected open fun <T: NamedNode> visitNamedNodes (json: JsonObject, factory : (String, Int, Int, Boolean) -> T): List<NamedNode> {
         val nodes = mutableListOf<T>()
         when {
             typeEquals(json, "uast:QualifiedIdentifier") -> return visitQualifiedIdentifier(json, factory)
-            typeEquals(json, "uast:Identifier") -> nodes.add(factory(visitIdentifier(json), getOffset(json), getLength(json)))
+            typeEquals(json, "uast:Identifier") -> nodes.add(factory(visitIdentifier(json), getOffset(json), getLength(json), true))
             json.has("name") -> {
                 val nameObj = json["name"].asJsonObject
                 nodes += visitNamedNodes(nameObj, factory) as MutableList<T>
@@ -103,11 +106,23 @@ open class BabelFishUnifiedVisitor {
         return nodes
     }
 
-    private fun <T: NamedNode> visitQualifiedIdentifier(json: JsonObject, factory : (String, Int, Int) -> T): List<NamedNode> {
+    private fun <T: NamedNode> visitQualifiedIdentifier(json: JsonObject, factory : (String, Int, Int, Boolean) -> T): List<NamedNode> {
         val nodes = mutableListOf<NamedNode>()
         val names = json["Names"].asJsonArray
-        for (name in names) {
-            nodes.add(factory(visitIdentifier(name.asJsonObject), getOffset(name.asJsonObject), getLength(name.asJsonObject)))
+        when (names.size()) {
+            0 -> return nodes
+            1 -> nodes.add(factory(visitIdentifier(names.first().asJsonObject),
+                    getOffset(names.first().asJsonObject), getLength(names.first().asJsonObject), true))
+            else -> {
+                nodes.add(VariableAccessNode(visitIdentifier(names.first().asJsonObject),
+                        getOffset(names.first().asJsonObject), getLength(names.first().asJsonObject)))
+                for (i in 1 until names.size() - 1) {
+                    nodes.add(FieldAccessNode(visitIdentifier(names[i].asJsonObject),
+                            getOffset(names[i].asJsonObject), getLength(names[i].asJsonObject)))
+                }
+                nodes.add(factory(visitIdentifier(names.last().asJsonObject),
+                        getOffset(names.last().asJsonObject), getLength(names.last().asJsonObject), false))
+            }
         }
         return nodes
     }
@@ -118,6 +133,11 @@ open class BabelFishUnifiedVisitor {
             return ""
         }
         return json["Name"].asString
+    }
+
+    protected fun addToParent(node: UnifiedAstNode, parentNode: UnifiedAstNode) {
+        if (parentNode is CompositeNode) parentNode.addChild(node)
+        else throw UnifiedAstException("Unexpected parent $parentNode for node $node")
     }
 
     protected fun typeEquals(json: JsonObject, type: String): Boolean {

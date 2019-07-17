@@ -1,0 +1,11 @@
+FileNode
+  ClassDeclarationNode (CodeBlockInLambda)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        VariableDeclarationNode (r)
+          LambdaExpressionNode
+            MethodBodyNode
+              MethodCallNode (println)
+              MethodCallNode (println)
+        MethodCallNode (run)

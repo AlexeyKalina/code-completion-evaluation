@@ -8,16 +8,17 @@ import org.jb.cce.uast.statements.declarations.MethodDeclarationNode
 import org.jb.cce.uast.statements.declarations.MethodHeaderNode
 import org.jb.cce.uast.statements.declarations.VariableDeclarationNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
-import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
-import org.jb.cce.uast.statements.expressions.references.MethodCallNode
+import org.jb.cce.uast.statements.expressions.LambdaExpressionNode
+import org.jb.cce.uast.statements.expressions.NamedNode
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
 import org.jb.cce.uast.statements.expressions.references.ArrayAccessNode
-import org.jb.cce.uast.util.ConverterHelper.addToParent
+import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
+import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 
-class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
+class BabelFishJavaVisitor(path: String, text: String): BabelFishUnifiedVisitor(path, text)  {
 
     override fun visitFileNode(json: JsonObject): FileNode {
-        val file = FileNode(getOffset(json), getLength(json))
+        val file = FileNode(getOffset(json), getLength(json), path, text)
         visitChildren(json, file)
         return file
     }
@@ -29,11 +30,12 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
                     typeEquals(json, "java:Initializer") -> visitMethodDeclaration(json, parentNode)
             typeEquals(json, "java:MethodInvocation") ||
                 typeEquals(json, "java:ExpressionMethodReference") -> visitMethodCall(json, parentNode)
-            //TODO: support lambda
-            typeEquals(json, "java:LambdaExpression") -> return
+            typeEquals(json, "java:LambdaExpression") -> visitLambdaExpression(json, parentNode)
+            typeEquals(json, "java:ArrayInitializer") -> visitArrayInitializer(json, parentNode)
             typeEquals(json, "java:ClassInstanceCreation") -> visitInstanceCreation(json, parentNode)
             typeEquals(json, "java:ArrayAccess") -> visitArrayAccess(json, parentNode)
             typeEquals(json, "java:VariableDeclarationFragment") ||
+                typeEquals(json, "java:SingleVariableDeclaration") ||
                 typeEquals(json, "java:EnumConstantDeclaration") -> visitVariableDeclaration(json, parentNode)
             (roleExists(json, "Expression") || roleExists(json, "Argument") || roleExists(json, "Assignment"))
                 && (typeEquals(json, "uast:Identifier") ||
@@ -66,6 +68,16 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
         }
     }
 
+    private fun visitArrayInitializer(json: JsonObject, parentNode: UnifiedAstNode) {
+        if (!json.has("expressions")) return
+        for (expression in json["expressions"].asJsonArray) {
+            if (!expression.isJsonObject) continue
+            if (typeEquals(expression.asJsonObject, "uast:Identifier") || typeEquals(expression.asJsonObject, "uast:QualifiedIdentifier"))
+                visitVariableAccess(expression.asJsonObject, parentNode)
+            else visitChild(expression.asJsonObject, parentNode)
+        }
+    }
+
     override fun visitVariableDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {
         val variableDeclaration = VariableDeclarationNode(visitIdentifier(json["name"].asJsonObject), getOffset(json), getLength(json))
         visitChildren(json, variableDeclaration)
@@ -73,14 +85,17 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
     }
 
     override fun visitFieldAccess(json: JsonObject, parentNode: UnifiedAstNode) {
-        val fieldAccessNodes = visitNamedNodes(json) { name, offset, length -> FieldAccessNode(name, offset, length) }
+        val fieldAccessNodes = visitNamedNodes(json) { name, offset, length, first -> FieldAccessNode(name, offset, length) }
         for (node in fieldAccessNodes) {
             addToParent(node, parentNode)
         }
     }
 
     override fun visitVariableAccess(json: JsonObject, parentNode: UnifiedAstNode) {
-        val variableAccessNodes = visitNamedNodes(json) { name, offset, length -> VariableAccessNode(name, offset, length) }
+        val variableAccessNodes = visitNamedNodes(json) { name, offset, length, first ->
+            if (first) VariableAccessNode(name, offset, length) as NamedNode
+            else FieldAccessNode(name, offset, length)
+        }
         for (node in variableAccessNodes) {
             addToParent(node, parentNode)
         }
@@ -101,14 +116,37 @@ class BabelFishJavaVisitor: BabelFishUnifiedVisitor() {
     }
 
     override fun visitArrayAccess(json: JsonObject, parentNode: UnifiedAstNode) {
-        val arrayAccessNodes = visitNamedNodes(json["array"].asJsonObject) { name, offset, length -> ArrayAccessNode(name, offset, length) }
-        for (node in arrayAccessNodes) {
+        val arrayAccessNodes = visitNamedNodes(json["array"].asJsonObject) { name, offset, length, first -> ArrayAccessNode(name, offset, length) }
+        for (node in arrayAccessNodes)
             addToParent(node, parentNode)
+        val index = json["index"].asJsonObject
+        if (typeEquals(index, "uast:Identifier") || typeEquals(index, "uast:QualifiedIdentifier")) {
+            val indexNodes = visitNamedNodes(index) { name, offset, length, first ->
+                if (first) VariableAccessNode(name, offset, length) as NamedNode
+                else FieldAccessNode(name, offset, length)
+            }
+            for (node in indexNodes)
+                addToParent(node, arrayAccessNodes.last())
         }
+        visitChild(index, arrayAccessNodes.last())
+    }
+
+    private fun visitLambdaExpression(json: JsonObject, parentNode: UnifiedAstNode) {
+        val lambda = LambdaExpressionNode(getOffset(json), getLength(json))
+        val body = json["body"].asJsonObject
+        when {
+            typeEquals(body, "uast:Block") -> {
+                val block = MethodBodyNode(getOffset(body), getLength(body))
+                lambda.setBody(block)
+                visitChildren(body, block)
+            }
+            else -> visitChild(body, lambda)
+        }
+        addToParent(lambda, parentNode)
     }
 
     private fun visitCall(json: JsonObject, parentNode: UnifiedAstNode): MethodCallNode {
-        val methodCallNodes = visitNamedNodes(json) { name, offset, length -> MethodCallNode(name, offset, length) }
+        val methodCallNodes = visitNamedNodes(json) { name, offset, length, first -> MethodCallNode(name, offset, length) }
         for (node in methodCallNodes) {
             addToParent(node, parentNode)
         }
