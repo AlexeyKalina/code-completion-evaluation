@@ -2,6 +2,7 @@ package org.jb.cce.interpretator
 
 import com.intellij.codeInsight.completion.CodeCompletionHandlerBase
 import com.intellij.codeInsight.completion.CompletionType
+import com.intellij.codeInsight.lookup.Lookup
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.codeInsight.lookup.impl.LookupImpl
 import com.intellij.openapi.command.WriteCommandAction
@@ -45,7 +46,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
             val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
             val expectedItem = lookup.items.firstOrNull { it.lookupString == expectedText }
             if (expectedItem != null && completionType != CompletionType.SMART) {
-                lookup.finishLookup(Char.MIN_VALUE, expectedItem)
+                lookup.finishLookup(Lookup.AUTO_INSERT_SELECT_CHAR, expectedItem)
             }
             return lookup.items.map { it.lookupString }
         }

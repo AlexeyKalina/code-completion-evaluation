@@ -29,7 +29,7 @@ class Interpreter(private val invoker: CompletionInvoker) {
                     session.addLookup(Lookup(action.prefix, invoker.callCompletion(completionType, action.expectedText)))
                     completionSuccess = session.lookups.last().suggests.contains(action.expectedText)
                 }
-                is CancelSession -> {
+                is FinishSession -> {
                     if (session == null) {
                         throw UnexpectedActionException("Session canceled before created")
                     }

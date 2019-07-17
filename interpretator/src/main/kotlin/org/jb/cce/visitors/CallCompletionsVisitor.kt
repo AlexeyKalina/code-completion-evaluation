@@ -79,7 +79,7 @@ abstract class CallCompletionsVisitor(protected open val text: String,
             actions += DeleteRange(node.getOffset(), node.getOffset() + prefix.length, true)
         actions += PrintText(node.getText(), true)
 
-        actions += CancelSession()
+        actions += FinishSession()
     }
 
     private fun prepareAllContext(node: Completable) {
