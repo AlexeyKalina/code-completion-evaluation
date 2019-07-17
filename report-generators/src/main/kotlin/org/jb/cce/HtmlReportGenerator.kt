@@ -37,8 +37,7 @@ class HtmlReportGenerator(outputDir: String) {
     private val resultsDir = Paths.get(reportsDir, "data")
 
     private data class ResultPaths(val resourcePath: String, val reportPath: String)
-    private data class ReportInfo(val reportPath: String, val sessions: List<FileEvaluationInfo<Session>>)
-    private val references: MutableMap<String, ReportInfo> = mutableMapOf()
+    private val references: MutableMap<String, String> = mutableMapOf()
 
     init {
         Files.createDirectories(resourcesDir)
@@ -66,7 +65,7 @@ class HtmlReportGenerator(outputDir: String) {
             val report = getHtml(sessions, file.name, resourcePath,
                     evaluationResults.mapNotNull { it.sessions.find { it.filePath == filePath }?.text }.first() )
             FileWriter(reportPath).use { it.write(report) }
-            references[filePath] = ReportInfo(reportPath, evaluationResults.mapNotNull { it.sessions.find { it.filePath == filePath } })
+            references[filePath] = reportPath
         }
     }
 
@@ -79,7 +78,7 @@ class HtmlReportGenerator(outputDir: String) {
                             <h2>Message:</h2>${fileError.exception.message}
                             <h2>StackTrace:</h2>${fileError.exception.stackTrace?.contentToString()}</body></html>"""
             FileWriter(reportPath).use { it.write(report) }
-            references[file.path] = ReportInfo(reportPath, listOf())
+            references[file.path] = reportPath
         }
     }
 
@@ -203,12 +202,12 @@ class HtmlReportGenerator(outputDir: String) {
             headerBuilder.appendln("<th>${metric.first} ${metric.second}</th>")
 
         for (fileError in errors) {
-            writeRow(contentBuilder, "<a href=\"${references[fileError.path]!!.reportPath}\" style=\"color:red;\">${File(fileError.path).name}</a>",
+            writeRow(contentBuilder, "<a href=\"${references[fileError.path]!!}\" style=\"color:red;\">${File(fileError.path).name}</a>",
                     evaluationResults.flatMap { it.globalMetrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name })
         }
 
         for (filePath in getDistinctFiles(evaluationResults))
-            writeRow(contentBuilder, "<a href=\"${references[filePath]!!.reportPath}\">${File(filePath).name}</a>",
+            writeRow(contentBuilder, "<a href=\"${references[filePath]!!}\">${File(filePath).name}</a>",
                 evaluationResults.flatMap { it.fileMetrics.find { it.filePath == filePath }?.results ?:
                 it.globalMetrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name })
 
