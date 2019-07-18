@@ -16,6 +16,6 @@ class SessionSerializer {
         for (session in sessions) {
             map[session.id] = session
         }
-        return gson.toJson(map)
+        return gson.toJson(map).replace("\\\"", "&quot;")
     }
 }

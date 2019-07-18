@@ -1,6 +1,5 @@
 package org.jb.cce
 
-import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.MetricsEvaluationInfo
 import org.jb.cce.info.SessionsEvaluationInfo
@@ -35,6 +34,7 @@ class HtmlReportGenerator(outputDir: String) {
     private val reportsDir: String = Paths.get(outputDir, formatter.format(Date())).toString()
     private val resourcesDir = Paths.get(reportsDir, "res")
     private val resultsDir = Paths.get(reportsDir, "data")
+    private val logsDir = Paths.get(reportsDir, "logs")
 
     private data class ResultPaths(val resourcePath: String, val reportPath: String)
     private val references: MutableMap<String, String> = mutableMapOf()
@@ -42,9 +42,12 @@ class HtmlReportGenerator(outputDir: String) {
     init {
         Files.createDirectories(resourcesDir)
         Files.createDirectories(resultsDir)
+        Files.createDirectories(logsDir)
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorStyle), Paths.get(resourcesDir.toString(), tabulatorStyle))
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(resourcesDir.toString(), tabulatorScript))
     }
+
+    fun logsDirectory() = logsDir.toString()
 
     fun generateReport(sessions: List<SessionsEvaluationInfo>, metrics: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {
         saveEvaluationResults(sessions)
