@@ -8,7 +8,7 @@ The plugin deals with the quality evaluation of code completion based on artific
 3. Generated actions are interpreted in the IDE. As a result, sessions are formed (include expected text and lookups for one token).
 4. Calculation of metrics and output of results in HTML-report.
 
-## Requirments
+## Requirements
 
 You need to install [Babelfish](https://doc.bblf.sh) service with language drivers. The easiest way to do this is using [Docker](https://docs.docker.com). Run the following command:
 
