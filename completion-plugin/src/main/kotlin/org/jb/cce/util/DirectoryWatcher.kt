@@ -1,23 +1,26 @@
 package org.jb.cce.util
 
-import com.intellij.util.io.exists
-import com.intellij.util.io.move
-import java.nio.file.FileSystems
-import java.nio.file.Paths
+import com.intellij.util.io.*
+import java.io.FileReader
+import java.io.FileWriter
+import java.nio.file.*
 import java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
-import java.nio.file.WatchKey
-import java.nio.file.WatchService
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.function.BiPredicate
 
 class DirectoryWatcher(private val logsDir: String, private val outputDir: String) {
     private val executor = Executors.newSingleThreadExecutor()
     private val watcher: WatchService = FileSystems.getDefault().newWatchService()
+    private val formatter = SimpleDateFormat("dd_MM_yyyy")
     private val watchKey: WatchKey
     private var logsCounter = 0
 
     init {
         this.watchKey = Paths.get(logsDir).register(watcher, ENTRY_CREATE)
+        Paths.get(this.outputDir).createDirectories()
     }
 
     fun start() {
@@ -51,5 +54,27 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
     fun stop() {
         executor.awaitTermination(1, TimeUnit.SECONDS)
         executor.shutdownNow()
+        saveLogs()
+    }
+
+    private fun saveLogs() {
+        val firstLogsFile = Paths.get(outputDir, "0.log")
+        if (!firstLogsFile.exists()) return
+
+        val firstLine = FileReader(firstLogsFile.toFile()).use { it.readLines().first() }
+        val resultLogsFile = Paths.get(outputDir, formatter.format(Date()), firstLine.split("\t")[3])
+        resultLogsFile.createFile()
+        val logsWriter = FileWriter(resultLogsFile.toFile())
+
+        logsWriter.use {
+            Files.find(Paths.get(outputDir), 1, BiPredicate { path, basicFileAttributes ->
+                !basicFileAttributes.isDirectory
+            }).forEach { logFile ->
+                    logsWriter.append(FileReader(logFile.toFile()).use { reader ->
+                    reader.readText()
+                })
+                Files.delete(logFile)
+            }
+        }
     }
 }

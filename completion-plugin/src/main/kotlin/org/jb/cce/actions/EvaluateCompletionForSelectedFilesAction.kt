@@ -30,6 +30,7 @@ import org.jb.cce.metrics.MetricsEvaluator
 import org.jb.cce.uast.Language
 import org.jb.cce.util.DirectoryWatcher
 import java.io.File
+import java.nio.file.Paths
 
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
@@ -63,7 +64,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             }
 
             override fun onSuccess() {
-                interpretUnderProgress(actions, errors, completionTypes, strategy, project, settingsDialog.outputDir)
+                interpretUnderProgress(actions, errors, completionTypes, strategy, project, settingsDialog.language, settingsDialog.outputDir)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
@@ -101,13 +102,14 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
     }
 
     private fun interpretUnderProgress(actions: List<Action>, errors: List<FileErrorInfo>, completionTypes: List<CompletionType>,
-                                       strategy: CompletionStrategy, project: Project, outputDir: String) {
+                                       strategy: CompletionStrategy, project: Project, language: Language, outputDir: String) {
         val task = object : Task.Backgroundable(project, "Interpretation of the generated actions") {
             private var sessionsInfo: List<SessionsEvaluationInfo>? = null
             private val reportGenerator = HtmlReportGenerator(outputDir)
 
             override fun run(indicator: ProgressIndicator) {
-                sessionsInfo = interpretActions(actions, completionTypes, strategy, project, reportGenerator.logsDirectory(), indicator)
+                val logsPath = Paths.get(reportGenerator.logsDirectory(), language.displayName.toLowerCase()).toString()
+                sessionsInfo = interpretActions(actions, completionTypes, strategy, project, logsPath, indicator)
             }
 
             override fun onSuccess() {
