@@ -64,17 +64,14 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
         val firstLine = FileReader(firstLogsFile.toFile()).use { it.readLines().first() }
         val resultLogsFile = Paths.get(outputDir, formatter.format(Date()), firstLine.split("\t")[3])
         resultLogsFile.createFile()
-        val logsWriter = FileWriter(resultLogsFile.toFile())
 
-        logsWriter.use {
-            Files.find(Paths.get(outputDir), 1, BiPredicate { path, basicFileAttributes ->
-                !basicFileAttributes.isDirectory
-            }).forEach { logFile ->
-                    logsWriter.append(FileReader(logFile.toFile()).use { reader ->
-                    reader.readText()
-                })
-                Files.delete(logFile)
-            }
+        resultLogsFile.toFile().bufferedWriter().use { writer ->
+            Files.find(Paths.get(outputDir), 1, { _, attrs -> !attrs.isDirectory }, emptyArray())
+                    .map(Path::toFile)
+                    .forEach {
+                        writer.append(it.readText())
+                        it.delete()
+                    }
         }
     }
 }
