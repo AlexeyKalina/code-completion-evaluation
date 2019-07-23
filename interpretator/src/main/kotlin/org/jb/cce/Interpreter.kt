@@ -2,11 +2,10 @@ package org.jb.cce
 
 import org.jb.cce.actions.*
 import org.jb.cce.exception.UnexpectedActionException
-import org.omg.CORBA.BooleanHolder
 
 class Interpreter(private val invoker: CompletionInvoker) {
 
-    fun interpret(actions: List<Action>, completionType: CompletionType, callbackPerFile: (List<Session>, String, String, Int, BooleanHolder) -> Unit) {
+    fun interpret(actions: List<Action>, completionType: CompletionType, callbackPerFile: (List<Session>, String, String, Int) -> Boolean) {
         if (actions.isEmpty()) return
         val result = mutableListOf<Session>()
         var currentOpenedFilePath = ""
@@ -51,9 +50,8 @@ class Interpreter(private val invoker: CompletionInvoker) {
                 is OpenFile -> {
                     if (!currentOpenedFilePath.isEmpty()) {
                         if (needToClose) invoker.closeFile(currentOpenedFilePath)
-                        val isCanceled = BooleanHolder()
-                        callbackPerFile(result.toList(), currentOpenedFilePath, currentOpenedFileText, actionsDone, isCanceled)
-                        if (isCanceled.value) return
+                        val isCanceled = callbackPerFile(result.toList(), currentOpenedFilePath, currentOpenedFileText, actionsDone)
+                        if (isCanceled) return
                         result.clear()
                         actionsDone = 0
                     }
@@ -66,6 +64,6 @@ class Interpreter(private val invoker: CompletionInvoker) {
             actionsDone++
         }
         if (needToClose) invoker.closeFile(currentOpenedFilePath)
-        callbackPerFile(result, currentOpenedFilePath, currentOpenedFileText, actionsDone, BooleanHolder())
+        callbackPerFile(result, currentOpenedFilePath, currentOpenedFileText, actionsDone)
     }
 }

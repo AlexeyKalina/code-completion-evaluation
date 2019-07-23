@@ -17,18 +17,25 @@ import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileFilter
-import org.jb.cce.*
+import com.intellij.stats.storage.PluginDirectoryFilePathProvider
+import org.jb.cce.HtmlReportGenerator
+import org.jb.cce.Interpreter
+import org.jb.cce.Session
+import org.jb.cce.UastBuilder
 import org.jb.cce.info.*
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.interpretator.DelegationCompletionInvoker
 import org.jb.cce.metrics.MetricInfo
 import org.jb.cce.metrics.MetricsEvaluator
 import org.jb.cce.uast.Language
+import org.jb.cce.util.DirectoryWatcher
 import java.io.File
+import java.nio.file.Paths
+
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
     private companion object {
-        val LOG = Logger.getInstance(EvaluateCompletionForSelectedFilesAction::class.java)
+        private val LOG = Logger.getInstance(EvaluateCompletionForSelectedFilesAction::class.java)
     }
 
     override fun actionPerformed(e: AnActionEvent) {
@@ -57,7 +64,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             }
 
             override fun onSuccess() {
-                interpretUnderProgress(actions, errors, completionTypes, strategy, project, settingsDialog.outputDir)
+                interpretUnderProgress(actions, errors, completionTypes, strategy, project, settingsDialog.language, settingsDialog.outputDir)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
@@ -95,28 +102,34 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
     }
 
     private fun interpretUnderProgress(actions: List<Action>, errors: List<FileErrorInfo>, completionTypes: List<CompletionType>,
-                                       strategy: CompletionStrategy, project: Project, outputDir: String) {
+                                       strategy: CompletionStrategy, project: Project, language: Language, outputDir: String) {
         val task = object : Task.Backgroundable(project, "Interpretation of the generated actions") {
             private var sessionsInfo: List<SessionsEvaluationInfo>? = null
+            private val reportGenerator = HtmlReportGenerator(outputDir)
 
             override fun run(indicator: ProgressIndicator) {
-                sessionsInfo = interpretActions(actions, completionTypes, strategy, project, indicator)
+                val logsPath = Paths.get(reportGenerator.logsDirectory(), language.displayName.toLowerCase()).toString()
+                sessionsInfo = interpretActions(actions, completionTypes, strategy, project, logsPath, indicator)
             }
 
             override fun onSuccess() {
-                val session = sessionsInfo ?: return
-                val metricsInfo = evaluateMetrics(session)
-                generateReports(outputDir, session, metricsInfo, errors)
+                val sessions = sessionsInfo ?: return
+                val metricsInfo = evaluateMetrics(sessions)
+                val reportPath = reportGenerator.generateReport(sessions, metricsInfo, errors)
+                ApplicationManager.getApplication().invokeAndWait {
+                    if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
+                }
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    private fun interpretActions(actions: List<Action>, completionTypes: List<CompletionType>,
-                                 strategy: CompletionStrategy, project: Project, indicator: ProgressIndicator): List<SessionsEvaluationInfo> {
+    private fun interpretActions(actions: List<Action>, completionTypes: List<CompletionType>, strategy: CompletionStrategy,
+                                 project: Project, outputDir: String, indicator: ProgressIndicator): List<SessionsEvaluationInfo> {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project))
         val interpreter = Interpreter(completionInvoker)
-
+        val logsWatcher = DirectoryWatcher(PluginDirectoryFilePathProvider().getStatsDataDirectory().toString(), outputDir)
+        logsWatcher.start()
         val sessionsInfo = mutableListOf<SessionsEvaluationInfo>()
         val mlCompletionFlag = isMLCompletionEnabled()
         LOG.info("Start interpreting actions")
@@ -124,21 +137,23 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         for (completionType in completionTypes) {
             setMLCompletion(completionType == CompletionType.ML)
             val fileSessions = mutableListOf<FileEvaluationInfo<Session>>()
-            interpreter.interpret(actions, completionType) { sessions, filePath, fileText, actionsDone, isCanceled ->
+            interpreter.interpret(actions, completionType) { sessions, filePath, fileText, actionsDone ->
                 if (indicator.isCanceled) {
                     LOG.info("Interpreting actions is canceled by user.")
-                    isCanceled.value = true
-                    return@interpret
+                    logsWatcher.stop()
+                    return@interpret true
                 }
                 completed += actionsDone
                 fileSessions.add(FileEvaluationInfo(filePath, sessions, fileText))
                 indicator.text2 = "$completionType ${File(filePath).name}"
                 indicator.fraction = completed.toDouble() / (actions.size * completionTypes.size)
                 LOG.info("Interpreting actions for file $filePath ($completionType completion) completed. Done: $completed/${actions.size * completionTypes.size}")
+                return@interpret false
             }
             sessionsInfo.add(SessionsEvaluationInfo(fileSessions, EvaluationInfo(completionType.name, strategy)))
         }
         setMLCompletion(mlCompletionFlag)
+        logsWatcher.stop()
         if (!indicator.isCanceled) return sessionsInfo
         return emptyList()
     }
@@ -154,15 +169,6 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             metricsInfo.add(MetricsEvaluationInfo(metricsEvaluator.result(), filesInfo, sessionsInfo.info))
         }
         return metricsInfo
-    }
-
-    private fun generateReports(outputDir: String, sessions: List<SessionsEvaluationInfo>, metrics: List<MetricsEvaluationInfo>,
-                                errors: List<FileErrorInfo>) {
-        val reportGenerator = HtmlReportGenerator(outputDir)
-        val reportPath = reportGenerator.generateReport(sessions, metrics, errors)
-        ApplicationManager.getApplication().invokeAndWait {
-            if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
-        }
     }
 
     private fun getFiles(e: AnActionEvent): Map<Language, Set<VirtualFile>> {
