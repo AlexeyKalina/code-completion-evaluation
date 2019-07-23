@@ -18,8 +18,6 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileFilter
 import com.intellij.stats.storage.PluginDirectoryFilePathProvider
-import com.intellij.util.io.exists
-import com.intellij.util.io.move
 import org.jb.cce.HtmlReportGenerator
 import org.jb.cce.Interpreter
 import org.jb.cce.Session
@@ -30,16 +28,13 @@ import org.jb.cce.interpretator.DelegationCompletionInvoker
 import org.jb.cce.metrics.MetricInfo
 import org.jb.cce.metrics.MetricsEvaluator
 import org.jb.cce.uast.Language
+import org.jb.cce.util.DirectoryWatcher
 import java.io.File
-import java.nio.file.FileSystems
-import java.nio.file.Paths
-import java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
-import java.nio.file.WatchKey
+
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
     private companion object {
         private val LOG = Logger.getInstance(EvaluateCompletionForSelectedFilesAction::class.java)
-        private var logsCounter = 0
     }
 
     override fun actionPerformed(e: AnActionEvent) {
@@ -131,8 +126,8 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
                                  project: Project, outputDir: String, indicator: ProgressIndicator): List<SessionsEvaluationInfo> {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project))
         val interpreter = Interpreter(completionInvoker)
-        val logsDir = PluginDirectoryFilePathProvider().getStatsDataDirectory()
-        val logsWatchKey = logsDir.toPath().register(FileSystems.getDefault().newWatchService(), ENTRY_CREATE)
+        val logsWatcher = DirectoryWatcher(PluginDirectoryFilePathProvider().getStatsDataDirectory().toString(), outputDir)
+        logsWatcher.start()
         val sessionsInfo = mutableListOf<SessionsEvaluationInfo>()
         val mlCompletionFlag = isMLCompletionEnabled()
         LOG.info("Start interpreting actions")
@@ -140,23 +135,23 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         for (completionType in completionTypes) {
             setMLCompletion(completionType == CompletionType.ML)
             val fileSessions = mutableListOf<FileEvaluationInfo<Session>>()
-            interpreter.interpret(actions, completionType) { sessions, filePath, fileText, actionsDone, isCanceled ->
+            interpreter.interpret(actions, completionType) { sessions, filePath, fileText, actionsDone ->
                 if (indicator.isCanceled) {
                     LOG.info("Interpreting actions is canceled by user.")
-                    isCanceled.add(true)
-                    return@interpret
-                } else
-                    isCanceled.add(false)
+                    logsWatcher.stop()
+                    return@interpret true
+                }
                 completed += actionsDone
                 fileSessions.add(FileEvaluationInfo(filePath, sessions, fileText))
                 indicator.text2 = "$completionType ${File(filePath).name}"
                 indicator.fraction = completed.toDouble() / (actions.size * completionTypes.size)
-                saveLogs(logsWatchKey, logsDir.absolutePath, outputDir)
                 LOG.info("Interpreting actions for file $filePath ($completionType completion) completed. Done: $completed/${actions.size * completionTypes.size}")
+                return@interpret false
             }
             sessionsInfo.add(SessionsEvaluationInfo(fileSessions, EvaluationInfo(completionType.name, strategy)))
         }
         setMLCompletion(mlCompletionFlag)
+        logsWatcher.stop()
         if (!indicator.isCanceled) return sessionsInfo
         return emptyList()
     }
@@ -192,17 +187,6 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             })
         }
         return language2files
-    }
-
-    private fun saveLogs(logsWatchKey: WatchKey, logsDir: String, outputDir: String) {
-        for (event in logsWatchKey.pollEvents()) {
-            val name = event.context()
-            val log = Paths.get(logsDir, name.toString())
-            if (log.exists())
-                log.move(Paths.get(outputDir, "$logsCounter.log"))
-            logsCounter++
-        }
-        logsWatchKey.reset()
     }
 
     private fun isMLCompletionEnabled() = Registry.get(PropertKey@ "completion.stats.enable.ml.ranking").asBoolean()

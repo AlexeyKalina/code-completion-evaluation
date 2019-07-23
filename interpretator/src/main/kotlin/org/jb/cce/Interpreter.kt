@@ -5,7 +5,7 @@ import org.jb.cce.exception.UnexpectedActionException
 
 class Interpreter(private val invoker: CompletionInvoker) {
 
-    fun interpret(actions: List<Action>, completionType: CompletionType, callbackPerFile: (List<Session>, String, String, Int, MutableList<Boolean>) -> Unit) {
+    fun interpret(actions: List<Action>, completionType: CompletionType, callbackPerFile: (List<Session>, String, String, Int) -> Boolean) {
         if (actions.isEmpty()) return
         val result = mutableListOf<Session>()
         var currentOpenedFilePath = ""
@@ -50,9 +50,8 @@ class Interpreter(private val invoker: CompletionInvoker) {
                 is OpenFile -> {
                     if (!currentOpenedFilePath.isEmpty()) {
                         if (needToClose) invoker.closeFile(currentOpenedFilePath)
-                        val isCanceled = mutableListOf<Boolean>()
-                        callbackPerFile(result.toList(), currentOpenedFilePath, currentOpenedFileText, actionsDone, isCanceled)
-                        if (isCanceled.first()) return
+                        val isCanceled = callbackPerFile(result.toList(), currentOpenedFilePath, currentOpenedFileText, actionsDone)
+                        if (isCanceled) return
                         result.clear()
                         actionsDone = 0
                     }
@@ -65,6 +64,6 @@ class Interpreter(private val invoker: CompletionInvoker) {
             actionsDone++
         }
         if (needToClose) invoker.closeFile(currentOpenedFilePath)
-        callbackPerFile(result, currentOpenedFilePath, currentOpenedFileText, actionsDone, mutableListOf())
+        callbackPerFile(result, currentOpenedFilePath, currentOpenedFileText, actionsDone)
     }
 }

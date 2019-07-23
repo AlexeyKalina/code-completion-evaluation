@@ -31,7 +31,7 @@ compileTestKotlin {
     kotlinOptions.jvmTarget = "1.8"
 }
 intellij {
-    version '192-EAP-SNAPSHOT'
+    version '192.5728.12-EAP-SNAPSHOT'
     plugins "PythonCore:2019.2.192.5728.12", "stats-collector"
 }
 runIde {
