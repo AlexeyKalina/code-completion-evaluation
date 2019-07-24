@@ -2,7 +2,7 @@
     <id>com.intellij.completion.evaluation</id>
     <name>Code Completion Quality Evaluation</name>
     <version>0.0.1</version>
-    <idea-version since-build="192."/>
+    <idea-version since-build="192"/>
     <vendor url="https://www.jetbrains.com">JetBrains</vendor>
 
     <description><![CDATA[

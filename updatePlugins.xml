@@ -2,7 +2,7 @@
 <plugins>
     <plugin id="com.intellij.completion.evaluation" url="https://github.com/bibaev/code-completion-evaluation/releases/download/0.0.1/completion-plugin-0.0.1-SNAPSHOT.zip" version="0.0.1">
         <name>Code Completion Quality Evaluation</name>
-        <idea-version since-build="192."/>
+        <idea-version since-build="192"/>
         <description><![CDATA[
            <p>The plugin deals with the quality evaluation of code completion based on artificial queries.</p>
            <p>Usage:</p>
