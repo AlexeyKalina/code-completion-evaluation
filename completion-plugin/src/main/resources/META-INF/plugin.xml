@@ -26,6 +26,10 @@
     ]]>
     </change-notes>
 
+    <extensions defaultExtensionNs="com.intellij">
+        <appStarter implementation="org.jb.cce.actions.CompletionEvaluationStarter"/>
+    </extensions>
+
     <actions>
         <action id="org.jb.cce.actions.EvaluateCompletionForSelectedFilesAction"
                 class="org.jb.cce.actions.EvaluateCompletionForSelectedFilesAction"
