@@ -16,6 +16,11 @@ You need to install [Babelfish](https://doc.bblf.sh) service with language drive
 
 Note: for python files Babelfish service is not needed.
 
+## Installation
+
+1. In Intellij IDEA add custom plugin repository `https://raw.githubusercontent.com/bibaev/code-completion-evaluation/master/updatePlugins.xml`. [Instruction](https://www.jetbrains.com/help/idea/managing-plugins.html#repos)
+2. Install plugin `Code Completion Quality Evaluation` in Marketplace.
+
 ## Usage
 1. Select files and/or directories for code completion evaluation.
 2. Right click and select `Evaluate Completion For Selected Files`.
