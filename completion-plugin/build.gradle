@@ -33,6 +33,7 @@ compileTestKotlin {
 intellij {
     version '192.5728.12-EAP-SNAPSHOT'
     plugins "PythonCore:2019.2.192.5728.12", "stats-collector"
+    updateSinceUntilBuild false
 }
 runIde {
     jvmArgs '-Xmx1G'
