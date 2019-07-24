@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugins>
+    <plugin id="com.intellij.completion.evaluation" url="https://github.com/bibaev/code-completion-evaluation/releases/download/0.0.1/completion-plugin-0.0.1-SNAPSHOT.jar" version="0.0.1">
+        <idea-version since-build="192.*"/>
+    </plugin>
+</plugins>
