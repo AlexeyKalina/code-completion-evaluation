@@ -31,9 +31,7 @@ class CompletionEvaluationStarter : ApplicationStarter {
         val fileSystem = LocalFileSystem.getInstance()
         val files  = config.listOfFiles.map { fileSystem.findFileByIoFile(File(it))!! }
 
-        println("Evaluation started.")
         CompletionEvaluator(true).evaluateCompletion(project, files, config.language, config.strategy,
                 config.completionTypes, config.outputDir)
-        println("Evaluation completed.")
     }
 }

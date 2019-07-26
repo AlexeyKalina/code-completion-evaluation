@@ -175,6 +175,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         val reportPath = reportGenerator.generateReport(sessions, metrics, errors)
         ApplicationManager.getApplication().invokeAndWait {
             if (!isHeadless && OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
+            if (isHeadless) println("Evaluation completed. Report: $reportPath")
         }
     }
 
