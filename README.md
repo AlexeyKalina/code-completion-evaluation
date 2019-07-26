@@ -50,3 +50,23 @@ Note: for python files Babelfish service is not needed.
 - HTML-reports:
   - Global report with metrics and links to file reports
   - Reports for files with all completions
+- Headless mode
+
+## Headless Mode
+
+You can run completion quality evaluation without IDEA UI.
+
+### UI mode comparision
+
+For comparision of two modes, a project with about a thousand java files was used.
+
+1. Quality. Metric values are the same for both modes.
+2. Performance. In headless mode completion quality was evaluated on the project about twice as fast as in UI mode. (7 min against 15 min).
+
+### Usage
+
+For running in headless mode you need:
+1. Create command line launcher for Intellij IDEA. [Instruction](https://www.jetbrains.com/help/idea/working-with-the-ide-features-from-command-line.html).
+2. Run command `idea evaluate-completion <path_to_config>`.
+3. If `path_to_config` missing, default config path will be used (`config.json`). 
+4. If config missing, default config will be created. Fill settings in default config before restarting evaluation.
