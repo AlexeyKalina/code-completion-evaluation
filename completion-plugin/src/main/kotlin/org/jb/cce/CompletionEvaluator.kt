@@ -6,7 +6,6 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
-import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ContentIterator
 import com.intellij.openapi.util.registry.Registry
@@ -20,7 +19,9 @@ import org.jb.cce.interpretator.DelegationCompletionInvoker
 import org.jb.cce.metrics.MetricInfo
 import org.jb.cce.metrics.MetricsEvaluator
 import org.jb.cce.uast.Language
+import org.jb.cce.util.ConsoleProcessIndicator
 import java.io.File
+import java.util.*
 
 class CompletionEvaluator(private val isHeadless: Boolean) {
     private companion object {
@@ -31,7 +32,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                            completionTypes: List<CompletionType>, outputDir: String) {
         val language2files = getFiles(files)
         if (language2files.isEmpty()) {
-            print("Languages of selected files aren't supported.")
+            println("Languages of selected files aren't supported.")
             return
         }
         evaluateUnderProgress(project, language, language2files.getValue(language), strategy, completionTypes, outputDir)
@@ -72,7 +73,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 interpretUnderProgress(actions, errors, completionTypes, strategy, project, outputDir)
             }
         }
-        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
+        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, ConsoleProcessIndicator(task, isHeadless))
     }
 
     private fun generateActions(project: Project, language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy,
@@ -121,7 +122,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 generateReports(outputDir, sessions, metricsInfo, errors)
             }
         }
-        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
+        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, ConsoleProcessIndicator(task, isHeadless))
     }
 
     private fun interpretActions(actions: List<Action>, completionTypes: List<CompletionType>,
@@ -177,6 +178,17 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         }
     }
 
-    private fun isMLCompletionEnabled() = Registry.get(PropertKey@ "completion.stats.enable.ml.ranking").asBoolean()
-    private fun setMLCompletion(value: Boolean) = Registry.get(PropertKey@ "completion.stats.enable.ml.ranking").setValue(value)
+    private fun isMLCompletionEnabled(): Boolean {
+        try {
+            return Registry.get(PropertKey@ "completion.stats.enable.ml.ranking").asBoolean()
+        } catch (e: MissingResourceException) {
+            return false
+        }
+    }
+    private fun setMLCompletion(value: Boolean) {
+        try {
+            Registry.get(PropertKey@ "completion.stats.enable.ml.ranking").setValue(value)
+        } catch (e: MissingResourceException) {
+        }
+    }
 }

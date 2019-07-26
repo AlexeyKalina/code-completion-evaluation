@@ -15,25 +15,25 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
     override fun main(params: Array<out String>) {
         val configPath = if (params.size == 2) params[1] else "config.json"
-        print("Config path: ${Paths.get(configPath).toAbsolutePath()}")
+        println("Config path: ${Paths.get(configPath).toAbsolutePath()}")
 
         val config = try {
             ConfigFactory.load(configPath)
         } catch (e: Exception) {
-            print("Error for loading config: $configPath, $e")
+            println("Error for loading config: $configPath, $e")
             return
         }
         val project = ProjectUtil.openProject(config.projectPath, null, false)
         if (project == null) {
-            print("Project ${config.projectPath} not found.")
+            println("Project ${config.projectPath} not found.")
             return
         }
         val fileSystem = LocalFileSystem.getInstance()
         val files  = config.listOfFiles.map { fileSystem.findFileByIoFile(File(it))!! }
 
-        print("Evaluation started.")
+        println("Evaluation started.")
         CompletionEvaluator(true).evaluateCompletion(project, files, config.language, config.strategy,
                 config.completionTypes, config.outputDir)
-        print("Evaluation completed.")
+        println("Evaluation completed.")
     }
 }
