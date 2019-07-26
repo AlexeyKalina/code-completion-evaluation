@@ -34,13 +34,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             print("Languages of selected files aren't supported.")
             return
         }
-
-        if (isHeadless) {
-            val actions = generateActions(project, language, language2files.getValue(language), strategy, null)
-            val sessions = interpretActions(actions.first, completionTypes, strategy, project, null)
-            val metricsInfo = evaluateMetrics(sessions)
-            generateReports(outputDir, sessions, metricsInfo, actions.second)
-        } else generateUnderProgress(project, language, language2files.getValue(language), strategy, completionTypes, outputDir)
+        evaluateUnderProgress(project, language, language2files.getValue(language), strategy, completionTypes, outputDir)
     }
 
     fun getFiles(selectedFiles: List<VirtualFile>): Map<Language, Set<VirtualFile>> {
@@ -62,7 +56,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         return language2files
     }
 
-    private fun generateUnderProgress(project: Project, language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy,
+    private fun evaluateUnderProgress(project: Project, language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy,
                                       completionTypes: List<CompletionType>, outputDir: String) {
         val task = object : Task.Backgroundable(project, "Generating actions for selected files", true) {
             private lateinit var actions: List<Action>
@@ -82,7 +76,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
     }
 
     private fun generateActions(project: Project, language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy,
-                                indicator: ProgressIndicator?): Pair<List<Action>, List<FileErrorInfo>> {
+                                indicator: ProgressIndicator): Pair<List<Action>, List<FileErrorInfo>> {
         val actionsGenerator = ActionsGenerator(strategy)
         val uastBuilder = UastBuilder.create(project, language)
 
@@ -91,15 +85,13 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         val errors = mutableListOf<FileErrorInfo>()
         var completed = 0
         for (file in sortedFiles) {
-            if (indicator?.isCanceled == true) {
+            if (indicator.isCanceled) {
                 LOG.info("Generating actions is canceled by user. Done: $completed/${files.size}. With error: ${errors.size}")
                 break
             }
             LOG.info("Start generating actions for file ${file.path}. Done: $completed/${files.size}. With error: ${errors.size}")
-            if (indicator != null) {
-                indicator.text2 = file.name
-                indicator.fraction = completed.toDouble() / files.size
-            }
+            indicator.text2 = file.name
+            indicator.fraction = completed.toDouble() / files.size
             try {
                 val uast = uastBuilder.build(file)
                 generatedActions.add(actionsGenerator.generate(uast))
@@ -133,7 +125,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
     }
 
     private fun interpretActions(actions: List<Action>, completionTypes: List<CompletionType>,
-                                 strategy: CompletionStrategy, project: Project, indicator: ProgressIndicator?): List<SessionsEvaluationInfo> {
+                                 strategy: CompletionStrategy, project: Project, indicator: ProgressIndicator): List<SessionsEvaluationInfo> {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project))
         val interpreter = Interpreter(completionInvoker)
 
@@ -145,23 +137,21 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             setMLCompletion(completionType == CompletionType.ML)
             val fileSessions = mutableListOf<FileEvaluationInfo<Session>>()
             interpreter.interpret(actions, completionType) { sessions, filePath, fileText, actionsDone ->
-                if (indicator?.isCanceled == true) {
+                if (indicator.isCanceled) {
                     LOG.info("Interpreting actions is canceled by user.")
                     return@interpret true
                 }
                 completed += actionsDone
                 fileSessions.add(FileEvaluationInfo(filePath, sessions, fileText))
-                if (indicator != null) {
-                    indicator.text2 = "$completionType ${File(filePath).name}"
-                    indicator.fraction = completed.toDouble() / (actions.size * completionTypes.size)
-                }
+                indicator.text2 = "$completionType ${File(filePath).name}"
+                indicator.fraction = completed.toDouble() / (actions.size * completionTypes.size)
                 LOG.info("Interpreting actions for file $filePath ($completionType completion) completed. Done: $completed/${actions.size * completionTypes.size}")
                 return@interpret false
             }
             sessionsInfo.add(SessionsEvaluationInfo(fileSessions, EvaluationInfo(completionType.name, strategy)))
         }
         setMLCompletion(mlCompletionFlag)
-        if (indicator?.isCanceled != true) return sessionsInfo
+        if (!indicator.isCanceled) return sessionsInfo
         return emptyList()
     }
 

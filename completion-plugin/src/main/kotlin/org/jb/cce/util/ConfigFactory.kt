@@ -1,12 +1,11 @@
 package org.jb.cce.util
 
-import com.google.gson.*
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonPrimitive
 import org.jb.cce.actions.*
 import org.jb.cce.uast.Language
 import java.io.File
 import java.io.FileReader
-import java.lang.IllegalArgumentException
-import java.lang.reflect.Type
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
@@ -22,7 +21,7 @@ object ConfigFactory {
         val configFile = File(path)
         if (!configFile.exists()) {
             save(defaultConfig, path)
-            return defaultConfig
+            throw IllegalArgumentException("Config file missing. Config created by path: ${configFile.absolutePath}. Fill settings in config.")
         }
 
         val map = gson.fromJson(FileReader(configFile), HashMap<String, Any>().javaClass)
