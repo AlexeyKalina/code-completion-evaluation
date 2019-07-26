@@ -48,6 +48,11 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
             return emptyList()
         } else {
             val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
+            var attempts = 10
+            while(lookup.isCalculating && attempts > 0) {
+                Thread.sleep(100)
+                attempts -= 1
+            }
             val expectedItem = lookup.items.firstOrNull { it.lookupString == expectedText }
             if (expectedItem != null && completionType != CompletionType.SMART) {
                 lookup.finishLookup(Lookup.AUTO_INSERT_SELECT_CHAR, expectedItem)
