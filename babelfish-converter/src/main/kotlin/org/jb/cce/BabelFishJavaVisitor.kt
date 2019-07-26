@@ -69,7 +69,7 @@ class BabelFishJavaVisitor(path: String, text: String): BabelFishUnifiedVisitor(
     }
 
     private fun visitArrayInitializer(json: JsonObject, parentNode: UnifiedAstNode) {
-        if (!json.has("expressions")) return
+        if (!json.has("expressions") || !json["expressions"].isJsonArray) return
         for (expression in json["expressions"].asJsonArray) {
             if (!expression.isJsonObject) continue
             if (typeEquals(expression.asJsonObject, "uast:Identifier") || typeEquals(expression.asJsonObject, "uast:QualifiedIdentifier"))
