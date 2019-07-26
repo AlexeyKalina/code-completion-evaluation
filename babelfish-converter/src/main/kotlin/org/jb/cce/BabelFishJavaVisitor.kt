@@ -26,6 +26,7 @@ class BabelFishJavaVisitor(path: String, text: String): BabelFishUnifiedVisitor(
     override fun visitChild(json: JsonObject, parentNode: UnifiedAstNode) {
         when {
             typeEquals(json, "java:TypeDeclaration") -> visitTypeDeclaration(json, parentNode)
+            typeEquals(json, "java:SingleMemberAnnotation") -> return
             typeEquals(json, "java:MethodDeclaration") ||
                     typeEquals(json, "java:Initializer") -> visitMethodDeclaration(json, parentNode)
             typeEquals(json, "java:MethodInvocation") ||
