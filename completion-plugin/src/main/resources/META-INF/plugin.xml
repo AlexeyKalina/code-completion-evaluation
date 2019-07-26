@@ -1,7 +1,7 @@
 <idea-plugin>
     <id>com.intellij.completion.evaluation</id>
     <name>Code Completion Quality Evaluation</name>
-    <version>0.0.1</version>
+    <version>0.0.2</version>
     <idea-version since-build="192"/>
     <vendor url="https://www.jetbrains.com">JetBrains</vendor>
 
@@ -17,6 +17,10 @@
     ]]></description>
 
     <change-notes><![CDATA[
+      0.0.2 <br>
+        <ul>
+            <li>Headless mode</li>
+        </ul>
       0.0.1 <br>
         <ul>
             <li>Support Java, Python and C#</li>
