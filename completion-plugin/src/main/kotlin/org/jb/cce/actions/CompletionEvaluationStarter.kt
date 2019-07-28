@@ -11,7 +11,6 @@ import java.nio.file.Paths
 class CompletionEvaluationStarter : ApplicationStarter {
     override fun getCommandName(): String = "evaluate-completion"
     override fun isHeadless(): Boolean = true
-    override fun canProcessExternalCommandLine(): Boolean = true
 
     override fun main(params: Array<out String>) {
         val configPath = if (params.size == 2) params[1] else "config.json"

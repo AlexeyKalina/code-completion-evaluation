@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.CompletionEvaluator
+import org.jb.cce.util.FilesHelper
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -14,7 +15,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
 
         val evaluator = CompletionEvaluator(false)
 
-        val language2files = evaluator.getFiles(files)
+        val language2files = FilesHelper.getFiles(files)
         if (language2files.isEmpty()) {
             Messages.showInfoMessage(project, "Languages of selected files aren't supported.", "Nothing to complete")
             return

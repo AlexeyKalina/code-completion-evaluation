@@ -6,12 +6,10 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
+import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.roots.ContentIterator
 import com.intellij.openapi.util.registry.Registry
-import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.VirtualFileFilter
 import org.jb.cce.actions.*
 import org.jb.cce.info.*
 import org.jb.cce.interpretator.CompletionInvokerImpl
@@ -19,7 +17,10 @@ import org.jb.cce.interpretator.DelegationCompletionInvoker
 import org.jb.cce.metrics.MetricInfo
 import org.jb.cce.metrics.MetricsEvaluator
 import org.jb.cce.uast.Language
-import org.jb.cce.util.ConsoleProcessIndicator
+import org.jb.cce.util.CommandLineProgress
+import org.jb.cce.util.FilesHelper
+import org.jb.cce.util.IdeaProgress
+import org.jb.cce.util.Progress
 import java.io.File
 import java.util.*
 
@@ -30,31 +31,12 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
 
     fun evaluateCompletion(project: Project, files: List<VirtualFile>, language: Language, strategy: CompletionStrategy,
                            completionTypes: List<CompletionType>, outputDir: String) {
-        val language2files = getFiles(files)
+        val language2files = FilesHelper.getFiles(files)
         if (language2files.isEmpty()) {
             println("Languages of selected files aren't supported.")
             return
         }
         evaluateUnderProgress(project, language, language2files.getValue(language), strategy, completionTypes, outputDir)
-    }
-
-    fun getFiles(selectedFiles: List<VirtualFile>): Map<Language, Set<VirtualFile>> {
-        val language2files = mutableMapOf<Language, MutableSet<VirtualFile>>()
-        for (file in selectedFiles) {
-            VfsUtilCore.iterateChildrenRecursively(file, VirtualFileFilter.ALL, object : ContentIterator {
-                override fun processFile(fileOrDir: VirtualFile): Boolean {
-                    val extension = fileOrDir.extension
-                    if (fileOrDir.isDirectory || extension == null) return true
-
-                    val language = Language.resolve(extension)
-                    if (language != Language.UNSUPPORTED) {
-                        language2files.computeIfAbsent(language) { mutableSetOf() }.add(fileOrDir)
-                    }
-                    return true
-                }
-            })
-        }
-        return language2files
     }
 
     private fun evaluateUnderProgress(project: Project, language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy,
@@ -64,7 +46,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             private lateinit var errors: List<FileErrorInfo>
 
             override fun run(indicator: ProgressIndicator) {
-                val result = generateActions(project, language, files, strategy, indicator)
+                val result = generateActions(project, language, files, strategy, getProcess(indicator))
                 actions = result.first
                 errors = result.second
             }
@@ -73,11 +55,11 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 interpretUnderProgress(actions, errors, completionTypes, strategy, project, outputDir)
             }
         }
-        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, ConsoleProcessIndicator(task, isHeadless))
+        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
     private fun generateActions(project: Project, language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy,
-                                indicator: ProgressIndicator): Pair<List<Action>, List<FileErrorInfo>> {
+                                indicator: Progress): Pair<List<Action>, List<FileErrorInfo>> {
         val actionsGenerator = ActionsGenerator(strategy)
         val uastBuilder = UastBuilder.create(project, language)
 
@@ -86,13 +68,12 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         val errors = mutableListOf<FileErrorInfo>()
         var completed = 0
         for (file in sortedFiles) {
-            if (indicator.isCanceled) {
+            if (indicator.isCanceled()) {
                 LOG.info("Generating actions is canceled by user. Done: $completed/${files.size}. With error: ${errors.size}")
                 break
             }
             LOG.info("Start generating actions for file ${file.path}. Done: $completed/${files.size}. With error: ${errors.size}")
-            indicator.text2 = file.name
-            indicator.fraction = completed.toDouble() / files.size
+            indicator.setProgress(file.name, completed.toDouble() / files.size)
             try {
                 val uast = uastBuilder.build(file)
                 generatedActions.add(actionsGenerator.generate(uast))
@@ -113,7 +94,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             private var sessionsInfo: List<SessionsEvaluationInfo>? = null
 
             override fun run(indicator: ProgressIndicator) {
-                sessionsInfo = interpretActions(actions, completionTypes, strategy, project, indicator)
+                sessionsInfo = interpretActions(actions, completionTypes, strategy, project, getProcess(indicator))
             }
 
             override fun onSuccess() {
@@ -122,11 +103,11 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 generateReports(outputDir, sessions, metricsInfo, errors)
             }
         }
-        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, ConsoleProcessIndicator(task, isHeadless))
+        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
     private fun interpretActions(actions: List<Action>, completionTypes: List<CompletionType>,
-                                 strategy: CompletionStrategy, project: Project, indicator: ProgressIndicator): List<SessionsEvaluationInfo> {
+                                 strategy: CompletionStrategy, project: Project, indicator: Progress): List<SessionsEvaluationInfo> {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project))
         val interpreter = Interpreter(completionInvoker)
 
@@ -138,21 +119,20 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             setMLCompletion(completionType == CompletionType.ML)
             val fileSessions = mutableListOf<FileEvaluationInfo<Session>>()
             interpreter.interpret(actions, completionType) { sessions, filePath, fileText, actionsDone ->
-                if (indicator.isCanceled) {
+                if (indicator.isCanceled()) {
                     LOG.info("Interpreting actions is canceled by user.")
                     return@interpret true
                 }
                 completed += actionsDone
                 fileSessions.add(FileEvaluationInfo(filePath, sessions, fileText))
-                indicator.text2 = "$completionType ${File(filePath).name}"
-                indicator.fraction = completed.toDouble() / (actions.size * completionTypes.size)
+                indicator.setProgress("$completionType ${File(filePath).name}", completed.toDouble() / (actions.size * completionTypes.size))
                 LOG.info("Interpreting actions for file $filePath ($completionType completion) completed. Done: $completed/${actions.size * completionTypes.size}")
                 return@interpret false
             }
             sessionsInfo.add(SessionsEvaluationInfo(fileSessions, EvaluationInfo(completionType.name, strategy)))
         }
         setMLCompletion(mlCompletionFlag)
-        if (!indicator.isCanceled) return sessionsInfo
+        if (!indicator.isCanceled()) return sessionsInfo
         return emptyList()
     }
 
@@ -179,11 +159,13 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         }
     }
 
+    private fun getProcess(indicator: ProgressIndicator) = if (isHeadless) CommandLineProgress(indicator.text) else IdeaProgress(indicator)
+
     private fun isMLCompletionEnabled(): Boolean {
-        try {
-            return Registry.get(PropertKey@ "completion.stats.enable.ml.ranking").asBoolean()
+        return try {
+            Registry.get(PropertKey@ "completion.stats.enable.ml.ranking").asBoolean()
         } catch (e: MissingResourceException) {
-            return false
+            false
         }
     }
     private fun setMLCompletion(value: Boolean) {
