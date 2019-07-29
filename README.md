@@ -65,8 +65,14 @@ For comparision of two modes, a project with about a thousand java files was use
 
 ### Usage
 
-For running in headless mode you need:
-1. Create command line launcher for Intellij IDEA. [Instruction](https://www.jetbrains.com/help/idea/working-with-the-ide-features-from-command-line.html).
-2. Run command `idea evaluate-completion <path_to_config>`.
-3. If `path_to_config` missing, default config path will be used (`config.json`). 
-4. If config missing, default config will be created. Fill settings in default config before restarting evaluation.
+- For running from command line you need:
+  1. Add `-Djava.awt.headless=true` to jvm-options. [Instruction](https://www.jetbrains.com/help/idea/tuning-the-ide.html).
+  2. Create command line launcher for Intellij IDEA. [Instruction](https://www.jetbrains.com/help/idea/working-with-the-ide-features-from-command-line.html).
+  3. Run command `<Intellij IDEA> evaluate-completion [path_to_config]`.
+  4. If `path_to_config` missing, default config path will be used (`config.json`). 
+  5. If config missing, default config will be created. Fill settings in default config before restarting evaluation.
+- For running in debug mode you need:
+  1. Install plugin to builded IDEA.
+  2. Create debug-configuration:
+    ![run-configuration](https://user-images.githubusercontent.com/7608535/61994170-ef155a80-b07f-11e9-9a5b-fbfba5008875.png)
+  3. Start created configuration.
