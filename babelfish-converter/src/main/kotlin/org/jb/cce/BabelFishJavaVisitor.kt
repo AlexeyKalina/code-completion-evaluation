@@ -26,6 +26,7 @@ class BabelFishJavaVisitor(path: String, text: String): BabelFishUnifiedVisitor(
     override fun visitChild(json: JsonObject, parentNode: UnifiedAstNode) {
         when {
             typeEquals(json, "java:TypeDeclaration") -> visitTypeDeclaration(json, parentNode)
+            typeEquals(json, "java:SingleMemberAnnotation") -> return
             typeEquals(json, "java:MethodDeclaration") ||
                     typeEquals(json, "java:Initializer") -> visitMethodDeclaration(json, parentNode)
             typeEquals(json, "java:MethodInvocation") ||
@@ -69,7 +70,7 @@ class BabelFishJavaVisitor(path: String, text: String): BabelFishUnifiedVisitor(
     }
 
     private fun visitArrayInitializer(json: JsonObject, parentNode: UnifiedAstNode) {
-        if (!json.has("expressions")) return
+        if (!json.has("expressions") || !json["expressions"].isJsonArray) return
         for (expression in json["expressions"].asJsonArray) {
             if (!expression.isJsonObject) continue
             if (typeEquals(expression.asJsonObject, "uast:Identifier") || typeEquals(expression.asJsonObject, "uast:QualifiedIdentifier"))

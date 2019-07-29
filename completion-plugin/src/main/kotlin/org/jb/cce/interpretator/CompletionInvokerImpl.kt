@@ -24,6 +24,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
     private companion object {
         val LOG = Logger.getInstance(CompletionInvokerImpl::class.java)
         const val LOG_MAX_LENGTH = 50
+        const val WAITING_TIME = 100L
     }
 
     private var editor: Editor? = null
@@ -48,6 +49,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
             return emptyList()
         } else {
             val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
+            lookup.waitForResult(1000)
             val expectedItem = lookup.items.firstOrNull { it.lookupString == expectedText }
             if (expectedItem != null && completionType != CompletionType.SMART) {
                 lookup.finishLookup(Lookup.AUTO_INSERT_SELECT_CHAR, expectedItem)
@@ -104,5 +106,15 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         val presentation = LookupElementPresentation()
         element.renderElement(presentation)
         return "${presentation.itemText} ${presentation.typeText} ${presentation.tailText}"
+    }
+
+    private fun LookupImpl.waitForResult(timeMs: Long): Boolean {
+        var totalWaitingTimeMs = 0L
+        while (isCalculating && totalWaitingTimeMs < timeMs) {
+            Thread.sleep(WAITING_TIME)
+            totalWaitingTimeMs += WAITING_TIME
+        }
+
+        return !isCalculating
     }
 }
