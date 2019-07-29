@@ -1,10 +1,13 @@
 package org.jb.cce.util
 
-import com.intellij.util.io.*
+import com.intellij.util.io.createDirectories
+import com.intellij.util.io.createFile
+import com.intellij.util.io.exists
+import com.intellij.util.io.move
 import java.io.FileReader
-import java.io.FileWriter
 import java.nio.file.*
 import java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
+import java.nio.file.attribute.BasicFileAttributes
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.Executors
@@ -66,7 +69,7 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
         resultLogsFile.createFile()
 
         resultLogsFile.toFile().bufferedWriter().use { writer ->
-            Files.find(Paths.get(outputDir), 1, { _, attrs -> !attrs.isDirectory }, emptyArray())
+            Files.find(Paths.get(outputDir), 1, BiPredicate { _: Path, attrs: BasicFileAttributes -> !attrs.isDirectory })
                     .map(Path::toFile)
                     .forEach {
                         writer.append(it.readText())

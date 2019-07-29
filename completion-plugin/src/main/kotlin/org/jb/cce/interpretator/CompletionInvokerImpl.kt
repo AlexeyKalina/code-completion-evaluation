@@ -50,9 +50,10 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         } else {
             val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
             lookup.waitForResult(1000)
-            val expectedItem = lookup.items.firstOrNull { it.lookupString == expectedText }
-            if (expectedItem != null && completionType != CompletionType.SMART) {
-                lookup.finishLookup(Lookup.AUTO_INSERT_SELECT_CHAR, expectedItem)
+            val expectedItemIndex = lookup.items.indexOfFirst { it.lookupString == expectedText }
+            if (expectedItemIndex != -1 && completionType != CompletionType.SMART) {
+                lookup.selectedIndex = expectedItemIndex
+                lookup.finishLookup(Lookup.AUTO_INSERT_SELECT_CHAR, lookup.items[expectedItemIndex])
             }
             return lookup.items.map { Suggest(it.lookupString, lookupElementText(it)) }
         }

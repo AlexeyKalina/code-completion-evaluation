@@ -129,7 +129,8 @@ class BabelFishJavaVisitor(path: String, text: String): BabelFishUnifiedVisitor(
             for (node in indexNodes)
                 addToParent(node, arrayAccessNodes.last())
         }
-        visitChild(index, arrayAccessNodes.last())
+        if (!arrayAccessNodes.isEmpty())
+            visitChild(index, arrayAccessNodes.last())
     }
 
     private fun visitLambdaExpression(json: JsonObject, parentNode: UnifiedAstNode) {
