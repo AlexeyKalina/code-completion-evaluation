@@ -40,12 +40,12 @@ class Interpreter(private val invoker: CompletionInvoker) {
                     session = null
                 }
                 is PrintText -> {
-                    if (completionType != CompletionType.SMART && action.completable && completionSuccess) continue@iterateActions
-                    invoker.printText(action.text)
+                    if (completionType == CompletionType.SMART || !action.completable || !completionSuccess)
+                        invoker.printText(action.text)
                 }
                 is DeleteRange -> {
-                    if (completionType != CompletionType.SMART && action.completable && completionSuccess) continue@iterateActions
-                    invoker.deleteRange(action.begin, action.end)
+                    if (completionType == CompletionType.SMART || !action.completable || !completionSuccess)
+                        invoker.deleteRange(action.begin, action.end)
                 }
                 is OpenFile -> {
                     if (!currentOpenedFilePath.isEmpty()) {
