@@ -23,8 +23,8 @@ abstract class CallCompletionsVisitor(protected open val text: String,
 
     private val prefixCreator = when (strategy.prefix) {
         is CompletionPrefix.NoPrefix -> NoPrefixCreator()
-        is CompletionPrefix.CapitalizePrefix -> CapitalizePrefixCreator()
-        is CompletionPrefix.SimplePrefix -> SimplePrefixCreator(strategy.prefix.n)
+        is CompletionPrefix.CapitalizePrefix -> CapitalizePrefixCreator(strategy.prefix.completePrevious)
+        is CompletionPrefix.SimplePrefix -> SimplePrefixCreator(strategy.prefix.completePrevious, strategy.prefix.n)
     }
 
     fun getActions(): List<Action> = actions
@@ -68,14 +68,16 @@ abstract class CallCompletionsVisitor(protected open val text: String,
 
         val prefix = prefixCreator.getPrefix(node.getText())
         var currentPrefix = ""
-        for (symbol in prefix) {
-            actions += CallCompletion(currentPrefix, node.getText(), tokenType)
-            actions += PrintText(symbol.toString(), true)
-            currentPrefix += symbol
-        }
+        if (prefixCreator.completePrevious) {
+            for (symbol in prefix) {
+                actions += CallCompletion(currentPrefix, node.getText(), tokenType)
+                actions += PrintText(symbol.toString(), true)
+                currentPrefix += symbol
+            }
+        } else if (prefix.isNotEmpty()) actions += PrintText(prefix, true)
         actions += CallCompletion(prefix, node.getText(), tokenType)
 
-        if (!prefix.isEmpty())
+        if (prefix.isNotEmpty())
             actions += DeleteRange(node.getOffset(), node.getOffset() + prefix.length, true)
         actions += PrintText(node.getText(), true)
 
