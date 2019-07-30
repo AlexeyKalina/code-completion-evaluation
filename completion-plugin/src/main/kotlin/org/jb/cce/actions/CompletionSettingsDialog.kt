@@ -1,6 +1,8 @@
 package org.jb.cce.actions
 
+import com.intellij.ide.plugins.PluginManager
 import com.intellij.ide.util.PropertiesComponent
+import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
@@ -19,8 +21,11 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     lateinit var language: Language
     private val properties = PropertiesComponent.getInstance(project)
     private val outputDirProperty = "org.jb.cce.output_dir"
+    private val statsCollectorId = "com.intellij.stats.completion"
+
     var outputDir = properties.getValue(outputDirProperty) ?: project.basePath ?: ""
     var completionTypes = arrayListOf(CompletionType.BASIC)
+    var saveLogs = true
 
     init {
         init()
@@ -31,7 +36,7 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     var completionStatement = CompletionStatement.METHOD_CALLS
 
     override fun createCenterPanel(): JComponent? {
-        val dialogPanel = JPanel(GridLayout(6,1))
+        val dialogPanel = JPanel(GridLayout(7,1))
 
         dialogPanel.add(createLanguageChooser())
         dialogPanel.add(createTypePanel())
@@ -39,6 +44,7 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         dialogPanel.add(createPrefixPanel())
         dialogPanel.add(createStatementPanel())
         dialogPanel.add(createOutputDirChooser())
+        dialogPanel.add(createLogsPanel())
 
         return dialogPanel
     }
@@ -64,7 +70,7 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         if (language2files.size == 1) {
             languagePanel.add(JLabel(languages.single().toString()))
         } else {
-            val languageComboBox = ComboBox<LanguageItem>(languages)
+            val languageComboBox = ComboBox(languages)
             languageComboBox.selectedItem = languages.first()
             languageComboBox.addItemListener { event ->
                 if (event.stateChange == ItemEvent.SELECTED) {
@@ -235,5 +241,23 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
 
         return outputPanel
     }
-}
 
+    private fun createLogsPanel(): JPanel {
+        val statsCollectorEnabled = PluginManager.getPlugin(PluginId.getId(statsCollectorId))?.isEnabled ?: false
+
+        val logsPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+        val logsActionLabel = JLabel("Save completion logs:")
+        val saveLogsCheckbox = JCheckBox()
+        saveLogsCheckbox.addItemListener { event -> saveLogs = event.stateChange == ItemEvent.SELECTED }
+        if (!statsCollectorEnabled) {
+            saveLogs = false
+            saveLogsCheckbox.isEnabled = false
+        } else
+            saveLogsCheckbox.isSelected = true
+
+        logsPanel.add(logsActionLabel)
+        logsPanel.add(saveLogsCheckbox)
+
+        return logsPanel
+    }
+}

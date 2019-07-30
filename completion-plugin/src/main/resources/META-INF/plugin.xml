@@ -44,5 +44,5 @@
     </actions>
 
     <depends optional="true">PythonCore</depends>
-    <depends>com.intellij.stats.completion</depends>
+    <depends optional="true">com.intellij.stats.completion</depends>
 </idea-plugin>
