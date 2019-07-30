@@ -37,6 +37,7 @@ object ConfigFactory {
         val prefix = json.asJsonObject["strategy"].asJsonObject["prefix"].asJsonObject
         prefix.add("name", JsonPrimitive(config.strategy.prefix.javaClass.name))
         val strategyPrefix = config.strategy.prefix
+        if (strategyPrefix !is CompletionPrefix.NoPrefix) prefix.add("completePrevious", JsonPrimitive(strategyPrefix.completePrevious))
         if (strategyPrefix is CompletionPrefix.SimplePrefix) prefix.add("n", JsonPrimitive(strategyPrefix.n))
         Files.write(Paths.get(path), gson.toJson(json).toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
     }
@@ -45,8 +46,8 @@ object ConfigFactory {
         val prefix = strategy["prefix"] as Map<String, Any>
         return when (prefix["name"]) {
             CompletionPrefix.NoPrefix::class.java.name -> CompletionPrefix.NoPrefix
-            CompletionPrefix.CapitalizePrefix::class.java.name -> CompletionPrefix.CapitalizePrefix
-            CompletionPrefix.SimplePrefix::class.java.name -> CompletionPrefix.SimplePrefix((prefix["n"] as Double).toInt())
+            CompletionPrefix.CapitalizePrefix::class.java.name -> CompletionPrefix.CapitalizePrefix(prefix["completePrevious"] as Boolean)
+            CompletionPrefix.SimplePrefix::class.java.name -> CompletionPrefix.SimplePrefix(prefix["completePrevious"] as Boolean, (prefix["n"] as Double).toInt())
             else -> throw IllegalArgumentException("Unknown completion prefix")
         }
     }

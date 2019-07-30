@@ -4,10 +4,10 @@ data class CompletionStrategy(val prefix: CompletionPrefix,
                               val statement: CompletionStatement,
                               val context: CompletionContext)
 
-sealed class CompletionPrefix {
-    object NoPrefix : CompletionPrefix()
-    object CapitalizePrefix : CompletionPrefix()
-    class SimplePrefix(val n: Int) : CompletionPrefix()
+sealed class CompletionPrefix(val completePrevious: Boolean) {
+    object NoPrefix : CompletionPrefix(false)
+    class CapitalizePrefix(completePrevious: Boolean) : CompletionPrefix(completePrevious)
+    class SimplePrefix(completePrevious: Boolean, val n: Int) : CompletionPrefix(completePrevious)
 }
 
 enum class CompletionStatement {

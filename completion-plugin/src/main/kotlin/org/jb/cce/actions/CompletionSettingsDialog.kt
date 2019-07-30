@@ -26,14 +26,14 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     var outputDir = properties.getValue(outputDirProperty) ?: project.basePath ?: ""
     var completionTypes = arrayListOf(CompletionType.BASIC)
     var saveLogs = true
+    var completionContext = CompletionContext.ALL
+    var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix
+    var completionStatement = CompletionStatement.METHOD_CALLS
 
     init {
         init()
         title = "Completion evaluation settings"
     }
-    var completionContext = CompletionContext.ALL
-    var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix
-    var completionStatement = CompletionStatement.METHOD_CALLS
 
     override fun createCenterPanel(): JComponent? {
         val dialogPanel = JPanel(GridLayout(7,1))
@@ -100,7 +100,7 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     }
 
     private fun completionTypeCheckbox(name: String, type: CompletionType): JCheckBox {
-       val checkBox = JCheckBox(name)
+        val checkBox = JCheckBox(name)
         checkBox.addItemListener { event ->
             if (event.stateChange == ItemEvent.SELECTED && !completionTypes.contains(type)) completionTypes.add(type)
             else if (event.stateChange == ItemEvent.DESELECTED) completionTypes.removeIf { it == type }
@@ -136,32 +136,49 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
 
     private fun createPrefixPanel(): JPanel {
         val prefixLabel = JLabel("Completion prefix:")
+        val completePreviousLabel = JLabel("Complete previous:")
+
         val prefixPanel = JPanel(FlowLayout(FlowLayout.LEFT))
         val noPrefixButton =  JRadioButton("No prefix")
         val model = SpinnerNumberModel(2, 1, 5, 1)
         val simplePrefixSpinner = JSpinner(model)
+
+        val completePreviousCheckbox = JCheckBox("", completionPrefix.completePrevious)
+        completePreviousCheckbox.isEnabled = false
+        completePreviousCheckbox.addItemListener { event ->
+            completionPrefix = when(completionPrefix) {
+                is CompletionPrefix.SimplePrefix -> CompletionPrefix.SimplePrefix(event.stateChange == ItemEvent.SELECTED, simplePrefixSpinner.value as Int)
+                is CompletionPrefix.CapitalizePrefix -> CompletionPrefix.CapitalizePrefix(event.stateChange == ItemEvent.SELECTED)
+                is CompletionPrefix.NoPrefix -> CompletionPrefix.NoPrefix
+            }
+        }
+
         noPrefixButton.addItemListener { event ->
             if (event.stateChange == ItemEvent.SELECTED) {
                 completionPrefix = CompletionPrefix.NoPrefix
                 simplePrefixSpinner.isEnabled = false
+                completePreviousCheckbox.isSelected = false
+                completePreviousCheckbox.isEnabled = false
             }
         }
         val simplePrefixButton =  JRadioButton("Simple prefix")
         simplePrefixSpinner.isEnabled = false
         simplePrefixButton.addItemListener { event ->
             if (event.stateChange == ItemEvent.SELECTED) {
-                completionPrefix = CompletionPrefix.SimplePrefix(simplePrefixSpinner.value as Int)
+                completionPrefix = CompletionPrefix.SimplePrefix(completePreviousCheckbox.isSelected, simplePrefixSpinner.value as Int)
                 simplePrefixSpinner.isEnabled = true
+                completePreviousCheckbox.isEnabled = true
             }
         }
         simplePrefixSpinner.addChangeListener {
-            completionPrefix = CompletionPrefix.SimplePrefix(simplePrefixSpinner.value as Int)
+            completionPrefix = CompletionPrefix.SimplePrefix(completePreviousCheckbox.isSelected, simplePrefixSpinner.value as Int)
         }
         val capitalizePrefixButton =  JRadioButton("Capitalize prefix")
         capitalizePrefixButton.addItemListener { event ->
             if (event.stateChange == ItemEvent.SELECTED) {
-                completionPrefix = CompletionPrefix.CapitalizePrefix
+                completionPrefix = CompletionPrefix.CapitalizePrefix(completePreviousCheckbox.isSelected)
                 simplePrefixSpinner.isEnabled = false
+                completePreviousCheckbox.isEnabled = true
             }
         }
 
@@ -178,6 +195,8 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         prefixPanel.add(simplePrefixButton)
         prefixPanel.add(simplePrefixSpinner)
         prefixPanel.add(capitalizePrefixButton)
+        prefixPanel.add(completePreviousCheckbox)
+        prefixPanel.add(completePreviousLabel)
 
         return prefixPanel
     }
@@ -247,13 +266,13 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
 
         val logsPanel = JPanel(FlowLayout(FlowLayout.LEFT))
         val logsActionLabel = JLabel("Save completion logs:")
-        val saveLogsCheckbox = JCheckBox()
+        val saveLogsCheckbox = JCheckBox("", saveLogs)
         saveLogsCheckbox.addItemListener { event -> saveLogs = event.stateChange == ItemEvent.SELECTED }
         if (!statsCollectorEnabled) {
             saveLogs = false
+            saveLogsCheckbox.isSelected = false
             saveLogsCheckbox.isEnabled = false
-        } else
-            saveLogsCheckbox.isSelected = true
+        }
 
         logsPanel.add(logsActionLabel)
         logsPanel.add(saveLogsCheckbox)

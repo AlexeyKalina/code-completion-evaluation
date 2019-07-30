@@ -90,7 +90,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
     }
 
     private fun interpretUnderProgress(actions: List<Action>, errors: List<FileErrorInfo>, completionTypes: List<CompletionType>,
-                                strategy: CompletionStrategy, project: Project, language: Language, outputDir: String, saveLogs: Boolean) {
+                                       strategy: CompletionStrategy, project: Project, language: Language, outputDir: String, saveLogs: Boolean) {
         val task = object : Task.Backgroundable(project, "Interpretation of the generated actions") {
             private var sessionsInfo: List<SessionsEvaluationInfo>? = null
             private val reportGenerator = HtmlReportGenerator(outputDir)
@@ -112,11 +112,11 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
     }
 
     private fun interpretActions(actions: List<Action>, completionTypes: List<CompletionType>, strategy: CompletionStrategy,
-                             project: Project, outputDir: String, saveLogs: Boolean, indicator: Progress): List<SessionsEvaluationInfo> {
+                                 project: Project, outputDir: String, saveLogs: Boolean, indicator: Progress): List<SessionsEvaluationInfo> {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project))
         val interpreter = Interpreter(completionInvoker)
-        val logsWatcher = DirectoryWatcher(PluginDirectoryFilePathProvider().getStatsDataDirectory().toString(), outputDir)
-        if (saveLogs) logsWatcher.start()
+        val logsWatcher = if (saveLogs) DirectoryWatcher(PluginDirectoryFilePathProvider().getStatsDataDirectory().toString(), outputDir) else null
+        logsWatcher?.start()
 
         val sessionsInfo = mutableListOf<SessionsEvaluationInfo>()
         val mlCompletionFlag = isMLCompletionEnabled()
@@ -128,7 +128,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             interpreter.interpret(actions, completionType) { sessions, filePath, fileText, actionsDone ->
                 if (indicator.isCanceled()) {
                     LOG.info("Interpreting actions is canceled by user.")
-                    if (saveLogs) logsWatcher.stop()
+                    logsWatcher?.stop()
                     return@interpret true
                 }
                 completed += actionsDone
@@ -140,7 +140,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             sessionsInfo.add(SessionsEvaluationInfo(fileSessions, EvaluationInfo(completionType.name, strategy)))
         }
         setMLCompletion(mlCompletionFlag)
-        if (saveLogs) logsWatcher.stop()
+        logsWatcher?.stop()
         if (!indicator.isCanceled()) return sessionsInfo
         return emptyList()
     }
