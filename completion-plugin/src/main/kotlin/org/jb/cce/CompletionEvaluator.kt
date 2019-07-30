@@ -140,7 +140,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             sessionsInfo.add(SessionsEvaluationInfo(fileSessions, EvaluationInfo(completionType.name, strategy)))
         }
         setMLCompletion(mlCompletionFlag)
-        if (saveLogs) logsWatcher?.stop()
+        logsWatcher?.stop()
         if (!indicator.isCanceled()) return sessionsInfo
         return emptyList()
     }
