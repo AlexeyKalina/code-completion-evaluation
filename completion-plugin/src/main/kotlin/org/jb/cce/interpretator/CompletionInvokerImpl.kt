@@ -19,6 +19,7 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import org.jb.cce.CompletionInvoker
 import org.jb.cce.Suggest
 import java.io.File
+import kotlin.system.measureTimeMillis
 
 class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
     private companion object {
@@ -35,7 +36,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         editor!!.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
-    override fun callCompletion(type: org.jb.cce.actions.CompletionType, expectedText: String): List<Suggest> {
+    override fun callCompletion(type: org.jb.cce.actions.CompletionType, expectedText: String, prefix: String): org.jb.cce.Lookup {
         LOG.info("Call completion. Type: $type. ${positionToString(editor!!.caretModel.offset)}")
         LookupManager.getInstance(project).hideActiveLookup()
         val completionType = when (type) {
@@ -44,18 +45,23 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
             org.jb.cce.actions.CompletionType.ML -> CompletionType.BASIC
         }
 
-        CodeCompletionHandlerBase(completionType, false, false, true).invokeCompletion(project, editor)
+        var latency = measureTimeMillis {
+            CodeCompletionHandlerBase(completionType, false, false, true).invokeCompletion(project, editor)
+        }
         if (LookupManager.getActiveLookup(editor) == null) {
-            return emptyList()
+            return org.jb.cce.Lookup(prefix, emptyList(), false, latency)
         } else {
             val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
-            lookup.waitForResult(1000)
+            latency += measureTimeMillis {
+                lookup.waitForResult(1000)
+            }
             val expectedItemIndex = lookup.items.indexOfFirst { it.lookupString == expectedText }
             if (expectedItemIndex != -1 && completionType != CompletionType.SMART) {
                 lookup.selectedIndex = expectedItemIndex
                 lookup.finishLookup(Lookup.AUTO_INSERT_SELECT_CHAR, lookup.items[expectedItemIndex])
             }
-            return lookup.items.map { Suggest(it.lookupString, lookupElementText(it)) }
+            val suggests = lookup.items.map { Suggest(it.lookupString, lookupElementText(it)) }
+            return org.jb.cce.Lookup(prefix, suggests, expectedItemIndex != -1, latency)
         }
     }
 
