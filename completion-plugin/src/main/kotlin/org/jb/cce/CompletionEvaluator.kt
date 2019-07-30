@@ -20,9 +20,9 @@ import org.jb.cce.metrics.MetricsEvaluator
 import org.jb.cce.uast.Language
 import org.jb.cce.util.*
 import java.io.File
-import java.io.FileWriter
 import java.nio.file.Paths
 import java.util.*
+import kotlin.system.exitProcess
 
 class CompletionEvaluator(private val isHeadless: Boolean) {
     private companion object {
@@ -34,7 +34,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         val language2files = FilesHelper.getFiles(files)
         if (language2files.isEmpty()) {
             println("Languages of selected files aren't supported.")
-            return
+            return finishWork(null)
         }
         evaluateUnderProgress(project, language, language2files.getValue(language), strategy, completionTypes, outputDir)
     }
@@ -46,6 +46,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             private lateinit var errors: List<FileErrorInfo>
 
             override fun run(indicator: ProgressIndicator) {
+                indicator.text = this.title
                 val result = generateActions(project, language, files, strategy, getProcess(indicator))
                 actions = result.first
                 errors = result.second
@@ -95,6 +96,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             private val reportGenerator = HtmlReportGenerator(outputDir)
 
             override fun run(indicator: ProgressIndicator) {
+                indicator.text = this.title
                 val logsPath = Paths.get(reportGenerator.logsDirectory(), language.displayName.toLowerCase()).toString()
                 sessionsInfo = interpretActions(actions, completionTypes, strategy, project, logsPath, getProcess(indicator))
             }
@@ -103,9 +105,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 val sessions = sessionsInfo ?: return
                 val metricsInfo = evaluateMetrics(sessions)
                 val reportPath = reportGenerator.generateReport(sessions, metricsInfo, errors)
-                ApplicationManager.getApplication().invokeAndWait {
-                    if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
-                }
+                finishWork(reportPath)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
@@ -159,6 +159,20 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
     }
 
     private fun getProcess(indicator: ProgressIndicator) = if (isHeadless) CommandLineProgress(indicator.text) else IdeaProgress(indicator)
+
+    private fun finishWork(reportPath: String?) {
+        if (reportPath == null)
+            if (isHeadless) exitProcess(1) else return
+
+        if (isHeadless) {
+            println("Evaluation completed. Report: $reportPath")
+            exitProcess(0)
+        } else {
+            ApplicationManager.getApplication().invokeAndWait {
+                if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
+            }
+        }
+    }
 
     private fun isMLCompletionEnabled(): Boolean {
         return try {
