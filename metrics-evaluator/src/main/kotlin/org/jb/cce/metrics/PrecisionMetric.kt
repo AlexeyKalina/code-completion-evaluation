@@ -13,23 +13,22 @@ class PrecisionMetric : Metric {
     override fun evaluate(sessions: List<Session>): Double {
         // top3
         val listOfCompletions = sessions.stream()
-                .flatMap { session -> session.lookups.map { lookup -> Pair(lookup.suggests, session.expectedText) }.stream() }
+                .flatMap { session -> session.lookups.map { lookup -> Pair(lookup.suggestions, session.expectedText) }.stream() }
                 .collect(Collectors.toList())
-        val recommendationsMadeCount = listOfCompletions.stream()
-                .filter { l -> !l.first.isEmpty() }
-                .count()
 
-        var relevantRecommendationsCount = 0
+        val fileSample = Sample()
         for (completion in listOfCompletions) {
             val indexOfNecessaryCompletion = completion.first.map { it.text }.indexOf(completion.second)
             if (indexOfNecessaryCompletion in 0..3) {
-                relevantRecommendationsCount++
+                fileSample.add(1.0)
                 sample.add(1.0)
-            } else if (!completion.first.isEmpty())
+            } else if (completion.first.isNotEmpty()) {
+                fileSample.add(0.0)
                 sample.add(0.0)
+            }
         }
 
-        return relevantRecommendationsCount.toDouble() / recommendationsMadeCount
+        return fileSample.mean()
     }
 
     override val name: String = "Precision"

@@ -10,20 +10,20 @@ class ESavedMetric : Metric {
         get() = sample.mean()
 
     override fun evaluate(sessions: List<Session>): Double {
-        var eSavedSum = 0.0
+        val fileSample = Sample()
         sessions.forEach {
-            var rank = it.lookups.map { lookup -> Pair(lookup.suggests, it.expectedText) }.indexOfFirst {
+            var rank = it.lookups.map { lookup -> Pair(lookup.suggestions, it.expectedText) }.indexOfFirst {
                 (suggests, expectedText) -> suggests.isNotEmpty() && suggests.first().text == expectedText
             }
             if (rank < 0) {
                 rank = it.lookups.size
             }
             val eSavedValue = (1.0 - rank.toDouble() / it.lookups.size)
-            eSavedSum += eSavedValue
+            fileSample.add(eSavedValue)
             sample.add(eSavedValue)
         }
 
-        return eSavedSum / sessions.size
+        return fileSample.mean()
     }
 
     override val name: String = "eSaved"

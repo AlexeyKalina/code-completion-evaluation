@@ -17,7 +17,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
 import org.jb.cce.CompletionInvoker
-import org.jb.cce.Suggest
+import org.jb.cce.Suggestion
 import java.io.File
 import kotlin.system.measureTimeMillis
 
@@ -60,7 +60,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
                 lookup.selectedIndex = expectedItemIndex
                 lookup.finishLookup(Lookup.AUTO_INSERT_SELECT_CHAR, lookup.items[expectedItemIndex])
             }
-            val suggests = lookup.items.map { Suggest(it.lookupString, lookupElementText(it)) }
+            val suggests = lookup.items.map { Suggestion(it.lookupString, lookupElementText(it)) }
             return org.jb.cce.Lookup(prefix, suggests, expectedItemIndex != -1, latency)
         }
     }

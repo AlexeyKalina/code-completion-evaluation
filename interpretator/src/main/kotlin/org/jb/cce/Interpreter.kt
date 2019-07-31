@@ -29,7 +29,7 @@ class Interpreter(private val invoker: CompletionInvoker) {
                         session = Session(position, action.expectedText, action.tokenType)
                     }
                     session.addLookup(invoker.callCompletion(completionType, action.expectedText, action.prefix))
-                    completionSuccess = session.lookups.last().suggests.any { it.text == action.expectedText }
+                    completionSuccess = session.lookups.last().suggestions.any { it.text == action.expectedText }
                 }
                 is FinishSession -> {
                     if (session == null) {

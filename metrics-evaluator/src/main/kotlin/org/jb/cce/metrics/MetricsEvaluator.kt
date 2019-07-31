@@ -19,7 +19,8 @@ class MetricsEvaluator private constructor() {
         registerMetric(FMeasureMetric())
         registerMetric(MeanReciprocalRankMetric())
         registerMetric(ESavedMetric())
-        registerMetric(MeanLatency())
+        registerMetric(MeanLatencyMetric())
+        registerMetric(MaxLatencyMetric())
     }
 
     fun registerMetric(metric: Metric) {

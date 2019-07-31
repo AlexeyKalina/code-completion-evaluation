@@ -189,9 +189,9 @@ class HtmlReportGenerator(outputDir: String) {
     private fun getColor(session: Session?): String {
         return when {
             session == null -> absentColor
-            !session.lookups.last().suggests.any{ it.text == session.expectedText } -> badColor
-            session.lookups.last().suggests.size < middleCountLookups ||
-                    session.lookups.last().suggests.subList(0, middleCountLookups).any{ it.text == session.expectedText } -> goodColor
+            !session.lookups.last().suggestions.any{ it.text == session.expectedText } -> badColor
+            session.lookups.last().suggestions.size < middleCountLookups ||
+                    session.lookups.last().suggestions.subList(0, middleCountLookups).any{ it.text == session.expectedText } -> goodColor
             else -> middleColor
         }
     }
