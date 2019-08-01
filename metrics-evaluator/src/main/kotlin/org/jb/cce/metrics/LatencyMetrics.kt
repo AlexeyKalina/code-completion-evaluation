@@ -3,10 +3,13 @@ package org.jb.cce.metrics
 import org.jb.cce.Session
 import org.jb.cce.metrics.util.Sample
 
-open class LatencyMetric {
-    protected val sample = Sample()
+abstract class LatencyMetric(override val name: String) : Metric {
+    private val sample = Sample()
 
-    protected fun getFileSample(sessions: List<Session>): Sample {
+    override val value: Double
+        get() = compute(sample)
+
+    override fun evaluate(sessions: List<Session>): Double {
         val fileSample = Sample()
         sessions.stream()
                 .flatMap { session -> session.lookups.stream() }
@@ -14,30 +17,16 @@ open class LatencyMetric {
                     this.sample.add(it.latency.toDouble())
                     fileSample.add(it.latency.toDouble())
                 }
-        return fileSample
+        return compute(fileSample)
     }
+
+    abstract fun compute(sample: Sample): Double
 }
 
-class MaxLatencyMetric : LatencyMetric(), Metric {
-    override val value: Double
-        get() = sample.max()
-
-    override fun evaluate(sessions: List<Session>): Double {
-        val fileSample = getFileSample(sessions)
-        return fileSample.max()
-    }
-
-    override val name: String = "Max Latency"
+class MaxLatencyMetric : LatencyMetric("Max Latency") {
+    override fun compute(sample: Sample): Double = sample.max()
 }
 
-class MeanLatencyMetric : LatencyMetric(), Metric {
-    override val value: Double
-        get() = sample.mean()
-
-    override fun evaluate(sessions: List<Session>): Double {
-        val fileSample = getFileSample(sessions)
-        return fileSample.mean()
-    }
-
-    override val name: String = "Mean Latency"
+class MeanLatencyMetric : LatencyMetric("Mean Latency") {
+    override fun compute(sample: Sample): Double = sample.mean()
 }
