@@ -8,13 +8,17 @@ document.addEventListener("click", function (e) {
 elementsArray.forEach(function(elem) {
     elem.addEventListener("click", function() {
         var lookups = completions[elem.id]["_lookups"];
-        var suggestions = lookups[lookups.length - 1]["suggestions"];
+        var lastLookup = lookups[lookups.length - 1];
+        var suggestions = lastLookup["suggestions"];
         var a, b, i, val = this.value;
         closeAllLists();
         a = document.createElement("DIV");
         a.setAttribute("id", this.id + "autocomplete-list");
         a.setAttribute("class", "autocomplete-items");
         this.appendChild(a);
+        prefixDiv = document.createElement("DIV");
+        prefixDiv.innerHTML = "prefix: &quot;" + lastLookup["text"] + "&quot;; latency: " + lastLookup["latency"];
+        a.appendChild(prefixDiv);
         for (i = 0; i < suggestions.length; i++) {
             b = document.createElement("DIV");
             if (completions[elem.id].expectedText === suggestions[i].text) {

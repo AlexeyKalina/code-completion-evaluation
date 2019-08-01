@@ -16,6 +16,11 @@ class SessionSerializer {
         for (session in sessions) {
             map[session.id] = session
         }
-        return gson.toJson(map).replace("""(\\r|\\n)""".toRegex(), "").replace("\\\"", "&quot;")
+        return gson.toJson(map).replace("""(\\r|\\n|\\t)""".toRegex(), "").replace("\\\"", "&quot;")
+    }
+
+    fun deserialize(json: String) : SessionsEvaluationInfo {
+        val list = gson.fromJson(json, SessionsEvaluationInfo::class.java)
+        return list!!
     }
 }

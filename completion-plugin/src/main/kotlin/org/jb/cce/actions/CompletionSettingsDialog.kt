@@ -21,6 +21,8 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     lateinit var language: Language
     private val properties = PropertiesComponent.getInstance(project)
     private val outputDirProperty = "org.jb.cce.output_dir"
+    private val pathToExternalProperty = "org.jb.cce.external_sessions_path"
+    private val pathToActionsProperty = "org.jb.cce.actions_path"
     private val statsCollectorId = "com.intellij.stats.completion"
 
     var outputDir = properties.getValue(outputDirProperty) ?: project.basePath ?: ""
@@ -29,6 +31,10 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     var completionContext = CompletionContext.ALL
     var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix
     var completionStatement = CompletionStatement.METHOD_CALLS
+    var compareExternal = false
+    var pathToExternalSessions = properties.getValue(pathToExternalProperty) ?: ""
+    var onlySaveActions = false
+    var pathToActions = properties.getValue(pathToActionsProperty) ?: ""
 
     init {
         init()
@@ -36,15 +42,17 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     }
 
     override fun createCenterPanel(): JComponent? {
-        val dialogPanel = JPanel(GridLayout(7,1))
+        val dialogPanel = JPanel(GridLayout(9,1))
 
         dialogPanel.add(createLanguageChooser())
         dialogPanel.add(createTypePanel())
         dialogPanel.add(createContextPanel())
         dialogPanel.add(createPrefixPanel())
         dialogPanel.add(createStatementPanel())
+        dialogPanel.add(createActionsSaveChooser())
         dialogPanel.add(createOutputDirChooser())
         dialogPanel.add(createLogsPanel())
+        dialogPanel.add(createExternalChooser())
 
         return dialogPanel
     }
@@ -278,5 +286,69 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         logsPanel.add(saveLogsCheckbox)
 
         return logsPanel
+    }
+
+    private fun createActionsSaveChooser(): JPanel {
+        val saveActionsLabel = JLabel("Save actions only:")
+        val pathActionsLabel = JLabel("Path to actions:")
+        val saveActionsPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+        val pathActionsText = JTextField(pathToActions)
+        pathActionsText.isEnabled = false
+
+        val saveActionsCheckbox = JCheckBox("")
+        saveActionsCheckbox.addItemListener { event ->
+            onlySaveActions = event.stateChange == ItemEvent.SELECTED
+            pathActionsText.isEnabled = event.stateChange == ItemEvent.SELECTED
+        }
+
+        pathActionsText.document.addDocumentListener(object : DocumentListener {
+            override fun changedUpdate(e: DocumentEvent) = update()
+            override fun removeUpdate(e: DocumentEvent) = update()
+            override fun insertUpdate(e: DocumentEvent) = update()
+
+            private fun update() {
+                pathToActions = pathActionsText.text
+                properties.setValue(pathToActionsProperty, pathToActions)
+            }
+        })
+
+        saveActionsPanel.add(saveActionsLabel)
+        saveActionsPanel.add(saveActionsCheckbox)
+        saveActionsPanel.add(pathActionsLabel)
+        saveActionsPanel.add(pathActionsText)
+
+        return saveActionsPanel
+    }
+
+    private fun createExternalChooser(): JPanel {
+        val compareExternalLabel = JLabel("Use external sessions:")
+        val pathExternalLabel = JLabel("Path to external sessions:")
+        val compareExternalPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+        val pathExternalText = JTextField(pathToExternalSessions)
+        pathExternalText.isEnabled = false
+
+        val compareExternalCheckbox = JCheckBox("")
+        compareExternalCheckbox.addItemListener { event ->
+            compareExternal = event.stateChange == ItemEvent.SELECTED
+            pathExternalText.isEnabled = event.stateChange == ItemEvent.SELECTED
+        }
+
+        pathExternalText.document.addDocumentListener(object : DocumentListener {
+            override fun changedUpdate(e: DocumentEvent) = update()
+            override fun removeUpdate(e: DocumentEvent) = update()
+            override fun insertUpdate(e: DocumentEvent) = update()
+
+            private fun update() {
+                pathToExternalSessions = pathExternalText.text
+                properties.setValue(pathToExternalProperty, pathToExternalSessions)
+            }
+        })
+
+        compareExternalPanel.add(compareExternalLabel)
+        compareExternalPanel.add(compareExternalCheckbox)
+        compareExternalPanel.add(pathExternalLabel)
+        compareExternalPanel.add(pathExternalText)
+
+        return compareExternalPanel
     }
 }
