@@ -12,20 +12,18 @@ class RecallMetric : Metric {
 
     override fun evaluate(sessions: List<Session>): Double {
         val listOfCompletions = sessions.stream()
-                .flatMap { session -> session.lookups.map { lookup -> Pair(lookup.suggests, session.expectedText) }.stream() }
+                .flatMap { session -> session.lookups.map { lookup -> Pair(lookup.suggestions, session.expectedText) }.stream() }
                 .collect(Collectors.toList())
 
-        var recommendationsMadeCount = 0
+        val fileSample = Sample()
         listOfCompletions.stream()
                 .forEach { (suggests, expectedText) ->
-                    if (suggests.any { it.text == expectedText }) {
-                        sample.add(1.0)
-                        recommendationsMadeCount++
-                    } else
-                        sample.add(0.0)
+                    val value = if (suggests.any { it.text == expectedText }) 1.0 else 0.0
+                    fileSample.add(value)
+                    sample.add(value)
                 }
 
-        return recommendationsMadeCount.toDouble() / listOfCompletions.size
+        return fileSample.mean()
     }
 
     override val name: String = "Recall"

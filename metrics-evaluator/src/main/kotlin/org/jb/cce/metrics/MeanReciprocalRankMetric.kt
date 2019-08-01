@@ -10,22 +10,17 @@ class MeanReciprocalRankMetric : Metric {
         get() = sample.mean()
 
     override fun evaluate(sessions: List<Session>): Double {
-        var rankSum = 0.0
-        var totalLookupsCount = 0
-
+        val fileSample = Sample()
         sessions.forEach {
-            totalLookupsCount += it.lookups.size
-            it.lookups.map { lookup ->  Pair(lookup.suggests, it.expectedText) }.forEach { (suggests, expectedText) ->
+            it.lookups.map { lookup ->  Pair(lookup.suggestions, it.expectedText) }.forEach { (suggests, expectedText) ->
                 val rank = suggests.map { suggest -> suggest.text }.indexOf(expectedText) + 1
-                if (rank > 0) {
-                    rankSum += 1.0 / rank
-                    sample.add(1.0 / rank)
-                } else
-                    sample.add(0.0)
+                val value = if (rank > 0) 1.0 / rank else 0.0
+                fileSample.add(value)
+                sample.add(value)
             }
         }
 
-        return rankSum / totalLookupsCount
+        return fileSample.mean()
     }
 
     override val name: String =  "Mean Reciprocal Rank"

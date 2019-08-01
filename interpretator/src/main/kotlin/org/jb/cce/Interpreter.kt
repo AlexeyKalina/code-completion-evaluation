@@ -28,8 +28,8 @@ class Interpreter(private val invoker: CompletionInvoker) {
                     if (session == null) {
                         session = Session(position, action.expectedText, action.tokenType)
                     }
-                    session.addLookup(Lookup(action.prefix, invoker.callCompletion(completionType, action.expectedText)))
-                    completionSuccess = session.lookups.last().suggests.any { it.text == action.expectedText }
+                    session.addLookup(invoker.callCompletion(completionType, action.expectedText, action.prefix))
+                    completionSuccess = session.lookups.last().suggestions.any { it.text == action.expectedText }
                 }
                 is FinishSession -> {
                     if (session == null) {

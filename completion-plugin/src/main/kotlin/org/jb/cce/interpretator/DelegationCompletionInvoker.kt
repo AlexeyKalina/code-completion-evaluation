@@ -2,7 +2,7 @@ package org.jb.cce.interpretator
 
 import com.intellij.openapi.application.ApplicationManager
 import org.jb.cce.CompletionInvoker
-import org.jb.cce.Suggest
+import org.jb.cce.Lookup
 import org.jb.cce.actions.CompletionType
 
 class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : CompletionInvoker {
@@ -10,8 +10,8 @@ class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : Comp
         invoker.moveCaret(offset)
     }
 
-    override fun callCompletion(type: CompletionType, expectedText: String): List<Suggest> = readAction {
-        invoker.callCompletion(type, expectedText)
+    override fun callCompletion(type: CompletionType, expectedText: String, prefix: String): Lookup = readAction {
+        invoker.callCompletion(type, expectedText, prefix)
     }
 
     override fun printText(text: String) = writeAction {

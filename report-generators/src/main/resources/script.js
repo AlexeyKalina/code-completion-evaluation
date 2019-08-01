@@ -8,19 +8,19 @@ document.addEventListener("click", function (e) {
 elementsArray.forEach(function(elem) {
     elem.addEventListener("click", function() {
         var lookups = completions[elem.id]["_lookups"];
-        var suggests = lookups[lookups.length - 1]["suggests"];
+        var suggestions = lookups[lookups.length - 1]["suggestions"];
         var a, b, i, val = this.value;
         closeAllLists();
         a = document.createElement("DIV");
         a.setAttribute("id", this.id + "autocomplete-list");
         a.setAttribute("class", "autocomplete-items");
         this.appendChild(a);
-        for (i = 0; i < suggests.length; i++) {
+        for (i = 0; i < suggestions.length; i++) {
             b = document.createElement("DIV");
-            if (completions[elem.id].expectedText === suggests[i].text) {
-                b.innerHTML = "<b>" + suggests[i].presentationText + "</b>"
+            if (completions[elem.id].expectedText === suggestions[i].text) {
+                b.innerHTML = "<b>" + suggestions[i].presentationText + "</b>"
             } else {
-                b.innerHTML = suggests[i].presentationText
+                b.innerHTML = suggestions[i].presentationText
             }
             a.appendChild(b);
         }
