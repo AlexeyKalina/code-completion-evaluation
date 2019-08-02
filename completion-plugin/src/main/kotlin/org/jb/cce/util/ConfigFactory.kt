@@ -15,7 +15,7 @@ object ConfigFactory {
 
     private val defaultConfig = Config("", listOf(""), Language.JAVA,
             CompletionStrategy(CompletionPrefix.NoPrefix, CompletionStatement.METHOD_CALLS, CompletionContext.ALL),
-            listOf(CompletionType.BASIC), "", false, null, null)
+            listOf(CompletionType.BASIC), "", false, null)
 
     fun load(path: String): Config {
         val configFile = File(path)
@@ -30,7 +30,7 @@ object ConfigFactory {
                 CompletionStrategy(getPrefix(strategy), CompletionStatement.valueOf(strategy["statement"] as String),
                         CompletionContext.valueOf(strategy["context"] as String)),
                 (map["completionTypes"] as List<String>).map { CompletionType.valueOf(it) }, map["outputDir"] as String, map["saveLogs"] as Boolean,
-                map["actionsPath"] as String?, map["externalSessionsPath"] as String?)
+                map["actionsPath"] as String?)
     }
 
     fun save(config: Config, path: String) {

@@ -11,5 +11,4 @@ data class Config(val projectPath: String,
                   val completionTypes: List<CompletionType>,
                   val outputDir: String,
                   val saveLogs: Boolean,
-                  val actionsPath: String?,
-                  val externalSessionsPath: String?)
+                  val actionsPath: String?)

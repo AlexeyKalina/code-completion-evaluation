@@ -12,27 +12,28 @@ import org.jb.cce.uast.Language
 import java.awt.FlowLayout
 import java.awt.GridLayout
 import java.awt.event.ItemEvent
+import java.nio.file.Paths
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 
 class CompletionSettingsDialog(project: Project, private val language2files: Map<Language, Set<VirtualFile>>) : DialogWrapper(true) {
+    companion object {
+        const val completionEvaluationDir = "completion-evaluation"
+        const val outputDirProperty = "org.jb.cce.output_dir"
+    }
     lateinit var language: Language
     private val properties = PropertiesComponent.getInstance(project)
-    private val outputDirProperty = "org.jb.cce.output_dir"
-    private val pathToExternalProperty = "org.jb.cce.external_sessions_path"
     private val pathToActionsProperty = "org.jb.cce.actions_path"
     private val statsCollectorId = "com.intellij.stats.completion"
 
-    var outputDir = properties.getValue(outputDirProperty) ?: project.basePath ?: ""
+    var outputDir = properties.getValue(outputDirProperty) ?: Paths.get(project.basePath ?: "", completionEvaluationDir).toString()
     var completionTypes = arrayListOf(CompletionType.BASIC)
     var saveLogs = true
     var completionContext = CompletionContext.ALL
     var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix
     var completionStatement = CompletionStatement.METHOD_CALLS
-    var compareExternal = false
-    var pathToExternalSessions = properties.getValue(pathToExternalProperty) ?: ""
     var onlySaveActions = false
     var pathToActions = properties.getValue(pathToActionsProperty) ?: ""
 
@@ -42,7 +43,7 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     }
 
     override fun createCenterPanel(): JComponent? {
-        val dialogPanel = JPanel(GridLayout(9,1))
+        val dialogPanel = JPanel(GridLayout(8,1))
 
         dialogPanel.add(createLanguageChooser())
         dialogPanel.add(createTypePanel())
@@ -52,7 +53,6 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         dialogPanel.add(createActionsSaveChooser())
         dialogPanel.add(createOutputDirChooser())
         dialogPanel.add(createLogsPanel())
-        dialogPanel.add(createExternalChooser())
 
         return dialogPanel
     }
@@ -318,37 +318,5 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         saveActionsPanel.add(pathActionsText)
 
         return saveActionsPanel
-    }
-
-    private fun createExternalChooser(): JPanel {
-        val compareExternalLabel = JLabel("Use external sessions:")
-        val pathExternalLabel = JLabel("Path to external sessions:")
-        val compareExternalPanel = JPanel(FlowLayout(FlowLayout.LEFT))
-        val pathExternalText = JTextField(pathToExternalSessions)
-        pathExternalText.isEnabled = false
-
-        val compareExternalCheckbox = JCheckBox("")
-        compareExternalCheckbox.addItemListener { event ->
-            compareExternal = event.stateChange == ItemEvent.SELECTED
-            pathExternalText.isEnabled = event.stateChange == ItemEvent.SELECTED
-        }
-
-        pathExternalText.document.addDocumentListener(object : DocumentListener {
-            override fun changedUpdate(e: DocumentEvent) = update()
-            override fun removeUpdate(e: DocumentEvent) = update()
-            override fun insertUpdate(e: DocumentEvent) = update()
-
-            private fun update() {
-                pathToExternalSessions = pathExternalText.text
-                properties.setValue(pathToExternalProperty, pathToExternalSessions)
-            }
-        })
-
-        compareExternalPanel.add(compareExternalLabel)
-        compareExternalPanel.add(compareExternalCheckbox)
-        compareExternalPanel.add(pathExternalLabel)
-        compareExternalPanel.add(pathExternalText)
-
-        return compareExternalPanel
     }
 }

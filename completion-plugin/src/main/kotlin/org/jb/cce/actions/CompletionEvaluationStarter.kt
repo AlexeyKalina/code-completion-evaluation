@@ -31,6 +31,6 @@ class CompletionEvaluationStarter : ApplicationStarter {
         val files  = config.listOfFiles.map { fileSystem.findFileByIoFile(File(it))!! }
 
         CompletionEvaluator(true).evaluateCompletion(project, files, config.language, config.strategy,
-                config.completionTypes, config.outputDir, config.saveLogs, config.actionsPath, config.externalSessionsPath)
+                config.completionTypes, config.outputDir, config.saveLogs, config.actionsPath)
     }
 }

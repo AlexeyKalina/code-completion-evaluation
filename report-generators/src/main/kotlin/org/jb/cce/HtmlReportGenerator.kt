@@ -1,5 +1,7 @@
 package org.jb.cce
 
+import org.jb.cce.actions.Action
+import org.jb.cce.actions.ActionSerializer
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.MetricsEvaluationInfo
 import org.jb.cce.info.SessionsEvaluationInfo
@@ -35,6 +37,7 @@ class HtmlReportGenerator(outputDir: String) {
     private val resourcesDir = Paths.get(reportsDir, "res")
     private val resultsDir = Paths.get(reportsDir, "data")
     private val logsDir = Paths.get(reportsDir, "logs")
+    private val actionsDir = Paths.get(reportsDir, "actions")
 
     private data class ResultPaths(val resourcePath: String, val reportPath: String)
     private val references: MutableMap<String, String> = mutableMapOf()
@@ -43,6 +46,7 @@ class HtmlReportGenerator(outputDir: String) {
         Files.createDirectories(resourcesDir)
         Files.createDirectories(resultsDir)
         Files.createDirectories(logsDir)
+        Files.createDirectories(actionsDir)
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorStyle), Paths.get(resourcesDir.toString(), tabulatorStyle))
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(resourcesDir.toString(), tabulatorScript))
     }
@@ -54,6 +58,11 @@ class HtmlReportGenerator(outputDir: String) {
         generateFileReports(sessions)
         generateErrorReports(errors)
         return generateGlobalReport(metrics, errors)
+    }
+
+    fun saveActions(actions: List<Action>) {
+        val actionsPath = Paths.get(actionsDir.toString(), "actions.json")
+        FileWriter(actionsPath.toFile()).use { it.write(ActionSerializer().serialize(actions)) }
     }
 
     private fun generateFileReports(evaluationResults: List<SessionsEvaluationInfo>) {
