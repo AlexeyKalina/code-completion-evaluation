@@ -2,12 +2,12 @@ package org.jb.cce.interpretator
 
 import com.intellij.codeInsight.completion.CodeCompletionHandlerBase
 import com.intellij.codeInsight.completion.CompletionType
-import com.intellij.codeInsight.lookup.Lookup
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementPresentation
 import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.codeInsight.lookup.impl.LookupImpl
 import com.intellij.openapi.command.WriteCommandAction
+import com.intellij.openapi.command.impl.UndoManagerImpl
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
@@ -55,13 +55,12 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
             latency += measureTimeMillis {
                 lookup.waitForResult(1000)
             }
+            val suggestions = lookup.items.map { Suggestion(it.lookupString, lookupElementText(it)) }
             val expectedItemIndex = lookup.items.indexOfFirst { it.lookupString == expectedText }
-            if (expectedItemIndex != -1 && completionType != CompletionType.SMART) {
-                lookup.selectedIndex = expectedItemIndex
-                lookup.finishLookup(Lookup.AUTO_INSERT_SELECT_CHAR, lookup.items[expectedItemIndex])
-            }
-            val suggests = lookup.items.map { Suggestion(it.lookupString, lookupElementText(it)) }
-            return org.jb.cce.Lookup(prefix, suggests, expectedItemIndex != -1, latency)
+            return if (expectedItemIndex != -1 && completionType != CompletionType.SMART)
+                org.jb.cce.Lookup(prefix, suggestions, lookup.finish(expectedItemIndex, expectedText.length - prefix.length), latency)
+            else
+                org.jb.cce.Lookup(prefix, suggestions, false, latency)
         }
     }
 
@@ -113,6 +112,18 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         val presentation = LookupElementPresentation()
         element.renderElement(presentation)
         return "${presentation.itemText}${presentation.tailText ?: ""}${if (presentation.typeText != null) ": " + presentation.typeText else ""}"
+    }
+
+    private fun LookupImpl.finish(expectedItemIndex: Int, completionLength: Int): Boolean {
+        selectedIndex = expectedItemIndex
+        val document = editor.document
+        val lengthBefore = document.textLength
+        finishLookup(Char.MIN_VALUE, items[expectedItemIndex])
+        if (lengthBefore + completionLength != document.textLength) {
+            UndoManagerImpl.getInstance(project).undo(FileEditorManager.getInstance(project).selectedEditor)
+            return false
+        }
+        return true
     }
 
     private fun LookupImpl.waitForResult(timeMs: Long): Boolean {
