@@ -112,7 +112,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
     private fun lookupElementText(element: LookupElement): String {
         val presentation = LookupElementPresentation()
         element.renderElement(presentation)
-        return "${presentation.itemText} ${presentation.typeText} ${presentation.tailText}"
+        return "${presentation.itemText}${presentation.tailText ?: ""}${if (presentation.typeText != null) ": " + presentation.typeText else ""}"
     }
 
     private fun LookupImpl.waitForResult(timeMs: Long): Boolean {
