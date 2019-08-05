@@ -16,6 +16,7 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
+import org.jb.cce.CallCompletionResult
 import org.jb.cce.CompletionInvoker
 import org.jb.cce.Suggestion
 import java.io.File
@@ -36,7 +37,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         editor!!.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
-    override fun callCompletion(type: org.jb.cce.actions.CompletionType, expectedText: String, prefix: String): org.jb.cce.Lookup {
+    override fun callCompletion(type: org.jb.cce.actions.CompletionType, expectedText: String, prefix: String): CallCompletionResult {
         LOG.info("Call completion. Type: $type. ${positionToString(editor!!.caretModel.offset)}")
         LookupManager.getInstance(project).hideActiveLookup()
         val completionType = when (type) {
@@ -49,7 +50,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
             CodeCompletionHandlerBase(completionType, false, false, true).invokeCompletion(project, editor)
         }
         if (LookupManager.getActiveLookup(editor) == null) {
-            return org.jb.cce.Lookup(prefix, emptyList(), false, latency)
+            return CallCompletionResult(org.jb.cce.Lookup(prefix, emptyList(), latency), false)
         } else {
             val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
             latency += measureTimeMillis {
@@ -58,9 +59,9 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
             val suggestions = lookup.items.map { Suggestion(it.lookupString, lookupElementText(it)) }
             val expectedItemIndex = lookup.items.indexOfFirst { it.lookupString == expectedText }
             return if (expectedItemIndex != -1 && completionType != CompletionType.SMART)
-                org.jb.cce.Lookup(prefix, suggestions, lookup.finish(expectedItemIndex, expectedText.length - prefix.length), latency)
+                CallCompletionResult(org.jb.cce.Lookup(prefix, suggestions, latency), lookup.finish(expectedItemIndex, expectedText.length - prefix.length))
             else
-                org.jb.cce.Lookup(prefix, suggestions, false, latency)
+                CallCompletionResult(org.jb.cce.Lookup(prefix, suggestions, latency), false)
         }
     }
 

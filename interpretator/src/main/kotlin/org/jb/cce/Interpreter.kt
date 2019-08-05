@@ -13,7 +13,6 @@ class Interpreter(private val invoker: CompletionInvoker) {
         var needToClose = false
         var session: Session? = null
         var position = 0
-        var completionSuccess = false
         var actionsDone = 0
 
         iterateActions@
@@ -24,27 +23,26 @@ class Interpreter(private val invoker: CompletionInvoker) {
                     position = action.offset
                 }
                 is CallCompletion -> {
-                    if (completionType != CompletionType.SMART && completionSuccess) continue@iterateActions
-                    if (session == null) {
-                        session = Session(position, action.expectedText, action.tokenType)
+                    if (completionType == CompletionType.SMART || session?.success != true) {
+                        if (session == null) session = Session(position, action.expectedText, action.tokenType)
+                        val completionResult = invoker.callCompletion(completionType, action.expectedText, action.prefix)
+                        session.addLookup(completionResult.lookup)
+                        session.success = completionResult.success
                     }
-                    session.addLookup(invoker.callCompletion(completionType, action.expectedText, action.prefix))
-                    completionSuccess = session.lookups.last().success
                 }
                 is FinishSession -> {
                     if (session == null) {
                         throw UnexpectedActionException("Session canceled before created")
                     }
-                    completionSuccess = false
                     result.add(session)
                     session = null
                 }
                 is PrintText -> {
-                    if (completionType == CompletionType.SMART || !action.completable || !completionSuccess)
+                    if (completionType == CompletionType.SMART || !action.completable || session?.success != true)
                         invoker.printText(action.text)
                 }
                 is DeleteRange -> {
-                    if (completionType == CompletionType.SMART || !action.completable || !completionSuccess)
+                    if (completionType == CompletionType.SMART || !action.completable || session?.success != true)
                         invoker.deleteRange(action.begin, action.end)
                 }
                 is OpenFile -> {

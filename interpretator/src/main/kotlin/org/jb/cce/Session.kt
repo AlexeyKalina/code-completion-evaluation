@@ -11,6 +11,7 @@ class Session(val offset: Int,
         get() = _lookups
 
     val id = UUID.randomUUID()!!
+    var success = false
 
     fun addLookup(lookup: Lookup) = _lookups.add(lookup)
 }
