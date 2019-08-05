@@ -27,8 +27,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
 
         val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionStatement, settingsDialog.completionContext)
         val completionTypes = settingsDialog.completionTypes
-        val actionsPath = if (settingsDialog.onlySaveActions) settingsDialog.pathToActions else null
         evaluator.evaluateCompletion(project, files, settingsDialog.language, strategy, completionTypes,
-                settingsDialog.outputDir, settingsDialog.saveLogs, actionsPath)
+                settingsDialog.workspaceDir, settingsDialog.interpretActionsAfterGeneration, settingsDialog.saveLogs)
     }
 }

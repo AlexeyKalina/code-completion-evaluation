@@ -26,7 +26,7 @@ class GenerateReportAction : AnAction() {
         }
 
         val properties = PropertiesComponent.getInstance(project)
-        val outputDir = properties.getValue(CompletionSettingsDialog.outputDirProperty) ?:
+        val outputDir = properties.getValue(CompletionSettingsDialog.workspaceDirProperty) ?:
             Paths.get(project.basePath ?: "", CompletionSettingsDialog.completionEvaluationDir).toString()
 
         val reportGenerator = HtmlReportGenerator(outputDir)

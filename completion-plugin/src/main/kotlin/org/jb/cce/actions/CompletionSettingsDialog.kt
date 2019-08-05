@@ -21,21 +21,19 @@ import javax.swing.event.DocumentListener
 class CompletionSettingsDialog(project: Project, private val language2files: Map<Language, Set<VirtualFile>>) : DialogWrapper(true) {
     companion object {
         const val completionEvaluationDir = "completion-evaluation"
-        const val outputDirProperty = "org.jb.cce.output_dir"
+        const val workspaceDirProperty = "org.jb.cce.workspace_dir"
     }
     lateinit var language: Language
     private val properties = PropertiesComponent.getInstance(project)
-    private val pathToActionsProperty = "org.jb.cce.actions_path"
     private val statsCollectorId = "com.intellij.stats.completion"
 
-    var outputDir = properties.getValue(outputDirProperty) ?: Paths.get(project.basePath ?: "", completionEvaluationDir).toString()
+    var workspaceDir = properties.getValue(workspaceDirProperty) ?: Paths.get(project.basePath ?: "", completionEvaluationDir).toString()
     var completionTypes = arrayListOf(CompletionType.BASIC)
     var saveLogs = true
     var completionContext = CompletionContext.ALL
     var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix
     var completionStatement = CompletionStatement.METHOD_CALLS
-    var onlySaveActions = false
-    var pathToActions = properties.getValue(pathToActionsProperty) ?: ""
+    var interpretActionsAfterGeneration = true
 
     init {
         init()
@@ -50,7 +48,7 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         dialogPanel.add(createContextPanel())
         dialogPanel.add(createPrefixPanel())
         dialogPanel.add(createStatementPanel())
-        dialogPanel.add(createActionsSaveChooser())
+        dialogPanel.add(createInterpretActionsPanel())
         dialogPanel.add(createOutputDirChooser())
         dialogPanel.add(createLogsPanel())
 
@@ -248,18 +246,18 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     }
 
     private fun createOutputDirChooser(): JPanel {
-        val outputLabel = JLabel("Output directory for report:")
+        val outputLabel = JLabel("Results workspace directory:")
         val outputPanel = JPanel(FlowLayout(FlowLayout.LEFT))
 
-        val outDirText = JTextField(outputDir)
+        val outDirText = JTextField(workspaceDir)
         outDirText.document.addDocumentListener(object : DocumentListener {
             override fun changedUpdate(e: DocumentEvent) = update()
             override fun removeUpdate(e: DocumentEvent) = update()
             override fun insertUpdate(e: DocumentEvent) = update()
 
             private fun update() {
-                outputDir = outDirText.text
-                properties.setValue(outputDirProperty, outputDir)
+                workspaceDir = outDirText.text
+                properties.setValue(workspaceDirProperty, workspaceDir)
             }
         })
 
@@ -288,35 +286,18 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         return logsPanel
     }
 
-    private fun createActionsSaveChooser(): JPanel {
-        val saveActionsLabel = JLabel("Save actions only:")
-        val pathActionsLabel = JLabel("Path to actions:")
-        val saveActionsPanel = JPanel(FlowLayout(FlowLayout.LEFT))
-        val pathActionsText = JTextField(pathToActions)
-        pathActionsText.isEnabled = false
+    private fun createInterpretActionsPanel(): JPanel {
+        val interpretActionsLabel = JLabel("Interpret actions after generation:")
+        val interpretActionsPanel = JPanel(FlowLayout(FlowLayout.LEFT))
 
-        val saveActionsCheckbox = JCheckBox("")
-        saveActionsCheckbox.addItemListener { event ->
-            onlySaveActions = event.stateChange == ItemEvent.SELECTED
-            pathActionsText.isEnabled = event.stateChange == ItemEvent.SELECTED
+        val interpretActionsCheckbox = JCheckBox("", interpretActionsAfterGeneration)
+        interpretActionsCheckbox.addItemListener { event ->
+            interpretActionsAfterGeneration = event.stateChange == ItemEvent.SELECTED
         }
 
-        pathActionsText.document.addDocumentListener(object : DocumentListener {
-            override fun changedUpdate(e: DocumentEvent) = update()
-            override fun removeUpdate(e: DocumentEvent) = update()
-            override fun insertUpdate(e: DocumentEvent) = update()
+        interpretActionsPanel.add(interpretActionsLabel)
+        interpretActionsPanel.add(interpretActionsCheckbox)
 
-            private fun update() {
-                pathToActions = pathActionsText.text
-                properties.setValue(pathToActionsProperty, pathToActions)
-            }
-        })
-
-        saveActionsPanel.add(saveActionsLabel)
-        saveActionsPanel.add(saveActionsCheckbox)
-        saveActionsPanel.add(pathActionsLabel)
-        saveActionsPanel.add(pathActionsText)
-
-        return saveActionsPanel
+        return interpretActionsPanel
     }
 }
