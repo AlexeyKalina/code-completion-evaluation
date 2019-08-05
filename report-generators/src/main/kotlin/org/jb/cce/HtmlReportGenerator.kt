@@ -28,7 +28,8 @@ class HtmlReportGenerator(outputDir: String) {
         private val style = HtmlReportGenerator::class.java.getResource("/style.css").readText()
         private val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
 
-        private val serializer = SessionSerializer()
+        private val sessionSerializer = SessionSerializer()
+        private val actionSerializer = ActionSerializer()
     }
 
     private lateinit var reportTitle: String
@@ -62,7 +63,7 @@ class HtmlReportGenerator(outputDir: String) {
 
     fun saveActions(actions: List<Action>) {
         val actionsPath = Paths.get(actionsDir.toString(), "actions.json")
-        FileWriter(actionsPath.toFile()).use { it.write(ActionSerializer().serialize(actions)) }
+        actionsPath.toFile().writeText(actionSerializer.serialize(actions))
     }
 
     private fun generateFileReports(evaluationResults: List<SessionsEvaluationInfo>) {
@@ -70,7 +71,7 @@ class HtmlReportGenerator(outputDir: String) {
 
         for (filePath in evaluationResults.flatMap { it.sessions.map { it.filePath } }.distinct()) {
             val sessions = evaluationResults.map { it.sessions.find { it.filePath == filePath }?.results ?: listOf() }
-            val json = serializer.serialize(sessions.flatten())
+            val json = sessionSerializer.serialize(sessions.flatten())
             val file = File(filePath)
             val (resourcePath, reportPath) = getPaths(file.name)
             FileWriter(resourcePath).use { it.write("sessions = '$json'") }
@@ -112,7 +113,7 @@ class HtmlReportGenerator(outputDir: String) {
 
     private fun saveEvaluationResults(evaluationResults: List<SessionsEvaluationInfo>) {
         for (results in evaluationResults) {
-            val json = serializer.serialize(results)
+            val json = sessionSerializer.serialize(results)
             val dataPath = Paths.get(resultsDir.toString(), "${results.info.evaluationType}.json").toString()
             FileWriter(dataPath).use { it.write(json) }
         }

@@ -6,12 +6,12 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.HtmlReportGenerator
 import org.jb.cce.SessionSerializer
 import org.jb.cce.generateReport
 import org.jb.cce.info.SessionsEvaluationInfo
-import java.io.FileReader
 import java.nio.file.Paths
 
 class GenerateReportAction : AnAction() {
@@ -22,7 +22,7 @@ class GenerateReportAction : AnAction() {
         val sessionsInfo = mutableListOf<SessionsEvaluationInfo>()
         val serializer = SessionSerializer()
         for (file in files) {
-            sessionsInfo.add(serializer.deserialize(FileReader(file.path).use { it.readText() }))
+            sessionsInfo.add(serializer.deserialize(VfsUtil.loadText(file)))
         }
 
         val properties = PropertiesComponent.getInstance(project)
@@ -38,7 +38,7 @@ class GenerateReportAction : AnAction() {
 
     override fun update(e: AnActionEvent) {
         val files = getFiles(e)
-        e.presentation.isEnabled = !(files.isEmpty() || files.any { it.extension != "json" })
+        e.presentation.isEnabled = files.isNotEmpty() && files.all { it.extension == "json" }
     }
 
     private fun getFiles(e: AnActionEvent) : List<VirtualFile> = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)?.toList() ?: emptyList()

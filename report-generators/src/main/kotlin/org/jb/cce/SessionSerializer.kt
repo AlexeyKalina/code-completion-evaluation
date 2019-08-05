@@ -8,12 +8,14 @@ import org.jb.cce.info.SessionsEvaluationInfo
 import java.util.*
 
 class SessionSerializer {
-    private val gson = GsonBuilder()
-            .addDeserializationExclusionStrategy(object : ExclusionStrategy {
-                override fun shouldSkipField(f: FieldAttributes) = false
-                override fun shouldSkipClass(aClass: Class<*>) = aClass == CompletionPrefix::class.java
-            })
-            .create()
+    companion object {
+        private val gson = GsonBuilder()
+                .addDeserializationExclusionStrategy(object : ExclusionStrategy {
+                    override fun shouldSkipField(f: FieldAttributes) = false
+                    override fun shouldSkipClass(aClass: Class<*>) = aClass == CompletionPrefix::class.java
+                })
+                .create()
+    }
 
     fun serialize(results: SessionsEvaluationInfo): String {
         return gson.toJson(results)
