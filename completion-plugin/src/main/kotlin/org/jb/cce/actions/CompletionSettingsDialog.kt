@@ -30,6 +30,7 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     var workspaceDir = properties.getValue(workspaceDirProperty) ?: Paths.get(project.basePath ?: "", completionEvaluationDir).toString()
     var completionTypes = arrayListOf(CompletionType.BASIC)
     var saveLogs = true
+    var trainingPercentage = 70
     var completionContext = CompletionContext.ALL
     var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix
     var completionStatement = CompletionStatement.METHOD_CALLS
@@ -273,15 +274,30 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         val logsPanel = JPanel(FlowLayout(FlowLayout.LEFT))
         val logsActionLabel = JLabel("Save completion logs:")
         val saveLogsCheckbox = JCheckBox("", saveLogs)
-        saveLogsCheckbox.addItemListener { event -> saveLogs = event.stateChange == ItemEvent.SELECTED }
+        val model = SpinnerNumberModel(trainingPercentage, 1, 99, 1)
+        val trainingPercentageSpinner = JSpinner(model)
+
+        saveLogsCheckbox.addItemListener { event ->
+            saveLogs = event.stateChange == ItemEvent.SELECTED
+            trainingPercentageSpinner.isEnabled = saveLogs
+        }
+
         if (!statsCollectorEnabled) {
             saveLogs = false
             saveLogsCheckbox.isSelected = false
             saveLogsCheckbox.isEnabled = false
+            trainingPercentageSpinner.isEnabled = false
+        }
+
+        val trainingPercentageLabel = JLabel("Percent for training:")
+        trainingPercentageSpinner.addChangeListener {
+            trainingPercentage = trainingPercentageSpinner.value as Int
         }
 
         logsPanel.add(logsActionLabel)
         logsPanel.add(saveLogsCheckbox)
+        logsPanel.add(trainingPercentageLabel)
+        logsPanel.add(trainingPercentageSpinner)
 
         return logsPanel
     }

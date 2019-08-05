@@ -22,6 +22,8 @@ import org.jb.cce.uast.Language
 import org.jb.cce.util.*
 import java.io.File
 import java.nio.file.Paths
+import java.time.Duration
+import java.time.Instant
 import java.util.*
 import kotlin.system.exitProcess
 
@@ -31,17 +33,17 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
     }
 
     fun evaluateCompletion(project: Project, files: List<VirtualFile>, language: Language, strategy: CompletionStrategy,
-                           completionTypes: List<CompletionType>, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean) {
+                           completionTypes: List<CompletionType>, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
         val language2files = FilesHelper.getFiles(files)
         if (language2files.isEmpty()) {
             println("Languages of selected files aren't supported.")
             return finishWork(null)
         }
-        evaluateUnderProgress(project, language, language2files.getValue(language), strategy, completionTypes, workspaceDir, interpretActions, saveLogs)
+        evaluateUnderProgress(project, language, language2files.getValue(language), strategy, completionTypes, workspaceDir, interpretActions, saveLogs, logsTrainingPercentage)
     }
 
     private fun evaluateUnderProgress(project: Project, language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy,
-                                      completionTypes: List<CompletionType>, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean) {
+                                      completionTypes: List<CompletionType>, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
         val task = object : Task.Backgroundable(project, "Generating actions for selected files", true) {
             private lateinit var actions: List<Action>
             private lateinit var errors: List<FileErrorInfo>
@@ -56,7 +58,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             override fun onSuccess() {
                 val reportGenerator = HtmlReportGenerator(workspaceDir)
                 if (interpretActions)
-                    interpretUnderProgress(actions, errors, completionTypes, strategy, project, language, reportGenerator, saveLogs)
+                    interpretUnderProgress(actions, errors, completionTypes, strategy, project, language, reportGenerator, saveLogs, logsTrainingPercentage)
                 else
                     reportGenerator.saveActions(actions)
             }
@@ -95,7 +97,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
     }
 
     private fun interpretUnderProgress(actions: List<Action>, errors: List<FileErrorInfo>, completionTypes: List<CompletionType>, strategy: CompletionStrategy,
-                                       project: Project, language: Language, reportGenerator: HtmlReportGenerator, saveLogs: Boolean) {
+                                       project: Project, language: Language, reportGenerator: HtmlReportGenerator, saveLogs: Boolean, logsTrainingPercentage: Int) {
         val task = object : Task.Backgroundable(project, "Interpretation of the generated actions") {
             private var sessionsInfo: List<SessionsEvaluationInfo>? = null
 
@@ -103,10 +105,13 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 indicator.text = this.title
                 val logsPath = Paths.get(reportGenerator.logsDirectory(), language.displayName.toLowerCase()).toString()
                 reportGenerator.saveActions(actions)
-                sessionsInfo = interpretActions(actions, completionTypes, strategy, project, logsPath, saveLogs, getProcess(indicator))
+                sessionsInfo = interpretActions(actions, completionTypes, strategy, project, logsPath, saveLogs, logsTrainingPercentage, getProcess(indicator))
             }
 
-            override fun onSuccess() {
+            override fun onSuccess() = finish()
+            override fun onCancel() = finish()
+
+            private fun finish() {
                 val sessions = sessionsInfo ?: return finishWork(null)
                 val reportPath = generateReport(reportGenerator, sessions, errors)
                 finishWork(reportPath)
@@ -116,37 +121,39 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
     }
 
     private fun interpretActions(actions: List<Action>, completionTypes: List<CompletionType>, strategy: CompletionStrategy,
-                                 project: Project, outputDir: String, saveLogs: Boolean, indicator: Progress): List<SessionsEvaluationInfo> {
+                                 project: Project, outputDir: String, saveLogs: Boolean, logsTrainingPercentage: Int, indicator: Progress): List<SessionsEvaluationInfo> {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project))
         val interpreter = Interpreter(completionInvoker)
-        val logsWatcher = if (saveLogs) DirectoryWatcher(PluginDirectoryFilePathProvider().getStatsDataDirectory().toString(), outputDir) else null
+        val logsWatcher = if (saveLogs) DirectoryWatcher(PluginDirectoryFilePathProvider().getStatsDataDirectory().toString(), outputDir, logsTrainingPercentage) else null
         logsWatcher?.start()
 
         val sessionsInfo = mutableListOf<SessionsEvaluationInfo>()
         val mlCompletionFlag = isMLCompletionEnabled()
         LOG.info("Start interpreting actions")
         var completed = 0
+        val startingTime = Instant.now()
         for (completionType in completionTypes) {
             setMLCompletion(completionType == CompletionType.ML)
             val fileSessions = mutableListOf<FileEvaluationInfo<Session>>()
             interpreter.interpret(actions, completionType) { sessions, filePath, fileText, actionsDone ->
+                completed += actionsDone
+                fileSessions.add(FileEvaluationInfo(filePath, sessions, fileText))
+                val perMinute = completed.toDouble()/(Duration.between(startingTime, Instant.now()).toMillis().toDouble() / 60000.0)
+                indicator.setProgress("$completionType ${File(filePath).name} ($completed/${actions.size * completionTypes.size} act, %.2f act/min)".format(perMinute),
+                        completed.toDouble() / (actions.size * completionTypes.size))
+                LOG.info("Interpreting actions for file $filePath ($completionType completion) completed. Done: $completed/${actions.size * completionTypes.size}, $perMinute act/min")
                 if (indicator.isCanceled()) {
                     LOG.info("Interpreting actions is canceled by user.")
                     logsWatcher?.stop()
                     return@interpret true
                 }
-                completed += actionsDone
-                fileSessions.add(FileEvaluationInfo(filePath, sessions, fileText))
-                indicator.setProgress("$completionType ${File(filePath).name}", completed.toDouble() / (actions.size * completionTypes.size))
-                LOG.info("Interpreting actions for file $filePath ($completionType completion) completed. Done: $completed/${actions.size * completionTypes.size}")
                 return@interpret false
             }
             sessionsInfo.add(SessionsEvaluationInfo(fileSessions, EvaluationInfo(completionType.name, strategy)))
         }
         setMLCompletion(mlCompletionFlag)
         logsWatcher?.stop()
-        if (!indicator.isCanceled()) return sessionsInfo
-        return emptyList()
+        return sessionsInfo
     }
 
     private fun getProcess(indicator: ProgressIndicator) = if (isHeadless) CommandLineProgress(indicator.text) else IdeaProgress(indicator)
