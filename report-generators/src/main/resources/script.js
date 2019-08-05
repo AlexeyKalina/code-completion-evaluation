@@ -17,6 +17,7 @@ elementsArray.forEach(function(elem) {
         a.setAttribute("class", "autocomplete-items");
         this.appendChild(a);
         prefixDiv = document.createElement("DIV");
+        prefixDiv.setAttribute("style", "background-color: lightgrey;")
         prefixDiv.innerHTML = "prefix: &quot;" + lastLookup["text"] + "&quot;; latency: " + lastLookup["latency"];
         a.appendChild(prefixDiv);
         for (i = 0; i < suggestions.length; i++) {
