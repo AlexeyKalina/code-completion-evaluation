@@ -12,23 +12,28 @@ import org.jb.cce.uast.Language
 import java.awt.FlowLayout
 import java.awt.GridLayout
 import java.awt.event.ItemEvent
+import java.nio.file.Paths
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 
 class CompletionSettingsDialog(project: Project, private val language2files: Map<Language, Set<VirtualFile>>) : DialogWrapper(true) {
+    companion object {
+        const val completionEvaluationDir = "completion-evaluation"
+        const val workspaceDirProperty = "org.jb.cce.workspace_dir"
+    }
     lateinit var language: Language
     private val properties = PropertiesComponent.getInstance(project)
-    private val outputDirProperty = "org.jb.cce.output_dir"
     private val statsCollectorId = "com.intellij.stats.completion"
 
-    var outputDir = properties.getValue(outputDirProperty) ?: project.basePath ?: ""
+    var workspaceDir = properties.getValue(workspaceDirProperty) ?: Paths.get(project.basePath ?: "", completionEvaluationDir).toString()
     var completionTypes = arrayListOf(CompletionType.BASIC)
     var saveLogs = true
     var completionContext = CompletionContext.ALL
     var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix
     var completionStatement = CompletionStatement.METHOD_CALLS
+    var interpretActionsAfterGeneration = true
 
     init {
         init()
@@ -36,13 +41,14 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     }
 
     override fun createCenterPanel(): JComponent? {
-        val dialogPanel = JPanel(GridLayout(7,1))
+        val dialogPanel = JPanel(GridLayout(8,1))
 
         dialogPanel.add(createLanguageChooser())
         dialogPanel.add(createTypePanel())
         dialogPanel.add(createContextPanel())
         dialogPanel.add(createPrefixPanel())
         dialogPanel.add(createStatementPanel())
+        dialogPanel.add(createInterpretActionsPanel())
         dialogPanel.add(createOutputDirChooser())
         dialogPanel.add(createLogsPanel())
 
@@ -240,18 +246,18 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     }
 
     private fun createOutputDirChooser(): JPanel {
-        val outputLabel = JLabel("Output directory for report:")
+        val outputLabel = JLabel("Results workspace directory:")
         val outputPanel = JPanel(FlowLayout(FlowLayout.LEFT))
 
-        val outDirText = JTextField(outputDir)
+        val outDirText = JTextField(workspaceDir)
         outDirText.document.addDocumentListener(object : DocumentListener {
             override fun changedUpdate(e: DocumentEvent) = update()
             override fun removeUpdate(e: DocumentEvent) = update()
             override fun insertUpdate(e: DocumentEvent) = update()
 
             private fun update() {
-                outputDir = outDirText.text
-                properties.setValue(outputDirProperty, outputDir)
+                workspaceDir = outDirText.text
+                properties.setValue(workspaceDirProperty, workspaceDir)
             }
         })
 
@@ -278,5 +284,20 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         logsPanel.add(saveLogsCheckbox)
 
         return logsPanel
+    }
+
+    private fun createInterpretActionsPanel(): JPanel {
+        val interpretActionsLabel = JLabel("Interpret actions after generation:")
+        val interpretActionsPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+
+        val interpretActionsCheckbox = JCheckBox("", interpretActionsAfterGeneration)
+        interpretActionsCheckbox.addItemListener { event ->
+            interpretActionsAfterGeneration = event.stateChange == ItemEvent.SELECTED
+        }
+
+        interpretActionsPanel.add(interpretActionsLabel)
+        interpretActionsPanel.add(interpretActionsCheckbox)
+
+        return interpretActionsPanel
     }
 }

@@ -1,5 +1,7 @@
 package org.jb.cce
 
+import org.jb.cce.actions.Action
+import org.jb.cce.actions.ActionSerializer
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.MetricsEvaluationInfo
 import org.jb.cce.info.SessionsEvaluationInfo
@@ -26,7 +28,8 @@ class HtmlReportGenerator(outputDir: String) {
         private val style = HtmlReportGenerator::class.java.getResource("/style.css").readText()
         private val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
 
-        private val serializer = SessionSerializer()
+        private val sessionSerializer = SessionSerializer()
+        private val actionSerializer = ActionSerializer()
     }
 
     private lateinit var reportTitle: String
@@ -35,6 +38,7 @@ class HtmlReportGenerator(outputDir: String) {
     private val resourcesDir = Paths.get(reportsDir, "res")
     private val resultsDir = Paths.get(reportsDir, "data")
     private val logsDir = Paths.get(reportsDir, "logs")
+    private val actionsDir = Paths.get(reportsDir, "actions")
 
     private data class ResultPaths(val resourcePath: String, val reportPath: String)
     private val references: MutableMap<String, String> = mutableMapOf()
@@ -43,6 +47,7 @@ class HtmlReportGenerator(outputDir: String) {
         Files.createDirectories(resourcesDir)
         Files.createDirectories(resultsDir)
         Files.createDirectories(logsDir)
+        Files.createDirectories(actionsDir)
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorStyle), Paths.get(resourcesDir.toString(), tabulatorStyle))
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(resourcesDir.toString(), tabulatorScript))
     }
@@ -56,12 +61,17 @@ class HtmlReportGenerator(outputDir: String) {
         return generateGlobalReport(metrics, errors)
     }
 
+    fun saveActions(actions: List<Action>) {
+        val actionsPath = Paths.get(actionsDir.toString(), "actions.json")
+        actionsPath.toFile().writeText(actionSerializer.serialize(actions))
+    }
+
     private fun generateFileReports(evaluationResults: List<SessionsEvaluationInfo>) {
         if (evaluationResults.isEmpty()) return
 
         for (filePath in evaluationResults.flatMap { it.sessions.map { it.filePath } }.distinct()) {
             val sessions = evaluationResults.map { it.sessions.find { it.filePath == filePath }?.results ?: listOf() }
-            val json = serializer.serialize(sessions.flatten())
+            val json = sessionSerializer.serialize(sessions.flatten())
             val file = File(filePath)
             val (resourcePath, reportPath) = getPaths(file.name)
             FileWriter(resourcePath).use { it.write("sessions = '$json'") }
@@ -103,7 +113,7 @@ class HtmlReportGenerator(outputDir: String) {
 
     private fun saveEvaluationResults(evaluationResults: List<SessionsEvaluationInfo>) {
         for (results in evaluationResults) {
-            val json = serializer.serialize(results)
+            val json = sessionSerializer.serialize(results)
             val dataPath = Paths.get(resultsDir.toString(), "${results.info.evaluationType}.json").toString()
             FileWriter(dataPath).use { it.write(json) }
         }
