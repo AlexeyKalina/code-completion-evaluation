@@ -1,0 +1,4 @@
+FileNode
+  MethodCallNode (echo)
+    VariableAccessNode (counter)
+  MethodCallNode (printf)

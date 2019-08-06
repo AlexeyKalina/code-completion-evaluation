@@ -7,12 +7,14 @@ import org.apache.commons.io.input.UnixLineEndingInputStream
 import org.jb.cce.psi.PsiConverter
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.Language
+import java.io.FileWriter
 
 abstract class UastBuilder {
     companion object {
         fun create(project: Project, language: Language): UastBuilder {
             return when (language){
                 Language.PYTHON -> PsiConverter(project, language)
+                Language.BASH -> PsiConverter(project, language)
                 Language.JAVA -> BabelFishBuilderWrapper(language) { path, text -> BabelFishJavaVisitor(path, text) }
                 Language.CSHARP -> BabelFishBuilderWrapper(language) { path, text -> BabelFishCSharpVisitor(path, text) }
                 Language.UNSUPPORTED -> throw UnsupportedOperationException("")
