@@ -55,11 +55,15 @@ class PsiPythonVisitor(private val path: String, private val text: String): PyRe
     }
 
     override fun visitPyTargetExpression(node: PyTargetExpression) {
-        if (stackOfDeclarations.any { it.getName() == node.name }) {
-            val accessNode = VariableAccessNode(node.name ?: throw PsiConverterException("Empty name"), node.textOffset, node.textLength)
+        if (stackOfDeclarations.any { it.getName() == node.nameElement?.text }) {
+            val accessNode = VariableAccessNode(node.nameElement?.text ?: throw PsiConverterException("Empty name"),
+                    node.nameElement?.startOffset ?: throw PsiConverterException("Empty offset"),
+                    node.nameElement?.textLength ?: throw PsiConverterException("Empty name length"))
             addToParent(accessNode)
         } else {
-            val declarationNode = VariableDeclarationNode(node.name ?: throw PsiConverterException("Empty name"), node.textOffset, node.textLength)
+            val declarationNode = VariableDeclarationNode(node.nameElement?.text ?: throw PsiConverterException("Empty name"),
+                    node.nameElement?.startOffset ?: throw PsiConverterException("Empty offset"),
+                    node.nameElement?.textLength ?: throw PsiConverterException("Empty name length"))
             addToParent(declarationNode)
             stackOfNodes.addLast(declarationNode)
             stackOfDeclarations.addLast(declarationNode)
