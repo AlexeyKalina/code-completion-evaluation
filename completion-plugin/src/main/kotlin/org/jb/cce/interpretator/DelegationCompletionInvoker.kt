@@ -4,14 +4,20 @@ import com.intellij.openapi.application.ApplicationManager
 import org.jb.cce.CallCompletionResult
 import org.jb.cce.CompletionInvoker
 import org.jb.cce.actions.CompletionType
+import org.jb.cce.util.ListSizeRestriction
 
 class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : CompletionInvoker {
+    private val applicationListenersRestriction = ListSizeRestriction.applicationListeners()
+
     override fun moveCaret(offset: Int) = onEdt {
         invoker.moveCaret(offset)
     }
 
-    override fun callCompletion(type: CompletionType, expectedText: String, prefix: String): CallCompletionResult = readAction {
-        invoker.callCompletion(type, expectedText, prefix)
+    override fun callCompletion(type: CompletionType, expectedText: String, prefix: String): CallCompletionResult {
+        applicationListenersRestriction.waitForSize(100, 10000)
+        return readAction {
+            invoker.callCompletion(type, expectedText, prefix)
+        }
     }
 
     override fun printText(text: String) = writeAction {
