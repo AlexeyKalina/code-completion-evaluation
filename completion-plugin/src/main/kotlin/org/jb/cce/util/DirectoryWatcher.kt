@@ -68,10 +68,9 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
         if (!firstLogsFile.exists()) return
 
         val firstLine = FileReader(firstLogsFile.toFile()).use { it.readLines().first() }
-        val baseDir = Paths.get(outputDir, formatter.format(Date())).createDirectories()
         val userId = firstLine.split("\t")[3]
-        val trainingLogsWriter = getLogsWriter(baseDir, "training", userId)
-        val testLogsWriter = getLogsWriter(baseDir, "test", userId)
+        val trainingLogsWriter = getLogsWriter("train", userId)
+        val validateLogsWriter = getLogsWriter("validate", userId)
 
         val files = Files.find(Paths.get(outputDir), 1, BiPredicate { _: Path, attrs: BasicFileAttributes -> !attrs.isDirectory })
                 .map(Path::toFile)
@@ -79,11 +78,11 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
 
         val threshold = files.count() * (trainingPercentage.toDouble() / 100.0)
         appendLogs(files, files.indices.filter { it < threshold }, trainingLogsWriter)
-        appendLogs(files, files.indices.filter { it >= threshold }, testLogsWriter)
+        appendLogs(files, files.indices.filter { it >= threshold }, validateLogsWriter)
     }
 
-    private fun getLogsWriter(baseDir: Path, datasetType: String, userId: String): BufferedWriter {
-        val logsFile = Paths.get(baseDir.toString(), datasetType, userId)
+    private fun getLogsWriter(datasetType: String, userId: String): BufferedWriter {
+        val logsFile = Paths.get(outputDir, datasetType, formatter.format(Date()), userId)
         logsFile.createFile()
         return logsFile.toFile().bufferedWriter()
     }

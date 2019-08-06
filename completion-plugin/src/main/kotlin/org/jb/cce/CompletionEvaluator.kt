@@ -22,12 +22,11 @@ import org.jb.cce.uast.Language
 import org.jb.cce.util.*
 import java.io.File
 import java.nio.file.Paths
-import java.time.Duration
-import java.time.Instant
 import java.util.*
 import kotlin.system.exitProcess
 
 class CompletionEvaluator(private val isHeadless: Boolean) {
+    private val minInMs = 60000
     private companion object {
         val LOG = Logger.getInstance(CompletionEvaluator::class.java)
     }
@@ -128,18 +127,19 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         logsWatcher?.start()
 
         val sessionsInfo = mutableListOf<SessionsEvaluationInfo>()
+        val actionStats = mutableListOf<ActionStat>()
         val mlCompletionFlag = isMLCompletionEnabled()
         LOG.info("Start interpreting actions")
         var completed = 0
-        val startingTime = Instant.now()
         for (completionType in completionTypes) {
             setMLCompletion(completionType == CompletionType.ML)
             val fileSessions = mutableListOf<FileEvaluationInfo<Session>>()
-            interpreter.interpret(actions, completionType) { sessions, filePath, fileText, actionsDone ->
+            interpreter.interpret(actions, completionType) { sessions, stats, filePath, fileText, actionsDone ->
                 completed += actionsDone
                 fileSessions.add(FileEvaluationInfo(filePath, sessions, fileText))
-                val perMinute = completed.toDouble()/(Duration.between(startingTime, Instant.now()).toMillis().toDouble() / 60000.0)
-                indicator.setProgress("$completionType ${File(filePath).name} ($completed/${actions.size * completionTypes.size} act, %.2f act/min)".format(perMinute),
+                actionStats.addAll(stats)
+                val perMinute = actionStats.count { it.timestamp > Date().time - minInMs }
+                indicator.setProgress("$completionType ${File(filePath).name} ($completed/${actions.size * completionTypes.size} act, $perMinute act/min)",
                         completed.toDouble() / (actions.size * completionTypes.size))
                 LOG.info("Interpreting actions for file $filePath ($completionType completion) completed. Done: $completed/${actions.size * completionTypes.size}, $perMinute act/min")
                 if (indicator.isCanceled()) {
