@@ -10,5 +10,6 @@ data class Config(val projectPath: String,
                   val strategy: CompletionStrategy,
                   val completionTypes: List<CompletionType>,
                   val outputDir: String,
+                  val interpretActions: Boolean,
                   val saveLogs: Boolean,
-                  val interpretActions: Boolean)
+                  val logsTrainingPercentage: Int)

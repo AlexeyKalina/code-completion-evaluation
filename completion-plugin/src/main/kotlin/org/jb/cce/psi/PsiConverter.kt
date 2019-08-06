@@ -19,7 +19,9 @@ class PsiConverter(val project: Project, val language: Language) : UastBuilder()
         return when (language) {
             Language.PYTHON -> {
                 val pythonVisitor = PsiPythonVisitor(file.path, file.text())
-                psi.accept(pythonVisitor)
+                ApplicationManager.getApplication().runReadAction {
+                    psi.accept(pythonVisitor)
+                }
                 pythonVisitor.file
             }
             else -> throw PsiConverterException("Unsupported language")

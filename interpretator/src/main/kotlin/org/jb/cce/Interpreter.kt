@@ -2,12 +2,15 @@ package org.jb.cce
 
 import org.jb.cce.actions.*
 import org.jb.cce.exception.UnexpectedActionException
+import java.security.Timestamp
+import java.time.Instant
 
 class Interpreter(private val invoker: CompletionInvoker) {
 
-    fun interpret(actions: List<Action>, completionType: CompletionType, callbackPerFile: (List<Session>, String, String, Int) -> Boolean) {
+    fun interpret(actions: List<Action>, completionType: CompletionType, callbackPerFile: (List<Session>, List<ActionStat>, String, String, Int) -> Boolean) {
         if (actions.isEmpty()) return
         val result = mutableListOf<Session>()
+        val stats = mutableListOf<ActionStat>()
         var currentOpenedFilePath = ""
         var currentOpenedFileText = ""
         var needToClose = false
@@ -17,6 +20,7 @@ class Interpreter(private val invoker: CompletionInvoker) {
 
         iterateActions@
         for (action in actions) {
+            stats.add(ActionStat(action, System.currentTimeMillis()))
             when (action) {
                 is MoveCaret -> {
                     invoker.moveCaret(action.offset)
@@ -48,9 +52,10 @@ class Interpreter(private val invoker: CompletionInvoker) {
                 is OpenFile -> {
                     if (!currentOpenedFilePath.isEmpty()) {
                         if (needToClose) invoker.closeFile(currentOpenedFilePath)
-                        val isCanceled = callbackPerFile(result.toList(), currentOpenedFilePath, currentOpenedFileText, actionsDone)
+                        val isCanceled = callbackPerFile(result, stats, currentOpenedFilePath, currentOpenedFileText, actionsDone)
                         if (isCanceled) return
                         result.clear()
+                        stats.clear()
                         actionsDone = 0
                     }
                     needToClose = !invoker.isOpen(action.path)
@@ -62,6 +67,6 @@ class Interpreter(private val invoker: CompletionInvoker) {
             actionsDone++
         }
         if (needToClose) invoker.closeFile(currentOpenedFilePath)
-        callbackPerFile(result, currentOpenedFilePath, currentOpenedFileText, actionsDone)
+        callbackPerFile(result, stats, currentOpenedFilePath, currentOpenedFileText, actionsDone)
     }
 }

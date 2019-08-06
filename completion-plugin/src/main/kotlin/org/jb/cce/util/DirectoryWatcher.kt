@@ -4,6 +4,8 @@ import com.intellij.util.io.createDirectories
 import com.intellij.util.io.createFile
 import com.intellij.util.io.exists
 import com.intellij.util.io.move
+import java.io.BufferedWriter
+import java.io.File
 import java.io.FileReader
 import java.nio.file.*
 import java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
@@ -13,8 +15,9 @@ import java.util.*
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.function.BiPredicate
+import kotlin.streams.toList
 
-class DirectoryWatcher(private val logsDir: String, private val outputDir: String) {
+class DirectoryWatcher(private val logsDir: String, private val outputDir: String, private val trainingPercentage: Int) {
     private val executor = Executors.newSingleThreadExecutor()
     private val watcher: WatchService = FileSystems.getDefault().newWatchService()
     private val formatter = SimpleDateFormat("dd_MM_yyyy")
@@ -65,16 +68,31 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
         if (!firstLogsFile.exists()) return
 
         val firstLine = FileReader(firstLogsFile.toFile()).use { it.readLines().first() }
-        val resultLogsFile = Paths.get(outputDir, formatter.format(Date()), firstLine.split("\t")[3])
-        resultLogsFile.createFile()
+        val userId = firstLine.split("\t")[3]
+        val trainingLogsWriter = getLogsWriter("train", userId)
+        val validateLogsWriter = getLogsWriter("validate", userId)
 
-        resultLogsFile.toFile().bufferedWriter().use { writer ->
-            Files.find(Paths.get(outputDir), 1, BiPredicate { _: Path, attrs: BasicFileAttributes -> !attrs.isDirectory })
-                    .map(Path::toFile)
-                    .forEach {
-                        writer.append(it.readText())
-                        it.delete()
-                    }
+        val files = Files.find(Paths.get(outputDir), 1, BiPredicate { _: Path, attrs: BasicFileAttributes -> !attrs.isDirectory })
+                .map(Path::toFile)
+                .toList()
+
+        val threshold = files.count() * (trainingPercentage.toDouble() / 100.0)
+        appendLogs(files, files.indices.filter { it < threshold }, trainingLogsWriter)
+        appendLogs(files, files.indices.filter { it >= threshold }, validateLogsWriter)
+    }
+
+    private fun getLogsWriter(datasetType: String, userId: String): BufferedWriter {
+        val logsFile = Paths.get(outputDir, datasetType, formatter.format(Date()), userId)
+        logsFile.createFile()
+        return logsFile.toFile().bufferedWriter()
+    }
+
+    private fun appendLogs(files: List<File>, indices: List<Int>, writer: BufferedWriter) {
+        writer.use {
+            for (i in indices) {
+                it.append(files[i].readText())
+                files[i].delete()
+            }
         }
     }
 }
