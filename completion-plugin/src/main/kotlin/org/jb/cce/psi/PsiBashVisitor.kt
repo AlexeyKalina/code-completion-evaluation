@@ -38,7 +38,7 @@ class PsiBashVisitor(private val path: String, private val text: String): ShVisi
     }
 
     override fun visitGenericCommandDirective(node: ShGenericCommandDirective) {
-        if (node.text.startsWith('$')) return super.visitGenericCommandDirective(node)
+        if (node.text.contains('$')) return super.visitGenericCommandDirective(node)
 
         val methodCall = MethodCallNode(node.text, node.textOffset, node.textLength)
         addToParent(methodCall)
