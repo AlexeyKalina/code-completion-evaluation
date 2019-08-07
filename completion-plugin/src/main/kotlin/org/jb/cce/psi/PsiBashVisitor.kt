@@ -3,10 +3,7 @@ package org.jb.cce.psi
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiRecursiveVisitor
-import com.intellij.sh.psi.ShFunctionDefinition
-import com.intellij.sh.psi.ShSimpleCommand
-import com.intellij.sh.psi.ShVariable
-import com.intellij.sh.psi.ShVisitor
+import com.intellij.sh.psi.*
 import com.intellij.sh.psi.impl.ShLazyBlockImpl
 import org.jb.cce.psi.exceptions.PsiConverterException
 import org.jb.cce.uast.CompositeNode
@@ -35,23 +32,18 @@ class PsiBashVisitor(private val path: String, private val text: String): ShVisi
     }
 
     override fun visitElement(element: PsiElement) {
-        if (element is ShLazyBlockImpl) visitMethodBodyNode(element)
+        if (element is ShLazyBlockImpl) return visitMethodBodyNode(element)
         super.visitElement(element)
         element.acceptChildren(this)
     }
 
-    override fun visitSimpleCommand(o: ShSimpleCommand) {
-        try {
-            val callee = o.command
-            val methodCall = MethodCallNode(callee.text, callee.textOffset, callee.textLength)
-            addToParent(methodCall)
+    override fun visitGenericCommandDirective(node: ShGenericCommandDirective) {
+        val methodCall = MethodCallNode(node.text, node.textOffset, node.textLength)
+        addToParent(methodCall)
 
-            stackOfNodes.addLast(methodCall)
-            super.visitSimpleCommand(o)
-            stackOfNodes.removeLast()
-        } catch (e: Exception) {
-            return
-        }
+        stackOfNodes.addLast(methodCall)
+        super.visitGenericCommandDirective(node)
+        stackOfNodes.removeLast()
     }
 
     override fun visitVariable(o: ShVariable) {
@@ -74,11 +66,11 @@ class PsiBashVisitor(private val path: String, private val text: String): ShVisi
     }
 
     private fun visitMethodBodyNode(node: ShLazyBlockImpl) {
-        val lastNode = stackOfNodes.last as? MethodDeclarationNode ?: return visitElement(node)
+        val lastNode = stackOfNodes.last as? MethodDeclarationNode ?: return node.acceptChildren(this)
         val body = MethodBodyNode(node.textOffset, node.textLength)
         lastNode.setBody(body)
         stackOfNodes.addLast(body)
-        visitElement(node)
+        node.acceptChildren(this)
         stackOfNodes.removeLast()
     }
 
