@@ -52,7 +52,7 @@ class Interpreter(private val invoker: CompletionInvoker) {
                 is OpenFile -> {
                     if (!currentOpenedFilePath.isEmpty()) {
                         if (needToClose) invoker.closeFile(currentOpenedFilePath)
-                        val isCanceled = callbackPerFile(result, stats, currentOpenedFilePath, currentOpenedFileText, actionsDone)
+                        val isCanceled = callbackPerFile(result.toList(), stats.toList(), currentOpenedFilePath, currentOpenedFileText, actionsDone)
                         if (isCanceled) return
                         result.clear()
                         stats.clear()
