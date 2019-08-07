@@ -178,7 +178,7 @@ class HtmlReportGenerator(outputDir: String) {
             val center = session.expectedText.length / sessions.size
             var shift = 0
             for (j in 0 until sessions.lastIndex) {
-                sb.append(getDiv(sessions[j].find { it.offset == session.offset }, session.expectedText.substring(shift, center)))
+                sb.append(getDiv(sessions[j].find { it.offset == session.offset }, session.expectedText.substring(shift, shift + center)))
                 sb.append(delimiter)
                 shift += center
             }
