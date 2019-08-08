@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugins>
-    <plugin id="com.intellij.completion.evaluation" url="https://github.com/bibaev/code-completion-evaluation/releases/download/0.0.4/completion-plugin-0.0.4.zip" version="0.0.4">
+    <plugin id="com.intellij.completion.evaluation" url="https://github.com/bibaev/code-completion-evaluation/releases/download/0.0.5/completion-plugin-0.0.5.zip" version="0.0.5">
         <name>Code Completion Quality Evaluation</name>
         <idea-version since-build="192.2549"/>
         <description><![CDATA[
