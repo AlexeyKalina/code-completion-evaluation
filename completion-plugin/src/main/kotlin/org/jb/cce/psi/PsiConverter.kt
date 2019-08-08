@@ -3,6 +3,8 @@ package org.jb.cce.psi
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
 import org.jb.cce.UastBuilder
@@ -17,21 +19,16 @@ class PsiConverter(private val project: Project, val language: Language) : UastB
         } ?: throw PsiConverterException("Cannot get PSI of file ${file.path}")
 
         return when (language) {
-            Language.BASH -> {
-                val bashVisitor = PsiBashVisitor(file.path, file.text())
-                ApplicationManager.getApplication().runReadAction {
-                    psi.accept(bashVisitor)
-                }
-                bashVisitor.file
-            }
-            Language.PYTHON -> {
-                val pythonVisitor = PsiPythonVisitor(file.path, file.text())
-                ApplicationManager.getApplication().runReadAction {
-                    psi.accept(pythonVisitor)
-                }
-                pythonVisitor.file
-            }
+            Language.BASH -> getUast(PsiBashVisitor(file.path, file.text()), psi)
+            Language.PYTHON -> getUast(PsiPythonVisitor(file.path, file.text()), psi)
             else -> throw PsiConverterException("Unsupported language")
         }
+    }
+
+    private fun<T> getUast(visitor: T, psi: PsiElement): FileNode where T: PsiElementVisitor, T : PsiVisitor {
+        ApplicationManager.getApplication().runReadAction {
+            psi.accept(visitor)
+        }
+        return visitor.getFile()
     }
 }

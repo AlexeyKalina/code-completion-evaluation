@@ -17,17 +17,15 @@ import org.jb.cce.uast.statements.expressions.VariableAccessNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 import java.util.*
 
-class PsiBashVisitor(private val path: String, private val text: String): ShVisitor(), PsiRecursiveVisitor {
+class PsiBashVisitor(private val path: String, private val text: String): ShVisitor(), PsiRecursiveVisitor, PsiVisitor {
     private var _file: FileNode? = null
-    var file: FileNode
-        get() = _file ?: throw PsiConverterException("Invoke 'accept' with visitor on Bash PSI first")
-        private set(value) { _file = value }
-
     private val stackOfNodes: Deque<UnifiedAstNode> = ArrayDeque<UnifiedAstNode>()
 
+    override fun getFile(): FileNode = _file ?: throw PsiConverterException("Invoke 'accept' with visitor on Bash PSI first")
+
     override fun visitFile(node: PsiFile?) {
-        file = FileNode(node?.textOffset ?: 0, node?.textLength ?: 0, path, text)
-        stackOfNodes.addLast(file)
+        _file = FileNode(node?.textOffset ?: 0, node?.textLength ?: 0, path, text)
+        stackOfNodes.addLast(_file)
         super.visitFile(node)
     }
 
