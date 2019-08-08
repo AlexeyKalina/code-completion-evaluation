@@ -1,0 +1,4 @@
+FileNode
+  VariableAccessNode (n)
+  MethodCallNode (echo)
+  MethodCallNode (echo)

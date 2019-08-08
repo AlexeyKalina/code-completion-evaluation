@@ -18,21 +18,19 @@ import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 import java.util.*
 import java.util.logging.Logger
 
-class PsiPythonVisitor(private val path: String, private val text: String): PyRecursiveElementVisitor() {
+class PsiPythonVisitor(private val path: String, private val text: String): PyRecursiveElementVisitor(), PsiVisitor {
     private val LOG = Logger.getLogger(this.javaClass.name)!!
     private var _file: FileNode? = null
 
-    var file: FileNode
-        get() = _file ?: throw PsiConverterException("Invoke 'accept' with visitor on Python PSI first")
-        private set(value) { _file = value }
+    override fun getFile(): FileNode = _file ?: throw PsiConverterException("Invoke 'accept' with visitor on Bash PSI first")
 
     private val stackOfNodes: Deque<UnifiedAstNode> = ArrayDeque<UnifiedAstNode>()
     private val stackOfDeclarations: Deque<VariableDeclarationNode> = ArrayDeque<VariableDeclarationNode>()
     private val stackOfLevelDeclarationCounts: Deque<Int> = ArrayDeque<Int>()
 
     override fun visitPyFile(node: PyFile) {
-        file = FileNode(node.textOffset, node.textLength, path, text)
-        stackOfNodes.addLast(file)
+        _file = FileNode(node.textOffset, node.textLength, path, text)
+        stackOfNodes.addLast(_file)
         stackOfLevelDeclarationCounts.addLast(0)
         super.visitPyFile(node)
         clearLastStackLevel()

@@ -1,5 +1,6 @@
 package org.jb.cce
 
+import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.jb.cce.actions.Action
 import org.jb.cce.actions.ActionSerializer
 import org.jb.cce.info.FileErrorInfo
@@ -167,33 +168,35 @@ class HtmlReportGenerator(outputDir: String) {
         if (_sessions.isEmpty() || _sessions.all { it.isEmpty() }) return text
 
         val sessions = _sessions.filterNot { it.isEmpty() }
-        val sb = StringBuilder(text)
-        var offset = 0
+        val sb = StringBuilder()
         val delimiter = "&int;"
-        for (session in sessions.flatten().distinctBy { it.offset }) {
+        val offsets = sessions.flatten().map { it.offset }.distinct().sorted()
+        val sessionGroups = offsets.map { offset -> sessions.map { it.find { session -> session.offset == offset } } }
+        var offset = 0
+
+        for (sessionGroup in sessionGroups) {
+            val session = sessionGroup.filterNotNull().first()
+            val commonText = escapeHtml4(text.substring(offset, session.offset))
+            sb.append(commonText)
+
             val center = session.expectedText.length / sessions.size
-            var curOffset = session.offset
-            for (j in 0 until sessions.lastIndex) {
-                offset = writeDiv(sessions[j].find { it.offset == session.offset }, sb, offset, curOffset, curOffset + center)
-                curOffset += center
-                sb.insert(offset + curOffset, delimiter)
-                offset += delimiter.length
+            var shift = 0
+            for (j in 0 until sessionGroup.lastIndex) {
+                sb.append(getDiv(sessionGroup[j], session.expectedText.substring(shift, shift + center)))
+                sb.append(delimiter)
+                shift += center
             }
-            offset = writeDiv(sessions.last().find { it.offset == session.offset }, sb, offset, curOffset,
-                    session.offset + session.expectedText.length)
+            sb.append(getDiv(sessionGroup.last(), session.expectedText.substring(shift)))
+            offset = session.offset + session.expectedText.length
         }
+        sb.append(escapeHtml4(text.substring(offset)))
         return sb.toString()
     }
 
-    private fun writeDiv(session: Session?, sb: StringBuilder, offset_: Int, startPosition: Int, endPosition: Int) : Int {
+    private fun getDiv(session: Session?, text: String) : String {
         val opened = "<div class=\"completion\" id=\"${session?.id}\" style=\"color: ${getColor(session)}; font-weight: bold\">"
         val closed = "</div>"
-        var offset = offset_
-        sb.insert(offset + startPosition, opened)
-        offset += opened.length
-        sb.insert(offset + endPosition, closed)
-        offset += closed.length
-        return offset
+        return "$opened$text$closed"
     }
 
     private fun getColor(session: Session?): String {

@@ -1,0 +1,5 @@
+FileNode
+  VariableAccessNode (valid)
+  MethodCallNode (echo)
+    VariableAccessNode (count)
+  VariableAccessNode (count)

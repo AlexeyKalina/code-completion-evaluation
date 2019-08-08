@@ -1,0 +1,5 @@
+FileNode
+  MethodDeclarationNode (function)
+    MethodHeaderNode (function)
+    MethodBodyNode
+      MethodCallNode (echo)
