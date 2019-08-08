@@ -169,20 +169,24 @@ class HtmlReportGenerator(outputDir: String) {
 
         val sessions = _sessions.filterNot { it.isEmpty() }
         val sb = StringBuilder()
-        var offset = 0
         val delimiter = "&int;"
-        for (session in sessions.flatten().distinctBy { it.offset }.sortedBy { it.offset }) {
+        val offsets = sessions.flatten().map { it.offset }.distinct().sorted()
+        val sessionGroups = offsets.map { offset -> sessions.map { it.find { session -> session.offset == offset } } }
+        var offset = 0
+
+        for (sessionGroup in sessionGroups) {
+            val session = sessionGroup.filterNotNull().first()
             val commonText = escapeHtml4(text.substring(offset, session.offset))
             sb.append(commonText)
 
             val center = session.expectedText.length / sessions.size
             var shift = 0
-            for (j in 0 until sessions.lastIndex) {
-                sb.append(getDiv(sessions[j].find { it.offset == session.offset }, session.expectedText.substring(shift, shift + center)))
+            for (j in 0 until sessionGroup.lastIndex) {
+                sb.append(getDiv(sessionGroup[j], session.expectedText.substring(shift, shift + center)))
                 sb.append(delimiter)
                 shift += center
             }
-            sb.append(getDiv(sessions.last().find { it.offset == session.offset }, session.expectedText.substring(shift)))
+            sb.append(getDiv(sessionGroup.last(), session.expectedText.substring(shift)))
             offset = session.offset + session.expectedText.length
         }
         sb.append(escapeHtml4(text.substring(offset)))
