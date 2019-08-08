@@ -14,7 +14,7 @@ class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : Comp
     }
 
     override fun callCompletion(type: CompletionType, expectedText: String, prefix: String): CallCompletionResult {
-        applicationListenersRestriction.waitForSize(100, 10000)
+        applicationListenersRestriction.waitForSize(100)
         return readAction {
             invoker.callCompletion(type, expectedText, prefix)
         }
