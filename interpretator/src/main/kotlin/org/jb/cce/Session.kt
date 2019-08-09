@@ -19,5 +19,6 @@ class Session(val offset: Int,
 enum class TokenType {
     METHOD_CALL,
     VARIABLE,
-    FIELD
+    FIELD,
+    UNKNOWN
 }

@@ -2,7 +2,6 @@ package org.jb.cce.visitors
 
 import org.jb.cce.TokenType
 import org.jb.cce.actions.*
-import org.jb.cce.exception.UnexpectedActionException
 import org.jb.cce.uast.Completable
 import org.jb.cce.uast.UnifiedAstRecursiveVisitor
 import org.jb.cce.uast.statements.declarations.blocks.BlockNode
@@ -23,8 +22,8 @@ abstract class CallCompletionsVisitor(protected open val text: String,
 
     private val prefixCreator = when (strategy.prefix) {
         is CompletionPrefix.NoPrefix -> NoPrefixCreator()
-        is CompletionPrefix.CapitalizePrefix -> CapitalizePrefixCreator(strategy.prefix.completePrevious)
-        is CompletionPrefix.SimplePrefix -> SimplePrefixCreator(strategy.prefix.completePrevious, strategy.prefix.n)
+        is CompletionPrefix.CapitalizePrefix -> CapitalizePrefixCreator(strategy.prefix.emulateTyping)
+        is CompletionPrefix.SimplePrefix -> SimplePrefixCreator(strategy.prefix.emulateTyping, strategy.prefix.n)
     }
 
     fun getActions(): List<Action> = actions
@@ -63,7 +62,7 @@ abstract class CallCompletionsVisitor(protected open val text: String,
             is MethodCallNode -> TokenType.METHOD_CALL
             is VariableAccessNode -> TokenType.VARIABLE
             is FieldAccessNode -> TokenType.FIELD
-            else -> throw UnexpectedActionException("Unknown token type")
+            else -> TokenType.UNKNOWN
         }
 
         val prefix = prefixCreator.getPrefix(node.getText())

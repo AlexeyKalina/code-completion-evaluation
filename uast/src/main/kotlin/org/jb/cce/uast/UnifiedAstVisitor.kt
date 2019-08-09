@@ -49,5 +49,8 @@ interface UnifiedAstVisitor {
     fun visitFieldAccessNode(node: FieldAccessNode) = visitReferenceNode(node)
     fun visitAssignmentNode(node: AssignmentNode) = visitStatementNode(node)
 
-    fun visitFileNode(node: FileNode) = visit(node)
+    fun visitTokenNode(node: TokenNode) = visit(node)
+
+    fun visitFileNode(node: FileNode) = visitTextFragmentNode(node)
+    fun visitTextFragmentNode(node: TextFragmentNode) = visit(node)
 }

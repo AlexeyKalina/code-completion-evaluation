@@ -18,7 +18,6 @@ import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.info.SessionsEvaluationInfo
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.interpretator.DelegationCompletionInvoker
-import org.jb.cce.uast.Language
 import org.jb.cce.util.*
 import java.io.File
 import java.nio.file.Paths
@@ -31,17 +30,17 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         val LOG = Logger.getInstance(CompletionEvaluator::class.java)
     }
 
-    fun evaluateCompletion(project: Project, files: List<VirtualFile>, language: Language, strategy: CompletionStrategy,
+    fun evaluateCompletion(project: Project, files: List<VirtualFile>, languageName: String, strategy: CompletionStrategy,
                            completionTypes: List<CompletionType>, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
         val language2files = FilesHelper.getFiles(files)
         if (language2files.isEmpty()) {
             println("Languages of selected files aren't supported.")
             return finishWork(null)
         }
-        evaluateUnderProgress(project, language, language2files.getValue(language), strategy, completionTypes, workspaceDir, interpretActions, saveLogs, logsTrainingPercentage)
+        evaluateUnderProgress(project, languageName, language2files.getValue(languageName), strategy, completionTypes, workspaceDir, interpretActions, saveLogs, logsTrainingPercentage)
     }
 
-    private fun evaluateUnderProgress(project: Project, language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy,
+    private fun evaluateUnderProgress(project: Project, languageName: String, files: Collection<VirtualFile>, strategy: CompletionStrategy,
                                       completionTypes: List<CompletionType>, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
         val task = object : Task.Backgroundable(project, "Generating actions for selected files", true) {
             private lateinit var actions: List<Action>
@@ -49,7 +48,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
-                val result = generateActions(project, language, files, strategy, getProcess(indicator))
+                val result = generateActions(project, languageName, files, strategy, getProcess(indicator))
                 actions = result.first
                 errors = result.second
             }
@@ -57,7 +56,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             override fun onSuccess() {
                 val reportGenerator = HtmlReportGenerator(workspaceDir)
                 if (interpretActions)
-                    interpretUnderProgress(actions, errors, completionTypes, strategy, project, language, reportGenerator, saveLogs, logsTrainingPercentage)
+                    interpretUnderProgress(actions, errors, completionTypes, strategy, project, languageName, reportGenerator, saveLogs, logsTrainingPercentage)
                 else
                     reportGenerator.saveActions(actions)
             }
@@ -65,10 +64,10 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    private fun generateActions(project: Project, language: Language, files: Collection<VirtualFile>, strategy: CompletionStrategy,
+    private fun generateActions(project: Project, languageName: String, files: Collection<VirtualFile>, strategy: CompletionStrategy,
                                 indicator: Progress): Pair<List<Action>, List<FileErrorInfo>> {
         val actionsGenerator = ActionsGenerator(strategy)
-        val uastBuilder = UastBuilder.create(project, language)
+        val uastBuilder = UastBuilder.create(project, languageName, strategy.statement == CompletionStatement.ALL_TOKENS)
 
         val sortedFiles = files.sortedBy { f -> f.name }
         val generatedActions = mutableListOf<List<Action>>()
@@ -96,13 +95,13 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
     }
 
     private fun interpretUnderProgress(actions: List<Action>, errors: List<FileErrorInfo>, completionTypes: List<CompletionType>, strategy: CompletionStrategy,
-                                       project: Project, language: Language, reportGenerator: HtmlReportGenerator, saveLogs: Boolean, logsTrainingPercentage: Int) {
+                                       project: Project, languageName: String, reportGenerator: HtmlReportGenerator, saveLogs: Boolean, logsTrainingPercentage: Int) {
         val task = object : Task.Backgroundable(project, "Interpretation of the generated actions") {
             private var sessionsInfo: List<SessionsEvaluationInfo>? = null
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
-                val logsPath = Paths.get(reportGenerator.logsDirectory(), language.displayName.toLowerCase()).toString()
+                val logsPath = Paths.get(reportGenerator.logsDirectory(), languageName.toLowerCase()).toString()
                 reportGenerator.saveActions(actions)
                 sessionsInfo = interpretActions(actions, completionTypes, strategy, project, logsPath, saveLogs, logsTrainingPercentage, getProcess(indicator))
             }

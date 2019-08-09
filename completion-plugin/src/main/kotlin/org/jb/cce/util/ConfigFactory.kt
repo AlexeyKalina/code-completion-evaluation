@@ -13,7 +13,7 @@ import java.nio.file.StandardOpenOption
 object ConfigFactory {
     private val gson = GsonBuilder().setPrettyPrinting().create()
 
-    private val defaultConfig = Config("", listOf(""), Language.JAVA,
+    private val defaultConfig = Config("", listOf(""), Language.JAVA.displayName,
             CompletionStrategy(CompletionPrefix.NoPrefix, CompletionStatement.METHOD_CALLS, CompletionContext.ALL),
             listOf(CompletionType.BASIC), "", interpretActions = false, saveLogs = true, logsTrainingPercentage = 70)
 
@@ -26,7 +26,7 @@ object ConfigFactory {
 
         val map = gson.fromJson(FileReader(configFile), HashMap<String, Any>().javaClass)
         val strategy = map["strategy"] as Map<String, Any>
-        return Config(map["projectPath"] as String, map["listOfFiles"] as List<String>, Language.valueOf(map["language"] as String),
+        return Config(map["projectPath"] as String, map["listOfFiles"] as List<String>, map["language"] as String,
                 CompletionStrategy(getPrefix(strategy), CompletionStatement.valueOf(strategy["statement"] as String),
                         CompletionContext.valueOf(strategy["context"] as String)),
                 (map["completionTypes"] as List<String>).map { CompletionType.valueOf(it) }, map["outputDir"] as String, map["interpretActions"] as Boolean,
@@ -38,7 +38,7 @@ object ConfigFactory {
         val prefix = json.asJsonObject["strategy"].asJsonObject["prefix"].asJsonObject
         prefix.add("name", JsonPrimitive(config.strategy.prefix.javaClass.name))
         val strategyPrefix = config.strategy.prefix
-        if (strategyPrefix !is CompletionPrefix.NoPrefix) prefix.add("completePrevious", JsonPrimitive(strategyPrefix.completePrevious))
+        if (strategyPrefix !is CompletionPrefix.NoPrefix) prefix.add("emulateTyping", JsonPrimitive(strategyPrefix.emulateTyping))
         if (strategyPrefix is CompletionPrefix.SimplePrefix) prefix.add("n", JsonPrimitive(strategyPrefix.n))
         Files.write(Paths.get(path), gson.toJson(json).toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
     }
