@@ -8,17 +8,21 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.stats.storage.PluginDirectoryFilePathProvider
 import org.jb.cce.actions.*
+import org.jb.cce.highlighter.Highlighter
 import org.jb.cce.info.EvaluationInfo
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.info.SessionsEvaluationInfo
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.interpretator.DelegationCompletionInvoker
+import org.jb.cce.uast.TextFragmentNode
 import org.jb.cce.util.*
+import org.jb.cce.visitors.EvaluationRootVisitor
 import java.io.File
 import java.nio.file.Paths
 import java.util.*
@@ -38,6 +42,26 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             return finishWork(null)
         }
         evaluateUnderProgress(project, languageName, language2files.getValue(languageName), strategy, completionTypes, workspaceDir, interpretActions, saveLogs, logsTrainingPercentage)
+    }
+
+    fun evaluateCompletionHere(project: Project, file: VirtualFile, languageName: String, offset: Int,
+                               strategy: CompletionStrategy, completionTypes: List<CompletionType>) {
+        val uastBuilder = UastBuilder.create(project, languageName, strategy.statement == CompletionStatement.ALL_TOKENS)
+        val uast = uastBuilder.build(file)
+        val evaluationRootVisitor = EvaluationRootVisitor(offset)
+        uast.accept(evaluationRootVisitor)
+        val root = evaluationRootVisitor.getRoot()
+        if (root != null) {
+            val fragment = TextFragmentNode(root.getOffset(), root.getLength(), uast.path, uast.text)
+            fragment.addChild(root)
+            val actions = ActionsGenerator(strategy).generate(fragment)
+            if (actions.isEmpty()) {
+                Messages.showInfoMessage(project, "No tokens for completion", "Nothing to complete")
+                return
+            }
+            val sessions = interpretActions(actions, completionTypes, strategy, project, "", false, 0, FakeProgress())
+            Highlighter(project).highlight(sessions)
+        } else Messages.showInfoMessage(project, "No tokens for completion", "Nothing to complete")
     }
 
     private fun evaluateUnderProgress(project: Project, languageName: String, files: Collection<VirtualFile>, strategy: CompletionStrategy,
@@ -119,10 +143,10 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
     }
 
     private fun interpretActions(actions: List<Action>, completionTypes: List<CompletionType>, strategy: CompletionStrategy,
-                                 project: Project, outputDir: String, saveLogs: Boolean, logsTrainingPercentage: Int, indicator: Progress): List<SessionsEvaluationInfo> {
+                                 project: Project, workspaceDir: String, saveLogs: Boolean, logsTrainingPercentage: Int, indicator: Progress): List<SessionsEvaluationInfo> {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project))
         val interpreter = Interpreter(completionInvoker)
-        val logsWatcher = if (saveLogs) DirectoryWatcher(PluginDirectoryFilePathProvider().getStatsDataDirectory().toString(), outputDir, logsTrainingPercentage) else null
+        val logsWatcher = if (saveLogs) DirectoryWatcher(PluginDirectoryFilePathProvider().getStatsDataDirectory().toString(), workspaceDir, logsTrainingPercentage) else null
         logsWatcher?.start()
 
         val sessionsInfo = mutableListOf<SessionsEvaluationInfo>()

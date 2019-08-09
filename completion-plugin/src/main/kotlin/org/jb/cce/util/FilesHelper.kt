@@ -7,7 +7,6 @@ import com.intellij.openapi.roots.ContentIterator
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileFilter
-//import org.jb.cce.uast.Language
 
 object FilesHelper {
     fun getFiles(selectedFiles: List<VirtualFile>): Map<String, Set<VirtualFile>> {
@@ -29,7 +28,7 @@ object FilesHelper {
         return language2files
     }
 
-    private fun getLanguageByExtension(ext: String): Language? {
+    fun getLanguageByExtension(ext: String): Language? {
         val fileType = FileTypeManager.getInstance().getFileTypeByExtension(ext) as? LanguageFileType ?: return null
         return fileType.language
     }

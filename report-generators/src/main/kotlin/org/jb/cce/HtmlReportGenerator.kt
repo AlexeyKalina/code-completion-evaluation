@@ -14,13 +14,8 @@ import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.*
 
-class HtmlReportGenerator(outputDir: String) {
+class HtmlReportGenerator(outputDir: String) : ColorizeTokens<String> {
     companion object {
-        private const val middleCountLookups = 3
-        private const val goodColor = "#008800"
-        private const val middleColor = "#999900"
-        private const val badColor = "#BB0066"
-        private const val absentColor = "#70AAFF"
         private const val globalReportName = "index.html"
         private const val tabulatorScript = "/tabulator.min.js"
         private const val tabulatorStyle = "/tabulator.min.css"
@@ -32,6 +27,12 @@ class HtmlReportGenerator(outputDir: String) {
         private val sessionSerializer = SessionSerializer()
         private val actionSerializer = ActionSerializer()
     }
+
+    override val middleCountLookups = 3
+    override val goodColor = "#008800"
+    override val middleColor = "#999900"
+    override val badColor = "#BB0066"
+    override val absentColor = "#70AAFF"
 
     private lateinit var reportTitle: String
 
@@ -197,16 +198,6 @@ class HtmlReportGenerator(outputDir: String) {
         val opened = "<div class=\"completion\" id=\"${session?.id}\" style=\"color: ${getColor(session)}; font-weight: bold\">"
         val closed = "</div>"
         return "$opened$text$closed"
-    }
-
-    private fun getColor(session: Session?): String {
-        return when {
-            session == null -> absentColor
-            !session.lookups.last().suggestions.any{ it.text == session.expectedText } -> badColor
-            session.lookups.last().suggestions.size < middleCountLookups ||
-                    session.lookups.last().suggestions.subList(0, middleCountLookups).any{ it.text == session.expectedText } -> goodColor
-            else -> middleColor
-        }
     }
 
     private fun getMetricsTable(evaluationResults: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {

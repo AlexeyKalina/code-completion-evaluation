@@ -17,8 +17,10 @@ import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
+class CompletionSettingsDialog(project: Project, private val language2files: Map<String, Set<VirtualFile>>,
+                               private val fullSettings: Boolean = true) : DialogWrapper(true) {
+    constructor(project: Project) : this(project, emptyMap(), false)
 
-class CompletionSettingsDialog(project: Project, private val language2files: Map<String, Set<VirtualFile>>) : DialogWrapper(true) {
     companion object {
         const val completionEvaluationDir = "completion-evaluation"
         const val workspaceDirProperty = "org.jb.cce.workspace_dir"
@@ -45,18 +47,18 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     lateinit var statementButtons: List<JRadioButton>
 
     override fun createCenterPanel(): JComponent? {
-        val dialogPanel = JPanel(GridLayout(8,1))
+        val dialogPanel = JPanel(GridLayout(if (fullSettings) 8 else 4,1))
 
         createStatementButtons()
 
-        dialogPanel.add(createLanguageChooser())
+        if (fullSettings) dialogPanel.add(createLanguageChooser())
         dialogPanel.add(createTypePanel())
         dialogPanel.add(createContextPanel())
         dialogPanel.add(createPrefixPanel())
         dialogPanel.add(createStatementPanel())
-        dialogPanel.add(createInterpretActionsPanel())
-        dialogPanel.add(createOutputDirChooser())
-        dialogPanel.add(createLogsPanel())
+        if (fullSettings) dialogPanel.add(createInterpretActionsPanel())
+        if (fullSettings) dialogPanel.add(createOutputDirChooser())
+        if (fullSettings) dialogPanel.add(createLogsPanel())
 
         return dialogPanel
     }

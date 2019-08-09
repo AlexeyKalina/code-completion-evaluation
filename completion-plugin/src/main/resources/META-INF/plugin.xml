@@ -2,7 +2,7 @@
     <id>com.intellij.completion.evaluation</id>
     <name>Code Completion Quality Evaluation</name>
     <version>0.0.5</version>
-    <idea-version since-build="192.2549"/>
+    <idea-version since-build="192.5118"/>
     <vendor url="https://www.jetbrains.com">JetBrains</vendor>
 
     <description><![CDATA[
@@ -47,6 +47,12 @@
                 description="Generate completion quality report by selected logs">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="after"
                           relative-to-action="org.jb.cce.actions.EvaluateCompletionForSelectedFilesAction"/>
+        </action>
+        <action id="org.jb.cce.actions.EvaluateCompletionHereAction"
+                class="org.jb.cce.actions.EvaluateCompletionHereAction"
+                text="Evaluate Completion Here"
+                description="Evaluate completion quality for this token and its children">
+            <add-to-group group-id="EditorPopupMenu" anchor="first"/>
         </action>
     </actions>
 

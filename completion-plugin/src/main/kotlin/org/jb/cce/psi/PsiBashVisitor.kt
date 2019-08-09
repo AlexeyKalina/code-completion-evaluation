@@ -57,7 +57,9 @@ class PsiBashVisitor(private val path: String, private val text: String): ShVisi
 
     override fun visitFunctionDefinition(node: ShFunctionDefinition) {
         val function = MethodDeclarationNode(node.textOffset, node.textLength)
-        val header = MethodHeaderNode(node.function?.text ?: "<empty_name>", node.textOffset, node.textLength)
+        val nameNode = node.function
+        val header = MethodHeaderNode(nameNode?.text ?: "<empty_name>",
+                nameNode?.textOffset ?: throw PsiConverterException("Empty name length"), nameNode.textLength)
         function.setHeader(header)
         addToParent(function)
         stackOfNodes.addLast(function)
