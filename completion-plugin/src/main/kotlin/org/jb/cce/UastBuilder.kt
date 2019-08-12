@@ -16,8 +16,10 @@ abstract class UastBuilder {
             val language = Language.resolve(languageName)
             return if (allTokens)
                 when (language) {
-                    Language.JAVA -> JavaTokensBuilder()
-                    else -> TextTokensBuilder()
+                    Language.JAVA -> TextTokensBuilder(JavaTokenFilter())
+                    Language.PYTHON -> TextTokensBuilder(PythonTokenFilter())
+                    Language.BASH -> TextTokensBuilder(BashTokenFilter())
+                    else -> TextTokensBuilder(TokenFilter())
                 }
             else when (language) {
                 Language.PYTHON -> PsiConverter(project, language)
