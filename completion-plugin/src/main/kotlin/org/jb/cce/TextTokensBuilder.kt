@@ -4,9 +4,11 @@ import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.uast.TextFragmentNode
 import org.jb.cce.uast.TokenNode
+import org.jb.cce.util.text
+import org.jb.cce.visitors.EvaluationRootVisitor
 
 open class TextTokensBuilder : UastBuilder() {
-    override fun build(file: VirtualFile): TextFragmentNode {
+    override fun build(file: VirtualFile, rootVisitor: EvaluationRootVisitor): TextFragmentNode {
         val text = file.text()
         val textFragment = TextFragmentNode(0, text.length, file.path, text)
         var curToken = ""
@@ -29,7 +31,7 @@ open class TextTokensBuilder : UastBuilder() {
             }
             offset++
         }
-        return textFragment
+        return findRoot(textFragment, rootVisitor)
     }
 
     open fun isIdentifierPart(ch: Char) = ch.isLetter()

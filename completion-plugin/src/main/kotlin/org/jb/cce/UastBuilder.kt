@@ -3,11 +3,12 @@ package org.jb.cce
 import com.google.gson.JsonParser
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import org.apache.commons.io.input.UnixLineEndingInputStream
+import org.jb.cce.exceptions.NullRootException
 import org.jb.cce.psi.PsiConverter
-import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.Language
 import org.jb.cce.uast.TextFragmentNode
+import org.jb.cce.util.text
+import org.jb.cce.visitors.EvaluationRootVisitor
 
 abstract class UastBuilder {
     companion object {
@@ -29,19 +30,21 @@ abstract class UastBuilder {
         }
     }
 
-    abstract fun build(file: VirtualFile): TextFragmentNode
+    protected fun findRoot(uast: TextFragmentNode, rootVisitor: EvaluationRootVisitor): TextFragmentNode {
+        uast.accept(rootVisitor)
+        return rootVisitor.getRoot() ?: throw NullRootException(uast.path)
+    }
+
+    abstract fun build(file: VirtualFile, rootVisitor: EvaluationRootVisitor): TextFragmentNode
 
     private class BabelFishBuilderWrapper(language: Language, private val visitorFactory: (path: String, text: String) -> BabelFishUnifiedVisitor) : UastBuilder() {
         private val client = BabelFishClient(language)
 
-        override fun build(file: VirtualFile): FileNode {
+        override fun build(file: VirtualFile, rootVisitor: EvaluationRootVisitor): TextFragmentNode {
             val babelFishUast = client.parse(file.text())
             val json = JsonParser().parse(babelFishUast).asJsonObject!!
-            return visitorFactory(file.path, file.text()).getUast(json)
+            val uast = visitorFactory(file.path, file.text()).getUast(json)
+            return findRoot(uast, rootVisitor)
         }
-    }
-
-    protected fun VirtualFile.text(): String {
-        return UnixLineEndingInputStream(this.inputStream, false).bufferedReader().use { it.readText() }
     }
 }

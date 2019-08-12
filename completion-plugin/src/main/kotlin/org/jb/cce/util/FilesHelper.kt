@@ -7,6 +7,7 @@ import com.intellij.openapi.roots.ContentIterator
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileFilter
+import org.apache.commons.io.input.UnixLineEndingInputStream
 
 object FilesHelper {
     fun getFiles(selectedFiles: List<VirtualFile>): Map<String, Set<VirtualFile>> {
@@ -32,4 +33,8 @@ object FilesHelper {
         val fileType = FileTypeManager.getInstance().getFileTypeByExtension(ext) as? LanguageFileType ?: return null
         return fileType.language
     }
+}
+
+fun VirtualFile.text(): String {
+    return UnixLineEndingInputStream(this.inputStream, false).bufferedReader().use { it.readText() }
 }
