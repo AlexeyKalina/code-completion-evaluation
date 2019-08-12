@@ -47,8 +47,8 @@ object ConfigFactory {
         val prefix = strategy["prefix"] as Map<String, Any>
         return when (prefix["name"]) {
             CompletionPrefix.NoPrefix::class.java.name -> CompletionPrefix.NoPrefix
-            CompletionPrefix.CapitalizePrefix::class.java.name -> CompletionPrefix.CapitalizePrefix(prefix["completePrevious"] as Boolean)
-            CompletionPrefix.SimplePrefix::class.java.name -> CompletionPrefix.SimplePrefix(prefix["completePrevious"] as Boolean, (prefix["n"] as Double).toInt())
+            CompletionPrefix.CapitalizePrefix::class.java.name -> CompletionPrefix.CapitalizePrefix(prefix["emulateTyping"] as Boolean)
+            CompletionPrefix.SimplePrefix::class.java.name -> CompletionPrefix.SimplePrefix(prefix["emulateTyping"] as Boolean, (prefix["n"] as Double).toInt())
             else -> throw IllegalArgumentException("Unknown completion prefix")
         }
     }
