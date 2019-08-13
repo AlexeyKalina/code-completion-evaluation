@@ -10,26 +10,20 @@ class ActionsGenerator(val strategy: CompletionStrategy) {
         if (strategy.context == CompletionContext.PREVIOUS) file.accept(deletionVisitor)
 
         val completionVisitor = when (strategy.statement) {
-            CompletionStatement.ALL -> AllCompletableVisitor(file.text, strategy)
-            CompletionStatement.METHOD_CALLS -> MethodCallsVisitor(file.text, strategy)
-            CompletionStatement.ARGUMENTS -> MethodArgumentsVisitor(file.text, strategy)
-            CompletionStatement.VARIABLES -> VariableAccessVisitor(file.text, strategy)
-            CompletionStatement.ALL_TOKENS -> AllTokensVisitor(file.text, strategy)
+            CompletionStatement.ALL -> AllCompletableVisitor(file.text, strategy, file.getOffset())
+            CompletionStatement.METHOD_CALLS -> MethodCallsVisitor(file.text, strategy, file.getOffset())
+            CompletionStatement.ARGUMENTS -> MethodArgumentsVisitor(file.text, strategy, file.getOffset())
+            CompletionStatement.VARIABLES -> VariableAccessVisitor(file.text, strategy, file.getOffset())
+            CompletionStatement.ALL_TOKENS -> AllTokensVisitor(file.text, strategy, file.getOffset())
         }
 
         file.accept(completionVisitor)
 
         val actions: MutableList<Action> = mutableListOf()
-        if (completionVisitor.getActions().isNotEmpty()) {
+        if (completionVisitor.getGeneratedActions().isNotEmpty()) {
             actions.add(OpenFile(file.path, file.text))
             actions.addAll(deletionVisitor.getActions().reversed())
-            actions.addAll(completionVisitor.getActions())
-
-            if (strategy.context == CompletionContext.PREVIOUS && strategy.statement == CompletionStatement.ALL_TOKENS) {
-                val lastChildren = file.getChildren().last()
-                val lastOffset = lastChildren.getOffset() + lastChildren.getLength()
-                actions.add(PrintText(file.text.substring(lastOffset)))
-            }
+            actions.addAll(completionVisitor.getGeneratedActions())
         }
 
         return actions

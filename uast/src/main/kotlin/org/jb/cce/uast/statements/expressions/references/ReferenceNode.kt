@@ -11,6 +11,7 @@ abstract class ReferenceNode(name: String,
     var prefix: ExpressionNode? = null
 
     override fun accept(visitor: UnifiedAstVisitor) {
+        prefix?.accept(visitor)
        visitor.visitReferenceNode(this)
     }
 }

@@ -32,3 +32,18 @@ class DefaultEvaluationRootVisitor : EvaluationRootVisitor() {
 
     override fun getRoot() = evaluationRoot
 }
+
+class EvaluationRootByRangeVisitor(private val startOffset: Int, private val endOffset: Int) : EvaluationRootVisitor() {
+    private var evaluationRoot: TextFragmentNode? = null
+
+    override fun visitTextFragmentNode(node: TextFragmentNode) {
+        evaluationRoot = TextFragmentNode(startOffset, endOffset - startOffset, node.path, node.text)
+        visitChildren(node)
+    }
+
+    override fun visitTokenNode(node: TokenNode) {
+        if (node.getOffset() in startOffset..endOffset) evaluationRoot?.addChild(node)
+    }
+
+    override fun getRoot() = evaluationRoot
+}

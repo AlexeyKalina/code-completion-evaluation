@@ -5,7 +5,7 @@ import org.jb.cce.uast.statements.expressions.VariableAccessNode
 import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 
-class AllCompletableVisitor(override val text: String, strategy: CompletionStrategy): CallCompletionsVisitor(text, strategy) {
+class AllCompletableVisitor(override val text: String, strategy: CompletionStrategy, textStart: Int): CallCompletionsVisitor(text, strategy, textStart) {
 
     override fun visitMethodCallNode(node: MethodCallNode) {
         if (node.prefix != null) visit(node.prefix!!)

@@ -24,7 +24,8 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     companion object {
         const val completionEvaluationDir = "completion-evaluation"
         const val workspaceDirProperty = "org.jb.cce.workspace_dir"
-        private val allTokensText = "All tokens"
+        private const val allTokensText = "All tokens"
+        private const val previousContextText = "Previous context"
     }
     lateinit var language: String
     private val properties = PropertiesComponent.getInstance(project)
@@ -45,11 +46,13 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         title = "Completion evaluation settings"
     }
     lateinit var statementButtons: List<JRadioButton>
+    lateinit var contextButtons: List<JRadioButton>
 
     override fun createCenterPanel(): JComponent? {
         val dialogPanel = JPanel(GridLayout(if (fullSettings) 8 else 4,1))
 
-        createStatementButtons()
+        createContextButtons()
+        createStatementButtons(!fullSettings)
 
         if (fullSettings) dialogPanel.add(createLanguageChooser())
         dialogPanel.add(createTypePanel())
@@ -69,30 +72,47 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         return super.doValidate()
     }
 
-    private fun createStatementButtons() {
-        val methodsButton =  JRadioButton("Method calls")
-        methodsButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED) completionStatement = CompletionStatement.METHOD_CALLS
-        }
-        val argumentsButton =  JRadioButton("Method arguments")
-        argumentsButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED) completionStatement = CompletionStatement.ARGUMENTS
-        }
-        val variablesButton =  JRadioButton("Variables")
-        variablesButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED) completionStatement = CompletionStatement.VARIABLES
-        }
-        val allStatementsButton =  JRadioButton("All of these")
-        allStatementsButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED) completionStatement = CompletionStatement.ALL
-        }
-        val allTokensButton =  JRadioButton(allTokensText)
-        allTokensButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED) completionStatement = CompletionStatement.ALL_TOKENS
-        }
+    private fun createStatementButtons(blockPreviousContext: Boolean) {
+        val methodsButton = getStatementButton(CompletionStatement.METHOD_CALLS, "Method calls", blockPreviousContext)
+        val argumentsButton = getStatementButton(CompletionStatement.ARGUMENTS, "Method arguments", blockPreviousContext)
+        val variablesButton = getStatementButton(CompletionStatement.VARIABLES, "Variables", blockPreviousContext)
+        val allStatementsButton = getStatementButton(CompletionStatement.ALL, "All of these", blockPreviousContext)
+        val allTokensButton = getStatementButton(CompletionStatement.ALL_TOKENS, allTokensText, false)
 
         methodsButton.isSelected = true
         statementButtons = listOf(methodsButton, argumentsButton, variablesButton, allStatementsButton, allTokensButton)
+    }
+
+    private fun getStatementButton(statement: CompletionStatement, title: String, blockPreviousContext: Boolean): JRadioButton {
+        val statementButton =  JRadioButton(title)
+        statementButton.addItemListener { event ->
+            if (event.stateChange == ItemEvent.SELECTED) {
+                completionStatement = statement
+                for (context in contextButtons)
+                    if (context.text == previousContextText && blockPreviousContext) {
+                        context.isSelected = false
+                        context.isEnabled = false
+                    } else if (blockPreviousContext) {
+                        context.isSelected = true
+                        completionContext = CompletionContext.ALL
+                    } else context.isEnabled = true
+            }
+        }
+        return statementButton
+    }
+
+    private fun createContextButtons() {
+        val allContextButton =  JRadioButton("All context")
+        allContextButton.addItemListener { event ->
+            if (event.stateChange == ItemEvent.SELECTED) completionContext = CompletionContext.ALL
+        }
+        val previousContextButton =  JRadioButton(previousContextText)
+        previousContextButton.addItemListener { event ->
+            if (event.stateChange == ItemEvent.SELECTED) completionContext = CompletionContext.PREVIOUS
+        }
+
+        allContextButton.isSelected = true
+        contextButtons = listOf(allContextButton, previousContextButton)
     }
 
     private class LanguageItem(val languageName: String, val count: Int) {
@@ -168,26 +188,12 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     private fun createContextPanel(): JPanel {
         val contextLabel = JLabel("Context for completion:")
         val contextTypePanel = JPanel(FlowLayout(FlowLayout.LEFT))
-        val allContextButton =  JRadioButton("All context")
-        allContextButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED) completionContext = CompletionContext.ALL
-        }
-        val previousContextButton =  JRadioButton("Previous context")
-        previousContextButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED) completionContext = CompletionContext.PREVIOUS
-        }
-
-        allContextButton.isSelected = true
-
-        val contextTypeGroup =  ButtonGroup()
-
-        contextTypeGroup.add(allContextButton)
-        contextTypeGroup.add(previousContextButton)
-
         contextTypePanel.add(contextLabel)
-        contextTypePanel.add(allContextButton)
-        contextTypePanel.add(previousContextButton)
-
+        val contextTypeGroup =  ButtonGroup()
+        for (context in contextButtons) {
+            contextTypeGroup.add(context)
+            contextTypePanel.add(context)
+        }
         return contextTypePanel
     }
 
@@ -342,7 +348,3 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         return interpretActionsPanel
     }
 }
-
-
-
-

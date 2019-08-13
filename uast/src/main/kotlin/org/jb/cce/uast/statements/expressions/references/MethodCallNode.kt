@@ -27,7 +27,7 @@ class MethodCallNode(name: String,
         else this.addArgument(node)
     }
 
-    override fun getChildren() = listOfNotNull(prefix) + arguments
+    override fun getChildren() = arguments
 
     override fun accept(visitor: UnifiedAstVisitor) {
         visitor.visitMethodCallNode(this)

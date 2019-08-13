@@ -13,12 +13,13 @@ import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 
 abstract class CallCompletionsVisitor(protected open val text: String,
-                                      private val strategy: CompletionStrategy) : UnifiedAstRecursiveVisitor() {
+                                      protected val strategy: CompletionStrategy,
+                                      textStart: Int) : UnifiedAstRecursiveVisitor() {
 
-    private val actions = mutableListOf<Action>()
+    protected val actions = mutableListOf<Action>()
     private val bracketSize = 1
     private var isInsideDeletedText = false
-    private var previousTextStart = 0
+    protected var previousTextStart = textStart
 
     private val prefixCreator = when (strategy.prefix) {
         is CompletionPrefix.NoPrefix -> NoPrefixCreator()
@@ -26,7 +27,7 @@ abstract class CallCompletionsVisitor(protected open val text: String,
         is CompletionPrefix.SimplePrefix -> SimplePrefixCreator(strategy.prefix.emulateTyping, strategy.prefix.n)
     }
 
-    fun getActions(): List<Action> = actions
+    fun getGeneratedActions(): List<Action> = actions
 
     override fun visitClassInitializerNode(node: ClassInitializerNode) = visitDeletableBlock(node)
 

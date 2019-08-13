@@ -11,6 +11,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.psi.PsiElement
 import com.intellij.stats.storage.PluginDirectoryFilePathProvider
 import org.jb.cce.actions.*
 import org.jb.cce.highlighter.Highlighter
@@ -22,6 +23,7 @@ import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.interpretator.DelegationCompletionInvoker
 import org.jb.cce.util.*
 import org.jb.cce.visitors.DefaultEvaluationRootVisitor
+import org.jb.cce.visitors.EvaluationRootByRangeVisitor
 import org.jb.cce.visitors.EvaluationRootByOffsetVisitor
 import java.io.File
 import java.nio.file.Paths
@@ -41,23 +43,23 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             println("Languages of selected files aren't supported.")
             return finishWork(null)
         }
-        evaluateUnderProgress(project, languageName, language2files.getValue(languageName), strategy, completionTypes, workspaceDir, interpretActions, saveLogs, logsTrainingPercentage, null)
+        evaluateUnderProgress(project, languageName, language2files.getValue(languageName), strategy, completionTypes, workspaceDir, interpretActions, saveLogs, logsTrainingPercentage, null, null)
     }
 
-    fun evaluateCompletionHere(project: Project, file: VirtualFile, languageName: String, offset: Int,
+    fun evaluateCompletionHere(project: Project, file: VirtualFile, languageName: String, offset: Int, psi: PsiElement?,
                                strategy: CompletionStrategy, completionTypes: List<CompletionType>) =
-        evaluateUnderProgress(project, languageName, listOf(file), strategy, completionTypes, "", true, false, 0, offset)
+        evaluateUnderProgress(project, languageName, listOf(file), strategy, completionTypes, "", true, false, 0, offset, psi)
 
     private fun evaluateUnderProgress(project: Project, languageName: String, files: Collection<VirtualFile>, strategy: CompletionStrategy,
                                       completionTypes: List<CompletionType>, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean,
-                                      logsTrainingPercentage: Int, offset: Int?) {
+                                      logsTrainingPercentage: Int, offset: Int?, psi: PsiElement?) {
         val task = object : Task.Backgroundable(project, "Generating actions for selected files", true) {
             private lateinit var actions: List<Action>
             private lateinit var errors: List<FileErrorInfo>
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
-                val result = generateActions(project, languageName, files, strategy, offset, getProcess(indicator))
+                val result = generateActions(project, languageName, files, strategy, offset, psi, getProcess(indicator))
                 actions = result.first
                 errors = result.second
             }
@@ -75,7 +77,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
     }
 
     private fun generateActions(project: Project, languageName: String, files: Collection<VirtualFile>, strategy: CompletionStrategy,
-                                offset: Int?, indicator: Progress): Pair<List<Action>, List<FileErrorInfo>> {
+                                offset: Int?, psi: PsiElement?, indicator: Progress): Pair<List<Action>, List<FileErrorInfo>> {
         val actionsGenerator = ActionsGenerator(strategy)
         val uastBuilder = UastBuilder.create(project, languageName, strategy.statement == CompletionStatement.ALL_TOKENS)
 
@@ -91,7 +93,12 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             LOG.info("Start generating actions for file ${file.path}. Done: $completed/${files.size}. With error: ${errors.size}")
             indicator.setProgress(file.name, completed.toDouble() / files.size)
             try {
-                val rootVisitor = if (offset != null) EvaluationRootByOffsetVisitor(offset, file.path, file.text()) else DefaultEvaluationRootVisitor()
+                val rootVisitor = when {
+                    psi != null -> EvaluationRootByRangeVisitor(psi.textRange?.startOffset ?: psi.textOffset,
+                            psi.textRange?.endOffset ?:psi.textOffset + psi.textLength)
+                    offset != null -> EvaluationRootByOffsetVisitor(offset, file.path, file.text())
+                    else -> DefaultEvaluationRootVisitor()
+                }
                 val uast = uastBuilder.build(file, rootVisitor)
                 generatedActions.add(actionsGenerator.generate(uast))
             } catch (e: Exception) {
