@@ -1,0 +1,39 @@
+package org.jb.cce.highlighter
+
+import com.intellij.codeInsight.completion.PrefixMatcher
+import com.intellij.codeInsight.lookup.LookupArranger
+import com.intellij.codeInsight.lookup.LookupElement
+import com.intellij.codeInsight.lookup.LookupElementBuilder
+import com.intellij.codeInsight.lookup.LookupManager
+import com.intellij.codeInsight.lookup.impl.LookupImpl
+import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.event.EditorMouseEvent
+import com.intellij.openapi.editor.event.EditorMouseListener
+import com.intellij.openapi.project.Project
+import org.jb.cce.Session
+
+class HighlightersClickListener(private val editor: Editor, private val project: Project) : EditorMouseListener {
+    private val sessions = mutableMapOf<HighlightRange, Session>()
+
+    fun addSession(session: Session, begin: Int, end: Int) {
+        sessions[HighlightRange(begin, end)] = session
+    }
+
+    fun clear() = sessions.clear()
+
+    override fun mouseClicked(event: EditorMouseEvent) {
+        for (session in sessions) {
+            if (editor.caretModel.offset in session.key.begin+1 .. session.key.end) {
+                val lookup = LookupManager.getInstance(project).createLookup(editor, LookupElement.EMPTY_ARRAY, "",
+                        LookupArranger.DefaultArranger()) as LookupImpl
+                for (completion in session.value.lookups.last().suggestions) {
+                    val item = if (completion.text == session.value.expectedText)
+                        LookupElementBuilder.create(completion.presentationText).bold()
+                    else LookupElementBuilder.create(completion.presentationText)
+                    lookup.addItem(item, PrefixMatcher.ALWAYS_TRUE)
+                }
+                lookup.showLookup()
+            }
+        }
+    }
+}
