@@ -7,12 +7,8 @@ class ActionSerializer {
 
     private val gson = Gson()
 
-    private fun serialize(action: Action): String {
-        return gson.toJson(action)
-    }
-
-    fun serialize(actions: List<Action>): String {
-        return actions.asSequence().map { serialize(it) }.joinToString(", ", "[", "]")
+    fun serialize(info: ActionsInfo): String {
+        return gson.toJson(info)
     }
 
     private fun deserialize(action: Map<String, Any>): Action {
@@ -23,14 +19,15 @@ class ActionSerializer {
             Action.ActionType.FINISH_SESSION.name -> FinishSession()
             Action.ActionType.PRINT_TEXT.name -> PrintText(action["text"] as String, action["completable"] as Boolean)
             Action.ActionType.DELETE_RANGE.name ->
-            DeleteRange((action["begin"] as Double).toInt(), (action["end"] as Double).toInt(), action["completable"] as Boolean)
+                DeleteRange((action["begin"] as Double).toInt(), (action["end"] as Double).toInt(), action["completable"] as Boolean)
             Action.ActionType.OPEN_FILE.name -> OpenFile(action["path"] as String, action["text"] as String)
             else -> throw UnexpectedActionException("Incorrect action type")
         }
     }
 
-    fun deserialize(json: String): List<Action> {
-        val list = gson.fromJson(json, mutableListOf<Map<String, Any>>().javaClass)
-        return list.asSequence().map { deserialize(it) }.toList()
+    fun deserialize(json: String): ActionsInfo {
+        val info = gson.fromJson(json, mutableMapOf<String, Any>().javaClass)
+        val actions = gson.fromJson(info["actions"] as String, mutableListOf<Map<String, Any>>().javaClass)
+        return ActionsInfo(info["projectPath"] as String, actions.map { deserialize(it) }.toList())
     }
 }

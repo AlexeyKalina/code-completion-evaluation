@@ -48,7 +48,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
 
     fun evaluateCompletionHere(project: Project, file: VirtualFile, languageName: String, offset: Int, psi: PsiElement?,
                                strategy: CompletionStrategy, completionTypes: List<CompletionType>) =
-        evaluateUnderProgress(project, languageName, listOf(file), strategy, completionTypes, "", true, false, 0, offset, psi)
+            evaluateUnderProgress(project, languageName, listOf(file), strategy, completionTypes, "", true, false, 0, offset, psi)
 
     private fun evaluateUnderProgress(project: Project, languageName: String, files: Collection<VirtualFile>, strategy: CompletionStrategy,
                                       completionTypes: List<CompletionType>, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean,
@@ -67,10 +67,11 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             override fun onSuccess() {
                 val reportGenerator = if (offset == null) HtmlReportGenerator(workspaceDir) else null
                 if (actions.isEmpty()) return Messages.showInfoMessage(project, "No tokens for completion", "Nothing to complete")
+                val actionsInfo = ActionsInfo(project.basePath!!, actions)
                 if (interpretActions)
-                    interpretUnderProgress(actions, errors, completionTypes, strategy, project, languageName, reportGenerator, saveLogs, logsTrainingPercentage)
+                    interpretUnderProgress(actionsInfo, errors, completionTypes, strategy, project, languageName, reportGenerator, saveLogs, logsTrainingPercentage)
                 else
-                    reportGenerator?.saveActions(actions)
+                    reportGenerator?.saveActions(actionsInfo)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
@@ -112,7 +113,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         return Pair(generatedActions.flatten(), errors)
     }
 
-    private fun interpretUnderProgress(actions: List<Action>, errors: List<FileErrorInfo>, completionTypes: List<CompletionType>, strategy: CompletionStrategy,
+    private fun interpretUnderProgress(actionsInfo: ActionsInfo, errors: List<FileErrorInfo>, completionTypes: List<CompletionType>, strategy: CompletionStrategy,
                                        project: Project, languageName: String, reportGenerator: HtmlReportGenerator?, saveLogs: Boolean, logsTrainingPercentage: Int) {
         val task = object : Task.Backgroundable(project, "Interpretation of the generated actions") {
             private var sessionsInfo: List<SessionsEvaluationInfo>? = null
@@ -120,8 +121,8 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
                 val logsPath = if (reportGenerator == null) "" else Paths.get(reportGenerator.logsDirectory(), languageName.toLowerCase()).toString()
-                reportGenerator?.saveActions(actions)
-                sessionsInfo = interpretActions(actions, completionTypes, strategy, project, logsPath, saveLogs, logsTrainingPercentage, getProcess(indicator))
+                reportGenerator?.saveActions(actionsInfo)
+                sessionsInfo = interpretActions(actionsInfo.actions, completionTypes, strategy, project, logsPath, saveLogs, logsTrainingPercentage, getProcess(indicator))
             }
 
             override fun onSuccess() = finish()

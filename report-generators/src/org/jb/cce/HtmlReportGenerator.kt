@@ -2,8 +2,8 @@ package org.jb.cce
 
 import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.jb.cce.ReportColors.Companion.getColor
-import org.jb.cce.actions.Action
 import org.jb.cce.actions.ActionSerializer
+import org.jb.cce.actions.ActionsInfo
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.MetricsEvaluationInfo
 import org.jb.cce.info.SessionsEvaluationInfo
@@ -11,6 +11,7 @@ import org.jb.cce.metrics.MetricInfo
 import java.io.File
 import java.io.FileWriter
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.*
@@ -30,20 +31,22 @@ class HtmlReportGenerator(outputDir: String) {
     }
     private lateinit var reportTitle: String
 
-    private val reportsDir: String = Paths.get(outputDir, formatter.format(Date())).toString()
-    private val resourcesDir = Paths.get(reportsDir, "res")
-    private val resultsDir = Paths.get(reportsDir, "data")
-    private val logsDir = Paths.get(reportsDir, "logs")
-    private val actionsDir = Paths.get(reportsDir, "actions")
+    private val baseDir: String = Paths.get(outputDir, formatter.format(Date())).toString()
+    private val resourcesDir = Paths.get(baseDir, "res")
+    private val resultsDir = Paths.get(baseDir, "data")
+    private val logsDir = Paths.get(baseDir, "logs")
+    private val actionsDir = Paths.get(baseDir, "actions")
+    private val reportsDir = Paths.get(baseDir, "reports")
 
-    private data class ResultPaths(val resourcePath: String, val reportPath: String)
-    private val references: MutableMap<String, String> = mutableMapOf()
+    private data class ResultPaths(val resourcePath: Path, val reportPath: Path)
+    private val references: MutableMap<String, Path> = mutableMapOf()
 
     init {
         Files.createDirectories(resourcesDir)
         Files.createDirectories(resultsDir)
         Files.createDirectories(logsDir)
         Files.createDirectories(actionsDir)
+        Files.createDirectories(reportsDir)
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorStyle), Paths.get(resourcesDir.toString(), tabulatorStyle))
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(resourcesDir.toString(), tabulatorScript))
     }
@@ -57,9 +60,9 @@ class HtmlReportGenerator(outputDir: String) {
         return generateGlobalReport(metrics, errors)
     }
 
-    fun saveActions(actions: List<Action>) {
+    fun saveActions(info: ActionsInfo) {
         val actionsPath = Paths.get(actionsDir.toString(), "actions.json")
-        actionsPath.toFile().writeText(actionSerializer.serialize(actions))
+        actionsPath.toFile().writeText(actionSerializer.serialize(info))
     }
 
     private fun generateFileReports(evaluationResults: List<SessionsEvaluationInfo>) {
@@ -70,10 +73,10 @@ class HtmlReportGenerator(outputDir: String) {
             val json = sessionSerializer.serialize(sessions.flatten())
             val file = File(filePath)
             val (resourcePath, reportPath) = getPaths(file.name)
-            FileWriter(resourcePath).use { it.write("sessions = '$json'") }
-            val report = getHtml(sessions, file.name, resourcePath,
+            FileWriter(resourcePath.toString()).use { it.write("sessions = '$json'") }
+            val report = getHtml(sessions, file.name, reportsDir.relativize(resourcePath).toString(),
                     evaluationResults.mapNotNull { it.sessions.find { it.filePath == filePath }?.text }.first() )
-            FileWriter(reportPath).use { it.write(report) }
+            FileWriter(reportPath.toString()).use { it.write(report) }
             references[filePath] = reportPath
         }
     }
@@ -86,7 +89,7 @@ class HtmlReportGenerator(outputDir: String) {
             val report = """<html><head><title>$reportTitle</title></head><body><h1>$reportTitle</h1>
                             <h2>Message:</h2>${fileError.exception.message}
                             <h2>StackTrace:</h2>${fileError.exception.stackTrace?.contentToString()}</body></html>"""
-            FileWriter(reportPath).use { it.write(report) }
+            FileWriter(reportPath.toString()).use { it.write(report) }
             references[file.path] = reportPath
         }
     }
@@ -102,7 +105,7 @@ class HtmlReportGenerator(outputDir: String) {
         if (errors.isEmpty()) sb.appendln("no errors occurred</h3>") else sb.appendln("${errors.size} with errors</h3>")
         sb.appendln(getMetricsTable(evaluationResults, errors))
         sb.appendln("<script>var table = new Tabulator(\"#metrics-table\", {layout:\"fitColumns\"});</script></body></html>")
-        val reportPath = Paths.get(reportsDir, globalReportName).toString()
+        val reportPath = Paths.get(baseDir, globalReportName).toString()
         FileWriter(reportPath).use { it.write(sb.toString()) }
         return reportPath
     }
@@ -119,8 +122,8 @@ class HtmlReportGenerator(outputDir: String) {
         return if (Files.exists(Paths.get(resourcesDir.toString(), "$fileName.js"))) {
             return getNextFilePaths(Paths.get(resourcesDir.toString(), fileName).toString())
         } else {
-            ResultPaths(Paths.get(resourcesDir.toString(), "$fileName.js").toString(),
-                    Paths.get(reportsDir, "$fileName.html").toString())
+            ResultPaths(Paths.get(resourcesDir.toString(), "$fileName.js"),
+                    Paths.get(reportsDir.toString(), "$fileName.html"))
         }
     }
 
@@ -130,7 +133,7 @@ class HtmlReportGenerator(outputDir: String) {
             index++
             val nextFile = "$filePath-$index.js"
         } while (File(nextFile).exists())
-        return ResultPaths("$filePath-$index.js", "$filePath-$index.html")
+        return ResultPaths(Paths.get("$filePath-$index.js"), Paths.get("$filePath-$index.html"))
     }
 
     private fun getHtml(sessions: List<List<Session>>, fileName: String, resourcePath: String, text: String) : String {
@@ -203,14 +206,19 @@ class HtmlReportGenerator(outputDir: String) {
             headerBuilder.appendln("<th>${metric.first} ${metric.second}</th>")
 
         for (fileError in errors) {
-            writeRow(contentBuilder, "<a href=\"${references[fileError.path]!!}\" style=\"color:red;\">${File(fileError.path).name}</a>",
+            val path = Paths.get(baseDir).relativize(references[fileError.path]!!)
+            writeRow(contentBuilder, "<a href=\"$path\" style=\"color:red;\">${File(fileError.path).name}</a>",
                     evaluationResults.flatMap { it.globalMetrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name })
         }
 
-        for (filePath in getDistinctFiles(evaluationResults))
-            writeRow(contentBuilder, "<a href=\"${references[filePath]!!}\">${File(filePath).name}</a>",
-                evaluationResults.flatMap { it.fileMetrics.find { it.filePath == filePath }?.results ?:
-                it.globalMetrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name })
+        for (filePath in getDistinctFiles(evaluationResults)) {
+            val path = Paths.get(baseDir).relativize(references[filePath]!!)
+            writeRow(contentBuilder, "<a href=\"$path\">${File(filePath).name}</a>",
+                    evaluationResults.flatMap {
+                        it.fileMetrics.find { it.filePath == filePath }?.results
+                                ?: it.globalMetrics.map { MetricInfo(it.name, null) }
+                    }.sortedBy { it.name })
+        }
 
         writeRow(contentBuilder, "Summary", evaluationResults.flatMap { it.globalMetrics }.sortedBy { it.name })
         contentBuilder.appendln("</tr>")
