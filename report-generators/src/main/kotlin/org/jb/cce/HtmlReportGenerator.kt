@@ -1,6 +1,7 @@
 package org.jb.cce
 
 import org.apache.commons.text.StringEscapeUtils.escapeHtml4
+import org.jb.cce.ReportColors.Companion.getColor
 import org.jb.cce.actions.Action
 import org.jb.cce.actions.ActionSerializer
 import org.jb.cce.info.FileErrorInfo
@@ -16,11 +17,6 @@ import java.util.*
 
 class HtmlReportGenerator(outputDir: String) {
     companion object {
-        private const val middleCountLookups = 3
-        private const val goodColor = "#008800"
-        private const val middleColor = "#999900"
-        private const val badColor = "#BB0066"
-        private const val absentColor = "#70AAFF"
         private const val globalReportName = "index.html"
         private const val tabulatorScript = "/tabulator.min.js"
         private const val tabulatorStyle = "/tabulator.min.css"
@@ -32,7 +28,6 @@ class HtmlReportGenerator(outputDir: String) {
         private val sessionSerializer = SessionSerializer()
         private val actionSerializer = ActionSerializer()
     }
-
     private lateinit var reportTitle: String
 
     private val reportsDir: String = Paths.get(outputDir, formatter.format(Date())).toString()
@@ -194,19 +189,9 @@ class HtmlReportGenerator(outputDir: String) {
     }
 
     private fun getDiv(session: Session?, text: String) : String {
-        val opened = "<div class=\"completion\" id=\"${session?.id}\" style=\"color: ${getColor(session)}; font-weight: bold\">"
+        val opened = "<div class=\"completion\" id=\"${session?.id}\" style=\"color: ${getColor(session, HtmlColors)}; font-weight: bold\">"
         val closed = "</div>"
         return "$opened$text$closed"
-    }
-
-    private fun getColor(session: Session?): String {
-        return when {
-            session == null -> absentColor
-            !session.lookups.last().suggestions.any{ it.text == session.expectedText } -> badColor
-            session.lookups.last().suggestions.size < middleCountLookups ||
-                    session.lookups.last().suggestions.subList(0, middleCountLookups).any{ it.text == session.expectedText } -> goodColor
-            else -> middleColor
-        }
     }
 
     private fun getMetricsTable(evaluationResults: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {

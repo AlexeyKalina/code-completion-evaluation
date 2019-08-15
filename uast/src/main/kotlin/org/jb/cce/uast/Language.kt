@@ -3,11 +3,12 @@ package org.jb.cce.uast
 enum class Language(val displayName: String, private val extension: String) {
     JAVA("Java", "java"),
     PYTHON("Python", "py"),
-    BASH ("Bash", "sh"),
+    BASH("Shell Script", "sh"),
     CSHARP("C#", "cs"),
+    ANOTHER("Another", "*"),
     UNSUPPORTED("Unsupported", "");
 
     companion object {
-        fun resolve(extension: String): Language = Language.values().find { it.extension == extension } ?: UNSUPPORTED
+        fun resolve(displayName: String): Language = values().find { it.displayName == displayName } ?: ANOTHER
     }
 }

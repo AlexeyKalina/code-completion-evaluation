@@ -4,14 +4,13 @@ import org.jb.cce.Session
 import org.jb.cce.metrics.util.Sample
 import java.util.stream.Collectors
 
-class PrecisionMetric : Metric {
+class PrecisionMetric(private val n: Int) : Metric {
     private val sample = Sample()
 
     override val value: Double
         get() = sample.mean()
 
     override fun evaluate(sessions: List<Session>): Double {
-        // top3
         val listOfCompletions = sessions.stream()
                 .flatMap { session -> session.lookups.map { lookup -> Pair(lookup.suggestions, session.expectedText) }.stream() }
                 .collect(Collectors.toList())
@@ -19,7 +18,7 @@ class PrecisionMetric : Metric {
         val fileSample = Sample()
         for (completion in listOfCompletions) {
             val indexOfNecessaryCompletion = completion.first.map { it.text }.indexOf(completion.second)
-            if (indexOfNecessaryCompletion in 0..3) {
+            if (indexOfNecessaryCompletion in 0 until n) {
                 fileSample.add(1.0)
                 sample.add(1.0)
             } else if (completion.first.isNotEmpty()) {
@@ -31,5 +30,5 @@ class PrecisionMetric : Metric {
         return fileSample.mean()
     }
 
-    override val name: String = "Precision"
+    override val name: String = "Precision@$n"
 }

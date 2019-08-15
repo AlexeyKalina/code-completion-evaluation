@@ -1,10 +1,12 @@
 package org.jb.cce
 
-import com.google.gson.ExclusionStrategy
-import com.google.gson.FieldAttributes
-import com.google.gson.GsonBuilder
+import com.google.gson.*
+import com.google.gson.stream.JsonReader
+import com.google.gson.stream.JsonWriter
+import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.jb.cce.actions.CompletionPrefix
 import org.jb.cce.info.SessionsEvaluationInfo
+import java.lang.reflect.Type
 import java.util.*
 
 class SessionSerializer {
@@ -13,6 +15,13 @@ class SessionSerializer {
                 .addDeserializationExclusionStrategy(object : ExclusionStrategy {
                     override fun shouldSkipField(f: FieldAttributes) = false
                     override fun shouldSkipClass(aClass: Class<*>) = aClass == CompletionPrefix::class.java
+                }).registerTypeAdapter(Suggestion::class.java, object : JsonSerializer<Suggestion> {
+                    override fun serialize(src: Suggestion, typeOfSrc: Type, context: JsonSerializationContext): JsonObject {
+                        val jsonObject = JsonObject()
+                        jsonObject.addProperty("text", src.text)
+                        jsonObject.addProperty("presentationText", escapeHtml4(src.presentationText.replace("★", "*")))
+                        return jsonObject
+                    }
                 })
                 .create()
     }
@@ -27,9 +36,6 @@ class SessionSerializer {
             map[session.id] = session
         }
         return gson.toJson(map)
-                .replace("""(\\r|\\n|\\t)""".toRegex(), "")
-                .replace("\\\"", "&quot;")
-                .replace("★", "*")
     }
 
     fun deserialize(json: String) : SessionsEvaluationInfo {

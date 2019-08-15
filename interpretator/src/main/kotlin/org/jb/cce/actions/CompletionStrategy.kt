@@ -4,17 +4,18 @@ data class CompletionStrategy(val prefix: CompletionPrefix,
                               val statement: CompletionStatement,
                               val context: CompletionContext)
 
-sealed class CompletionPrefix(val completePrevious: Boolean) {
+sealed class CompletionPrefix(val emulateTyping: Boolean) {
     object NoPrefix : CompletionPrefix(false)
-    class CapitalizePrefix(completePrevious: Boolean) : CompletionPrefix(completePrevious)
-    class SimplePrefix(completePrevious: Boolean, val n: Int) : CompletionPrefix(completePrevious)
+    class CapitalizePrefix(emulateTyping: Boolean) : CompletionPrefix(emulateTyping)
+    class SimplePrefix(emulateTyping: Boolean, val n: Int) : CompletionPrefix(emulateTyping)
 }
 
 enum class CompletionStatement {
     METHOD_CALLS,
     ARGUMENTS,
     VARIABLES,
-    ALL
+    ALL,
+    ALL_TOKENS
 }
 
 enum class CompletionType {

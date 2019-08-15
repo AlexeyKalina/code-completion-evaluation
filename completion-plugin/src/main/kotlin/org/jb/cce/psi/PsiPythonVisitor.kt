@@ -7,10 +7,7 @@ import org.jb.cce.uast.CompositeNode
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.exceptions.UnifiedAstException
-import org.jb.cce.uast.statements.declarations.ClassDeclarationNode
-import org.jb.cce.uast.statements.declarations.MethodDeclarationNode
-import org.jb.cce.uast.statements.declarations.MethodHeaderNode
-import org.jb.cce.uast.statements.declarations.VariableDeclarationNode
+import org.jb.cce.uast.statements.declarations.*
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 import org.jb.cce.uast.statements.expressions.NamedNode
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
@@ -95,7 +92,9 @@ class PsiPythonVisitor(private val path: String, private val text: String): PyRe
 
     override fun visitPyFunction(node: PyFunction) {
         val function = MethodDeclarationNode(node.textOffset, node.textLength)
-        val header = MethodHeaderNode(node.name ?: "<empty_name>", node.textOffset, node.textLength)
+        val nameNode = node.nameNode
+        val header = MethodHeaderNode(nameNode?.text ?: "<empty_name>",
+                nameNode?.startOffset ?: throw PsiConverterException("Empty name offset"), nameNode.textLength)
         val body = MethodBodyNode(node.statementList.textOffset, node.statementList.textLength)
         function.setHeader(header)
         function.setBody(body)
@@ -107,7 +106,10 @@ class PsiPythonVisitor(private val path: String, private val text: String): PyRe
     }
 
     override fun visitPyClass(node: PyClass) {
-        val classNode = ClassDeclarationNode(node.name ?: "", node.textOffset, node.textLength)
+        val nameNode = node.nameNode
+        val header = if (nameNode != null) ClassHeaderNode(nameNode.text, nameNode.startOffset, nameNode.textLength)
+            else ClassHeaderNode("<no_name>", node.textOffset, 0)
+        val classNode = ClassDeclarationNode(header, node.textOffset, node.textLength)
         addToParent(classNode)
         stackOfNodes.addLast(classNode)
         stackOfLevelDeclarationCounts.addLast(0)

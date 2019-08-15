@@ -39,6 +39,7 @@ interface UnifiedAstVisitor {
     fun visitMethodBodyNode(node: MethodBodyNode) = visitBlockNode(node)
     fun visitArrayDeclarationNode(node: ArrayDeclarationNode) = visitDeclarationNode(node)
     fun visitClassDeclarationNode(node: ClassDeclarationNode) = visitDeclarationNode(node)
+    fun visitClassHeaderNode(node: ClassHeaderNode) = visitDeclarationNode(node)
     fun visitMethodDeclarationNode(node: MethodDeclarationNode) = visitDeclarationNode(node)
     fun visitMethodHeaderNode(node: MethodHeaderNode) = visitDeclarationNode(node)
 
@@ -49,5 +50,8 @@ interface UnifiedAstVisitor {
     fun visitFieldAccessNode(node: FieldAccessNode) = visitReferenceNode(node)
     fun visitAssignmentNode(node: AssignmentNode) = visitStatementNode(node)
 
-    fun visitFileNode(node: FileNode) = visit(node)
+    fun visitTokenNode(node: TokenNode) = visit(node)
+
+    fun visitFileNode(node: FileNode) = visitTextFragmentNode(node)
+    fun visitTextFragmentNode(node: TextFragmentNode) = visit(node)
 }

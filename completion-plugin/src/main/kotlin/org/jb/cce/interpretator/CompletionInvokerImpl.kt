@@ -2,6 +2,7 @@ package org.jb.cce.interpretator
 
 import com.intellij.codeInsight.completion.CodeCompletionHandlerBase
 import com.intellij.codeInsight.completion.CompletionType
+import com.intellij.codeInsight.lookup.Lookup
 import com.intellij.codeInsight.lookup.LookupElement
 import com.intellij.codeInsight.lookup.LookupElementPresentation
 import com.intellij.codeInsight.lookup.LookupManager
@@ -119,7 +120,12 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         selectedIndex = expectedItemIndex
         val document = editor.document
         val lengthBefore = document.textLength
-        finishLookup(Char.MIN_VALUE, items[expectedItemIndex])
+        try {
+            finishLookup(Lookup.AUTO_INSERT_SELECT_CHAR, items[expectedItemIndex])
+        } catch (e: Throwable) {
+            LOG.warn("Lookup finishing error.", e)
+            return false
+        }
         if (lengthBefore + completionLength != document.textLength) {
             UndoManagerImpl.getInstance(project).undo(FileEditorManager.getInstance(project).selectedEditor)
             return false

@@ -4,6 +4,7 @@ import com.google.gson.JsonObject
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.statements.declarations.ClassDeclarationNode
+import org.jb.cce.uast.statements.declarations.ClassHeaderNode
 import org.jb.cce.uast.statements.declarations.MethodDeclarationNode
 import org.jb.cce.uast.statements.declarations.VariableDeclarationNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
@@ -103,8 +104,11 @@ class BabelFishCSharpVisitor(path: String, text: String): BabelFishUnifiedVisito
     }
 
     override fun visitTypeDeclaration(json: JsonObject, parentNode: UnifiedAstNode) {
-        val name = if (json.has("Identifier")) visitIdentifier(json["Identifier"].asJsonObject) else ""
-        val classDeclaration = ClassDeclarationNode(name, getOffset(json), getLength(json))
+        val header = if (json.has("Identifier")) {
+            val nameJson = json["Identifier"].asJsonObject
+            ClassHeaderNode(visitIdentifier(nameJson), getOffset(nameJson), getLength(nameJson))
+        } else ClassHeaderNode("<no_name>", getOffset(json), 0)
+        val classDeclaration = ClassDeclarationNode(header, getOffset(json), getLength(json))
 
         visitChildren(json, classDeclaration)
 

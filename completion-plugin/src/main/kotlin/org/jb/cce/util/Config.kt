@@ -6,7 +6,7 @@ import org.jb.cce.uast.Language
 
 data class Config(val projectPath: String,
                   val listOfFiles: List<String>,
-                  val language: Language,
+                  val language: String,
                   val strategy: CompletionStrategy,
                   val completionTypes: List<CompletionType>,
                   val outputDir: String,

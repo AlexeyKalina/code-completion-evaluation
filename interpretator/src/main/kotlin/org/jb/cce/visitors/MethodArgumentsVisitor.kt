@@ -7,7 +7,7 @@ import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
 import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
 
-class MethodArgumentsVisitor(override val text: String, strategy: CompletionStrategy): CallCompletionsVisitor(text, strategy) {
+class MethodArgumentsVisitor(override val text: String, strategy: CompletionStrategy, textStart: Int): CallCompletionsVisitor(text, strategy, textStart) {
 
     private var insideMethodCall = false
 

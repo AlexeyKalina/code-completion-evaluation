@@ -2,7 +2,6 @@ package org.jb.cce.visitors
 
 import org.jb.cce.TokenType
 import org.jb.cce.actions.*
-import org.jb.cce.exception.UnexpectedActionException
 import org.jb.cce.uast.Completable
 import org.jb.cce.uast.UnifiedAstRecursiveVisitor
 import org.jb.cce.uast.statements.declarations.blocks.BlockNode
@@ -14,20 +13,21 @@ import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 
 abstract class CallCompletionsVisitor(protected open val text: String,
-                                      private val strategy: CompletionStrategy) : UnifiedAstRecursiveVisitor() {
+                                      protected val strategy: CompletionStrategy,
+                                      textStart: Int) : UnifiedAstRecursiveVisitor() {
 
-    private val actions = mutableListOf<Action>()
+    protected val actions = mutableListOf<Action>()
     private val bracketSize = 1
     private var isInsideDeletedText = false
-    private var previousTextStart = 0
+    protected var previousTextStart = textStart
 
     private val prefixCreator = when (strategy.prefix) {
         is CompletionPrefix.NoPrefix -> NoPrefixCreator()
-        is CompletionPrefix.CapitalizePrefix -> CapitalizePrefixCreator(strategy.prefix.completePrevious)
-        is CompletionPrefix.SimplePrefix -> SimplePrefixCreator(strategy.prefix.completePrevious, strategy.prefix.n)
+        is CompletionPrefix.CapitalizePrefix -> CapitalizePrefixCreator(strategy.prefix.emulateTyping)
+        is CompletionPrefix.SimplePrefix -> SimplePrefixCreator(strategy.prefix.emulateTyping, strategy.prefix.n)
     }
 
-    fun getActions(): List<Action> = actions
+    fun getGeneratedActions(): List<Action> = actions
 
     override fun visitClassInitializerNode(node: ClassInitializerNode) = visitDeletableBlock(node)
 
@@ -63,7 +63,7 @@ abstract class CallCompletionsVisitor(protected open val text: String,
             is MethodCallNode -> TokenType.METHOD_CALL
             is VariableAccessNode -> TokenType.VARIABLE
             is FieldAccessNode -> TokenType.FIELD
-            else -> throw UnexpectedActionException("Unknown token type")
+            else -> TokenType.UNKNOWN
         }
 
         val prefix = prefixCreator.getPrefix(node.getText())
