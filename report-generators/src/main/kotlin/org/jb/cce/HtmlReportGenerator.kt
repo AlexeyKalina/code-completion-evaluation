@@ -14,7 +14,7 @@ import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.*
 
-class HtmlReportGenerator(outputDir: String) : ColorizeTokens<String> {
+class HtmlReportGenerator(outputDir: String) {
     companion object {
         private const val globalReportName = "index.html"
         private const val tabulatorScript = "/tabulator.min.js"
@@ -27,13 +27,6 @@ class HtmlReportGenerator(outputDir: String) : ColorizeTokens<String> {
         private val sessionSerializer = SessionSerializer()
         private val actionSerializer = ActionSerializer()
     }
-
-    override val middleCountLookups = 3
-    override val goodColor = "#008800"
-    override val middleColor = "#999900"
-    override val badColor = "#BB0066"
-    override val absentColor = "#70AAFF"
-
     private lateinit var reportTitle: String
 
     private val reportsDir: String = Paths.get(outputDir, formatter.format(Date())).toString()
@@ -195,7 +188,7 @@ class HtmlReportGenerator(outputDir: String) : ColorizeTokens<String> {
     }
 
     private fun getDiv(session: Session?, text: String) : String {
-        val opened = "<div class=\"completion\" id=\"${session?.id}\" style=\"color: ${getColor(session)}; font-weight: bold\">"
+        val opened = "<div class=\"completion\" id=\"${session?.id}\" style=\"color: ${getColor(session, HtmlColors)}; font-weight: bold\">"
         val closed = "</div>"
         return "$opened$text$closed"
     }

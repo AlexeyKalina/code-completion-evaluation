@@ -12,22 +12,15 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
-import org.jb.cce.ColorizeTokens
 import org.jb.cce.Session
+import org.jb.cce.getColor
 import org.jb.cce.info.SessionsEvaluationInfo
-import java.awt.Color
 import java.awt.Font
 
-class Highlighter(private val project: Project): ColorizeTokens<Color> {
+class Highlighter(private val project: Project) {
     companion object {
         private val listenerKey = Key<HighlightersClickListener>("org.jb.cce.highlighter.listener")
     }
-
-    override val middleCountLookups = 3
-    override val absentColor = Color(112, 170, 255)
-    override val goodColor = Color(188, 245, 188)
-    override val middleColor = Color(255, 250, 205)
-    override val badColor = Color(255, 153, 153)
 
     private lateinit var listener : HighlightersClickListener
 
@@ -59,7 +52,7 @@ class Highlighter(private val project: Project): ColorizeTokens<Color> {
     }
 
     private fun addHighlight(editor: Editor, session: Session?, begin: Int, end: Int) {
-        val color = getColor(session)
+        val color = getColor(session, HighlightColors)
         editor.markupModel.addRangeHighlighter(begin, end, HighlighterLayer.LAST,
                 TextAttributes(null, color, null, EffectType.BOXED, Font.PLAIN), HighlighterTargetArea.EXACT_RANGE)
         if (session != null) listener.addSession(session, begin, end)
