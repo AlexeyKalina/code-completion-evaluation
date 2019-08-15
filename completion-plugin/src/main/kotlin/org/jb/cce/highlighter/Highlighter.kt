@@ -33,7 +33,7 @@ class Highlighter(private val project: Project) {
         val sessions = evaluationResults.map { it.sessions.first().results }
         val offsets = sessions.flatten().map { it.offset }.distinct().sorted()
         val sessionGroups = offsets.map { offset -> sessions.map { it.find { session -> session.offset == offset } } }
-        ApplicationManager.getApplication().invokeAndWait {
+        ApplicationManager.getApplication().invokeLater {
             editor.markupModel.removeAllHighlighters()
             listener.clear()
             for (sessionGroup in sessionGroups) {
@@ -47,8 +47,8 @@ class Highlighter(private val project: Project) {
                 }
                 addHighlight(editor, sessionGroup.last(), session.offset + shift, session.offset + session.expectedText.length)
             }
+            editor.putUserData(listenerKey, listener)
         }
-        editor.putUserData(listenerKey, listener)
     }
 
     private fun addHighlight(editor: Editor, session: Session?, begin: Int, end: Int) {

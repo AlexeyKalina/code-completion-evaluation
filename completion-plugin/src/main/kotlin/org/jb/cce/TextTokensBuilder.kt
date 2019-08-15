@@ -19,7 +19,7 @@ open class TextTokensBuilder(private val tokenFilter: TokenFilter) : UastBuilder
                 continue
             }
             for (ch in line) {
-                if (ch == '_' || ch.isLetter() || ch.isDigit() && curToken.isNotEmpty()) {
+                if (ch == '_' || ch.isLetter() || (ch.isDigit() && curToken.isNotEmpty())) {
                     if (curToken.isEmpty()) tokenOffset = offset
                     curToken += ch
                 } else if (tokenFilter.test(curToken)) {
