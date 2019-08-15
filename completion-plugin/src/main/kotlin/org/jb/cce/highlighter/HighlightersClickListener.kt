@@ -10,20 +10,21 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.event.EditorMouseEvent
 import com.intellij.openapi.editor.event.EditorMouseListener
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.TextRange
 import org.jb.cce.Session
 
 class HighlightersClickListener(private val editor: Editor, private val project: Project) : EditorMouseListener {
-    private val sessions = mutableMapOf<HighlightRange, Session>()
+    private val sessions = mutableMapOf<TextRange, Session>()
 
     fun addSession(session: Session, begin: Int, end: Int) {
-        sessions[HighlightRange(begin, end)] = session
+        sessions[TextRange(begin, end)] = session
     }
 
     fun clear() = sessions.clear()
 
     override fun mouseClicked(event: EditorMouseEvent) {
         for (session in sessions) {
-            if (editor.caretModel.offset in session.key.begin+1 .. session.key.end) {
+            if (editor.caretModel.offset in session.key.startOffset+1 .. session.key.endOffset) {
                 val lookup = LookupManager.getInstance(project).createLookup(editor, LookupElement.EMPTY_ARRAY, "",
                         LookupArranger.DefaultArranger()) as LookupImpl
                 for (completion in session.value.lookups.last().suggestions) {

@@ -123,6 +123,7 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         try {
             finishLookup(Lookup.AUTO_INSERT_SELECT_CHAR, items[expectedItemIndex])
         } catch (e: Throwable) {
+            LOG.warn("Lookup finishing error.", e)
             return false
         }
         if (lengthBefore + completionLength != document.textLength) {

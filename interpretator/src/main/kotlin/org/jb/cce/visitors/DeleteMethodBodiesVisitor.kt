@@ -9,7 +9,7 @@ class DeleteMethodBodiesVisitor : DeletionVisitor() {
     private val actions = mutableListOf<DeleteRange>()
     private val bracketSize = 1
 
-    override fun getActions() = actions
+    override fun getActions(): List<DeleteRange> = actions
 
     override fun visitGlobalNode(node: GlobalNode) {
         actions += DeleteRange(node.getOffset() + bracketSize, node.getOffset() + node.getLength() - bracketSize)
