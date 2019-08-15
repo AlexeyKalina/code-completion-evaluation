@@ -4,7 +4,7 @@ import org.jb.cce.Session
 import org.jb.cce.metrics.util.Sample
 import java.util.stream.Collectors
 
-abstract class PrecisionMetric : Metric {
+class PrecisionMetric(private val n: Int) : Metric {
     private val sample = Sample()
 
     override val value: Double
@@ -18,7 +18,7 @@ abstract class PrecisionMetric : Metric {
         val fileSample = Sample()
         for (completion in listOfCompletions) {
             val indexOfNecessaryCompletion = completion.first.map { it.text }.indexOf(completion.second)
-            if (indexOfNecessaryCompletion in 0 until level()) {
+            if (indexOfNecessaryCompletion in 0 until n) {
                 fileSample.add(1.0)
                 sample.add(1.0)
             } else if (completion.first.isNotEmpty()) {
@@ -30,15 +30,5 @@ abstract class PrecisionMetric : Metric {
         return fileSample.mean()
     }
 
-    abstract fun level(): Int
-}
-
-class PrecisionOneMetric : PrecisionMetric() {
-    override fun level() = 1
-    override val name: String = "Precision@1"
-}
-
-class PrecisionFiveMetric : PrecisionMetric() {
-    override fun level() = 5
-    override val name: String = "Precision@5"
+    override val name: String = "Precision@$n"
 }
