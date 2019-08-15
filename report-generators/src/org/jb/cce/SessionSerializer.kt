@@ -1,8 +1,6 @@
 package org.jb.cce
 
 import com.google.gson.*
-import com.google.gson.stream.JsonReader
-import com.google.gson.stream.JsonWriter
 import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.jb.cce.actions.CompletionPrefix
 import org.jb.cce.info.SessionsEvaluationInfo
@@ -19,7 +17,7 @@ class SessionSerializer {
                     override fun serialize(src: Suggestion, typeOfSrc: Type, context: JsonSerializationContext): JsonObject {
                         val jsonObject = JsonObject()
                         jsonObject.addProperty("text", src.text)
-                        jsonObject.addProperty("presentationText", escapeHtml4(src.presentationText.replace("★", "*")))
+                        jsonObject.addProperty("presentationText", escapeHtml4(src.presentationText))
                         return jsonObject
                     }
                 })
@@ -36,6 +34,8 @@ class SessionSerializer {
             map[session.id] = session
         }
         return gson.toJson(map)
+                .replace("""(\\r|\\n|\\t)""".toRegex(), "")
+                .replace("★", "*")
     }
 
     fun deserialize(json: String) : SessionsEvaluationInfo {
