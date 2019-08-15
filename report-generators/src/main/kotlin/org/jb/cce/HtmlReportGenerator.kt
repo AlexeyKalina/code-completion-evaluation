@@ -1,6 +1,7 @@
 package org.jb.cce
 
 import org.apache.commons.text.StringEscapeUtils.escapeHtml4
+import org.jb.cce.ReportColors.Companion.getColor
 import org.jb.cce.actions.Action
 import org.jb.cce.actions.ActionSerializer
 import org.jb.cce.info.FileErrorInfo

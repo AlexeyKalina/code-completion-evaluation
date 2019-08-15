@@ -12,8 +12,8 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
+import org.jb.cce.ReportColors.Companion.getColor
 import org.jb.cce.Session
-import org.jb.cce.getColor
 import org.jb.cce.info.SessionsEvaluationInfo
 import java.awt.Font
 
