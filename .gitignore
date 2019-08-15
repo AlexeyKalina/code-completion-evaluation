@@ -31,3 +31,7 @@ hs_err_pid*
 # gradle
 build
 .gradle
+
+# TypeScript
+vscode-plugin/out
+vscode-plugin/node_modules
