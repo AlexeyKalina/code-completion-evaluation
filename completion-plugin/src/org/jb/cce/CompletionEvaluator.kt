@@ -2,6 +2,7 @@ package org.jb.cce
 
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -12,7 +13,6 @@ import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
-import com.intellij.stats.storage.PluginDirectoryFilePathProvider
 import org.jb.cce.actions.*
 import org.jb.cce.highlighter.Highlighter
 import org.jb.cce.info.EvaluationInfo
@@ -23,8 +23,8 @@ import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.interpretator.DelegationCompletionInvoker
 import org.jb.cce.util.*
 import org.jb.cce.visitors.DefaultEvaluationRootVisitor
-import org.jb.cce.visitors.EvaluationRootByRangeVisitor
 import org.jb.cce.visitors.EvaluationRootByOffsetVisitor
+import org.jb.cce.visitors.EvaluationRootByRangeVisitor
 import java.io.File
 import java.nio.file.Paths
 import java.util.*
@@ -141,7 +141,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                                  project: Project, workspaceDir: String, saveLogs: Boolean, logsTrainingPercentage: Int, indicator: Progress): List<SessionsEvaluationInfo> {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project))
         val interpreter = Interpreter(completionInvoker)
-        val logsWatcher = if (saveLogs) DirectoryWatcher(PluginDirectoryFilePathProvider().getStatsDataDirectory().toString(), workspaceDir, logsTrainingPercentage) else null
+        val logsWatcher = if (saveLogs) DirectoryWatcher(statsCollectorLogsDirectory(), workspaceDir, logsTrainingPercentage) else null
         logsWatcher?.start()
 
         val sessionsInfo = mutableListOf<SessionsEvaluationInfo>()
@@ -188,6 +188,10 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
             }
         }
+    }
+
+    private fun statsCollectorLogsDirectory(): String {
+        return Paths.get(PathManager.getSystemPath(), "completion-stats-data").toString()
     }
 
     private fun isMLCompletionEnabled(): Boolean {
