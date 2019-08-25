@@ -1,0 +1,23 @@
+language: java
+install: true
+
+jdk:
+  - openjdk8
+
+services:
+  - docker
+
+before_install:
+  - docker run -d --name bblfshd --privileged -p 9432:9432 bblfsh/bblfshd:latest-drivers
+
+before_cache:
+  - rm -f  $HOME/.gradle/caches/modules-2/modules-2.lock
+  - rm -fr $HOME/.gradle/caches/*/plugin-resolution/
+
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+
+script:
+  - ./gradlew clean test

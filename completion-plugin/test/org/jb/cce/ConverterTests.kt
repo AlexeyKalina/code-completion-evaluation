@@ -1,13 +1,18 @@
 package org.jb.cce
 
-import com.intellij.configurationStore.getOrCreateVirtualFile
 import com.intellij.openapi.application.ReadAction
-import com.intellij.testFramework.LightPlatformTestCase
-import org.jb.cce.psi.PsiConverter
-import org.jb.cce.uast.FileNode
+import com.intellij.openapi.vfs.VfsUtil
+import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
+import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import junit.framework.TestCase
 import org.jb.cce.uast.Language
+import org.jb.cce.uast.TextFragmentNode
 import org.jb.cce.uast.util.UastPrinter
-import org.junit.jupiter.api.Assertions
+import org.jb.cce.visitors.DefaultEvaluationRootVisitor
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.Assumptions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.extension.ExtensionContext
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.Arguments
@@ -17,28 +22,36 @@ import java.io.File
 import java.nio.file.Paths
 import java.util.stream.Stream
 
-
-class ConverterTests: LightPlatformTestCase() {
+@DisplayName("Check UAST was built correctly")
+class ConverterTests : BasePlatformTestCase() {
     companion object {
         private const val TEST_DATA_PATH = "testData"
         private const val OUTPUTS_NAME = "outs"
+        private val MUTED_TESTS = setOf(
+            "Shell Script:while_loop",
+            "Shell Script:for_loop",
+            "Java:LambdaInvocationInPlace"
+        )
     }
 
     @ArgumentsSource(FileArgumentProvider::class)
     @ParameterizedTest(name = "{0}")
     fun doTest(testName: String, language: Language, testFile: File, testOutput: File) {
+        Assumptions.assumeTrue(testName !in MUTED_TESTS)
         println(testName)
-        val virtualFile = getOrCreateVirtualFile(testFile.toPath(), null)
-        val uast = ReadAction.compute<FileNode, Exception> { UastBuilder.create(getProject(), language).build(virtualFile) }
+        val virtualFile = VfsUtil.findFileByIoFile(testFile, false) ?: kotlin.test.fail("virtual file not found")
+        val uast = ReadAction.compute<TextFragmentNode, Exception> {
+            UastBuilder.create(project, language.displayName, false).build(virtualFile, DefaultEvaluationRootVisitor())
+        }
         val printer = UastPrinter()
         uast.accept(printer)
         val text = printer.getText()
         if (testOutput.exists()) {
-            Assertions.assertEquals(text, testOutput.readText(), "Expected and actual uast structure mismatched")
+            TestCase.assertEquals("Expected and actual uast structure mismatched", testOutput.readText(), text)
         } else {
             testOutput.parentFile.mkdirs()
             testOutput.writeText(text)
-            Assertions.fail("No expected output found. Do not forget to add the output into VCS")
+            fail("No expected output found. Do not forget to add the output into VCS")
         }
     }
 
@@ -47,7 +60,7 @@ class ConverterTests: LightPlatformTestCase() {
             val language2files = Paths.get(TEST_DATA_PATH).toFile().walkTopDown()
                     .onEnter { it.name != OUTPUTS_NAME }
                     .filter { it.isFile }
-                    .groupBy { Language.resolve(it.extension) }
+                .groupBy { Language.resolveByExtension(it.extension) }
 
             val unsupportedFiles = language2files[Language.UNSUPPORTED]
             if (!unsupportedFiles.isNullOrEmpty()) {
@@ -65,4 +78,17 @@ class ConverterTests: LightPlatformTestCase() {
             return language2files.entries.stream().flatMap { asArguments(it.key, it.value) }
         }
     }
+
+    override fun getTestDataPath(): String {
+        return TEST_DATA_PATH
+    }
+
+    @BeforeEach
+    override fun setUp() {
+        super.setUp()
+        VfsRootAccess.allowRootAccess(testRootDisposable, Paths.get(TEST_DATA_PATH).toAbsolutePath().toString())
+    }
+
+    @AfterEach
+    override fun tearDown() = super.tearDown()
 }
