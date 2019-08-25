@@ -1,8 +1,6 @@
 <idea-plugin>
     <id>com.intellij.completion.evaluation</id>
     <name>Code Completion Quality Evaluation</name>
-    <version>0.0.6</version>
-    <idea-version since-build="192.5118"/>
     <vendor url="https://www.jetbrains.com">JetBrains</vendor>
 
     <description><![CDATA[
@@ -15,20 +13,6 @@
                 <li>After generation and interpretation of actions you will be asked to open the report in the browser.</li>
            </ul>
     ]]></description>
-
-    <change-notes><![CDATA[
-      0.0.2 <br>
-        <ul>
-            <li>Headless mode</li>
-        </ul>
-      0.0.1 <br>
-        <ul>
-            <li>Support Java, Python and C#</li>
-            <li>Support different strategies of queries generation: token types, context and prefix</li>
-            <li>Support different quality metrics: Precision, Recall, F-Measure, Mean Reciprocal Rank and E-saved</li>
-        </ul>
-    ]]>
-    </change-notes>
 
     <extensions defaultExtensionNs="com.intellij">
         <appStarter implementation="org.jb.cce.actions.CompletionEvaluationStarter"/>

@@ -1,14 +1,4 @@
-plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.3.0'
-}
-
-group 'com.intellij.completion.evaluation'
-version '1.0-SNAPSHOT'
-
-sourceCompatibility = 1.8
-
 repositories {
-    mavenCentral()
     maven {
         url "https://dl.bintray.com/bibaev/util"
     }
@@ -19,7 +9,6 @@ configurations {
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
     compile "com.google.code.gson:gson:2.8.5"
     compile group: 'net.java.dev.jna', name: 'jna', version: '4.2.2'
     compile project(':uast')
@@ -32,7 +21,3 @@ task extractLibraries(type: Copy) {
 }
 
 compileJava.dependsOn(extractLibraries)
-
-compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
-}
