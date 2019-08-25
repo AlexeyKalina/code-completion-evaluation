@@ -39,7 +39,7 @@ class ConverterTests : BasePlatformTestCase() {
         uast.accept(printer)
         val text = printer.getText()
         if (testOutput.exists()) {
-            TestCase.assertEquals("Expected and actual uast structure mismatched", text, testOutput.readText())
+            TestCase.assertEquals("Expected and actual uast structure mismatched", testOutput.readText(), text)
         } else {
             testOutput.parentFile.mkdirs()
             testOutput.writeText(text)
