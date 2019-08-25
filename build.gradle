@@ -1,16 +1,29 @@
 plugins {
     id 'java'
+    id 'org.jetbrains.kotlin.jvm' version '1.3.41' apply false
 }
 
-group 'com.intellij.completion.evaluation'
-version '1.0-SNAPSHOT'
+allprojects {
+    group 'com.intellij.completion.evaluation'
+    version '0.0.6'
 
-repositories {
-    mavenCentral()
+    sourceCompatibility = 1.8
 }
 
-dependencies {
-    compile project(':uast')
-    compile project(':completion-plugin')
-    compile project(':interpretator')
+subprojects {
+    apply plugin: 'org.jetbrains.kotlin.jvm'
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    }
+
+    compileKotlin {
+        kotlinOptions.jvmTarget = "1.8"
+    }
+    compileTestKotlin {
+        kotlinOptions.jvmTarget = "1.8"
+    }
 }
