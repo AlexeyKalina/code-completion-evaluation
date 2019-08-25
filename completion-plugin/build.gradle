@@ -35,9 +35,21 @@ runIde {
 }
 
 patchPluginXml {
+    sinceBuild '192.5118'
+    untilBuild '193.*'
+
     changeNotes """
-      Add change notes here.<br>
-      <em>most HTML tags may be used</em>"""
+        0.0.2 <br>
+        <ul>
+            <li>Headless mode</li>
+        </ul>
+        0.0.1 <br>
+        <ul>
+            <li>Support Java, Python and C#</li>
+            <li>Support different strategies of queries generation: token types, context and prefix</li>
+            <li>Support different quality metrics: Precision, Recall, F-Measure, Mean Reciprocal Rank and E-saved</li>
+        </ul>
+        """
 }
 
 test {
