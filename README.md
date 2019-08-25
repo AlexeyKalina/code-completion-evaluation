@@ -1,4 +1,4 @@
-# Code Completion Quality Evaluation Plugin
+# Code Completion Quality Evaluation Plugin [![Build Status](https://travis-ci.com/bibaev/code-completion-evaluation.svg?branch=master)](https://travis-ci.com/bibaev/code-completion-evaluation)
 
 ## Approach
 
