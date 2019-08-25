@@ -10,8 +10,25 @@ allprojects {
     sourceCompatibility = 1.8
 }
 
+sourceSets {
+    main.java.srcDirs = []
+    main.resources.srcDirs = []
+    test.java.srcDirs = []
+    test.resources.srcDirs = []
+}
+
 subprojects {
     apply plugin: 'org.jetbrains.kotlin.jvm'
+
+    sourceSets {
+        main.kotlin.srcDirs = ['src']
+        main.java.srcDirs = ['src']
+        main.resources.srcDirs = ['resources']
+        test.java.srcDirs = ['test']
+        test.kotlin.srcDirs = ['test']
+        test.resources.srcDirs = ['testResources']
+    }
+
     repositories {
         mavenCentral()
     }
