@@ -11,9 +11,9 @@ dependencies {
     compile project(':metrics-evaluator')
     compile project(':babelfish-converter')
     compile project(':report-generators')
-    testCompile("org.junit.jupiter:junit-jupiter-params:5.4.2")
-    testCompile("org.junit.jupiter:junit-jupiter-api:5.4.2")
-    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.4.2")
+    testCompile("org.junit.jupiter:junit-jupiter-params:5.5.1")
+    testCompile("org.junit.jupiter:junit-jupiter-api:5.5.1")
+    testRuntime("org.junit.jupiter:junit-jupiter-engine:5.5.1")
 }
 
 intellij {
@@ -54,4 +54,10 @@ patchPluginXml {
 
 test {
     useJUnitPlatform()
+    test {
+        testLogging {
+            events "passed", "skipped", "failed"
+            exceptionFormat "full"
+        }
+    }
 }
