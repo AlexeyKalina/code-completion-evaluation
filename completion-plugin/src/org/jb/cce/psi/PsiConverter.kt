@@ -23,6 +23,7 @@ class PsiConverter(private val project: Project, val language: Language) : UastB
 
         val uast = when (language) {
             Language.BASH -> getUast(PsiBashVisitor(file.path, file.text()), psi)
+            Language.JAVA -> getUast(PsiJavaVisitor(file.path, file.text()), psi)
             Language.PYTHON -> getUast(PsiPythonVisitor(file.path, file.text()), psi)
             else -> throw PsiConverterException("Unsupported language")
         }

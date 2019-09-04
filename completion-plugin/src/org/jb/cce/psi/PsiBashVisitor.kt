@@ -23,8 +23,8 @@ class PsiBashVisitor(private val path: String, private val text: String): ShVisi
 
     override fun getFile(): FileNode = _file ?: throw PsiConverterException("Invoke 'accept' with visitor on Bash PSI first")
 
-    override fun visitFile(node: PsiFile?) {
-        _file = FileNode(node?.textOffset ?: 0, node?.textLength ?: 0, path, text)
+    override fun visitFile(node: PsiFile) {
+        _file = FileNode(node.textOffset, node.textLength, path, text)
         stackOfNodes.addLast(_file)
         super.visitFile(node)
     }

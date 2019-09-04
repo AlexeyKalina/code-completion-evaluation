@@ -14,8 +14,7 @@ class MethodCallsVisitor(override val text: String, strategy: CompletionStrategy
     override fun visitMethodCallNode(node: MethodCallNode) {
         val prevValue = insideMethodCall
         insideMethodCall = true
-        val prefix = node.prefix
-        if (prefix != null) visit(prefix)
+        node.prefix?.accept(this)
         visitCompletable(node)
         visitChildren(node)
         insideMethodCall = prevValue
@@ -38,6 +37,7 @@ class MethodCallsVisitor(override val text: String, strategy: CompletionStrategy
     override fun visitFieldAccessNode(node: FieldAccessNode) {
         val prevValue = insideMethodCall
         insideMethodCall = false
+        node.prefix?.accept(this)
         super.visitFieldAccessNode(node)
         insideMethodCall = prevValue
     }
@@ -45,6 +45,7 @@ class MethodCallsVisitor(override val text: String, strategy: CompletionStrategy
     override fun visitArrayAccessNode(node: ArrayAccessNode) {
         val prevValue = insideMethodCall
         insideMethodCall = false
+        node.prefix?.accept(this)
         super.visitArrayAccessNode(node)
         insideMethodCall = prevValue
     }

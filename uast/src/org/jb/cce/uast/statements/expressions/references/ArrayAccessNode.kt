@@ -8,13 +8,15 @@ import org.jb.cce.uast.statements.expressions.ExpressionNode
 
 class ArrayAccessNode(name: String,
                       offset: Int,
-                      length: Int) : ReferenceNode(name, offset, length), CompositeNode {
-
+                      length: Int,
+                      isStatic: Boolean = false) : ReferenceNode(name, offset, length, isStatic), CompositeNode {
     private val indices = mutableListOf<ExpressionNode>()
 
     fun addIndex(index: ExpressionNode) {
         indices += index
     }
+
+    override fun getText() = name
 
     override fun addChild(node: UnifiedAstNode) {
         if (node !is ExpressionNode) throw UnifiedAstException("Unexpected child: $node for $this")

@@ -1,8 +1,14 @@
 package org.jb.cce.visitors
 
 import org.jb.cce.uast.*
+import org.jb.cce.uast.statements.expressions.references.ReferenceNode
 
 abstract class EvaluationRootVisitor : UnifiedAstRecursiveVisitor() {
+    override fun visitReferenceNode(node: ReferenceNode) {
+        node.prefix?.accept(this)
+        super.visitReferenceNode(node)
+    }
+
     abstract fun getRoot(): TextFragmentNode?
 }
 

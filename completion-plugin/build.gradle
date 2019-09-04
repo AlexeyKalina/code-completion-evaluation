@@ -18,7 +18,7 @@ dependencies {
 
 intellij {
     version '192.5728.12-EAP-SNAPSHOT'
-    plugins "PythonCore:2019.2.192.5728.12", "sh"
+    plugins "PythonCore:2019.2.192.5728.12", "sh", 'java'
 }
 
 task runIdeHeadless (type: RunIdeTask) {

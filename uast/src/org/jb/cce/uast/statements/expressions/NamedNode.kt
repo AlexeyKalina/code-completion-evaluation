@@ -4,7 +4,8 @@ import org.jb.cce.uast.UnifiedAstVisitor
 
 abstract class NamedNode(val name: String,
                          offset: Int,
-                         length: Int) : ExpressionNode(offset, length) {
+                         length: Int,
+                         val isStatic: Boolean = false) : ExpressionNode(offset, length) {
     override fun accept(visitor: UnifiedAstVisitor) {
         visitor.visitNamedNode(this)
     }

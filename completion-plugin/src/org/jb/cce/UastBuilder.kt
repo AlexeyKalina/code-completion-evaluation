@@ -24,9 +24,9 @@ abstract class UastBuilder {
             else when (language) {
                 Language.PYTHON -> PsiConverter(project, language)
                 Language.BASH -> PsiConverter(project, language)
-                Language.JAVA -> BabelFishBuilderWrapper(language) { path, text -> BabelFishJavaVisitor(path, text) }
+                Language.JAVA -> PsiConverter(project, language)
                 Language.CSHARP -> BabelFishBuilderWrapper(language) { path, text -> BabelFishCSharpVisitor(path, text) }
-                Language.ANOTHER -> throw java.lang.UnsupportedOperationException("Use All tokens statement type with this language.")
+                Language.ANOTHER -> throw UnsupportedOperationException("Use All tokens statement type with this language.")
                 Language.UNSUPPORTED -> throw UnsupportedOperationException("Unsupported language.")
             }
         }

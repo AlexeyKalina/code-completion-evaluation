@@ -41,6 +41,7 @@
     </actions>
 
     <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.java</depends>
     <depends optional="true">PythonCore</depends>
     <depends optional="true">com.jetbrains.sh</depends>
 </idea-plugin>
