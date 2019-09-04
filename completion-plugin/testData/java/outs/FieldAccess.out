@@ -4,5 +4,7 @@ FileNode
       MethodHeaderNode (main)
       MethodBodyNode
         MethodCallNode (println)
-          VariableAccessNode (args)
-          FieldAccessNode (length)
+          FieldAccessNode (length) - argument
+            VariableAccessNode (args) - prefix
+          FieldAccessNode (out) - prefix
+            VariableAccessNode (System) - prefix

@@ -5,5 +5,7 @@ FileNode
       MethodBodyNode
         VariableDeclarationNode (i)
         MethodCallNode (println)
-          ArrayAccessNode (args)
-            VariableAccessNode (i)
+          ArrayAccessNode (args) - argument
+            VariableAccessNode (i) - argument
+          FieldAccessNode (out) - prefix
+            VariableAccessNode (System) - prefix

@@ -4,7 +4,7 @@ FileNode
       MethodHeaderNode (main)
       MethodBodyNode
         MethodCallNode (method)
-          MethodCallNode (method2)
+          MethodCallNode (method2) - argument
     MethodDeclarationNode (method)
       MethodHeaderNode (method)
       MethodBodyNode

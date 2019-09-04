@@ -3,7 +3,7 @@ FileNode
     MethodHeaderNode (greet)
     MethodBodyNode
       MethodCallNode (write)
-        VariableAccessNode (name)
+        VariableAccessNode (name) - argument
   MethodCallNode (greet)
   MethodCallNode (greet)
   MethodCallNode (greet)

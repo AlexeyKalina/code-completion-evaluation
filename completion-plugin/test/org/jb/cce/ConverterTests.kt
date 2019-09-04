@@ -27,17 +27,11 @@ class ConverterTests : BasePlatformTestCase() {
     companion object {
         private const val TEST_DATA_PATH = "testData"
         private const val OUTPUTS_NAME = "outs"
-        private val MUTED_TESTS = setOf(
-            "Shell Script:while_loop",
-            "Shell Script:for_loop",
-            "Java:LambdaInvocationInPlace"
-        )
     }
 
     @ArgumentsSource(FileArgumentProvider::class)
     @ParameterizedTest(name = "{0}")
     fun doTest(testName: String, language: Language, testFile: File, testOutput: File) {
-        Assumptions.assumeTrue(testName !in MUTED_TESTS)
         println(testName)
         val virtualFile = VfsUtil.findFileByIoFile(testFile, false) ?: kotlin.test.fail("virtual file not found")
         val uast = ReadAction.compute<TextFragmentNode, Exception> {

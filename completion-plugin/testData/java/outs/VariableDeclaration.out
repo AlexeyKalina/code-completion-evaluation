@@ -5,3 +5,4 @@ FileNode
       MethodBodyNode
         VariableDeclarationNode (a)
           MethodCallNode (currentTimeMillis)
+            VariableAccessNode (System) - prefix

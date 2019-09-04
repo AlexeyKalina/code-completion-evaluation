@@ -3,10 +3,10 @@ FileNode
   VariableDeclarationNode (my_purchase)
   VariableDeclarationNode (grocery_bill)
   MethodCallNode (sum)
-    VariableAccessNode (prices)
-    VariableAccessNode (fruit)
-    VariableAccessNode (my_purchase)
-    VariableAccessNode (fruit)
-    VariableAccessNode (my_purchase)
+    VariableAccessNode (prices) - argument
+    VariableAccessNode (fruit) - argument
+    VariableAccessNode (my_purchase) - argument
+    VariableAccessNode (fruit) - argument
+    VariableAccessNode (my_purchase) - argument
   MethodCallNode (repr)
-    VariableAccessNode (grocery_bill)
+    VariableAccessNode (grocery_bill) - argument

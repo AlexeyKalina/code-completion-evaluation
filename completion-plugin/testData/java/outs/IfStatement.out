@@ -4,5 +4,10 @@ FileNode
       MethodHeaderNode (main)
       MethodBodyNode
         MethodCallNode (currentTimeMillis)
+          VariableAccessNode (System) - prefix
         MethodCallNode (println)
+          FieldAccessNode (out) - prefix
+            VariableAccessNode (System) - prefix
         MethodCallNode (println)
+          FieldAccessNode (out) - prefix
+            VariableAccessNode (System) - prefix

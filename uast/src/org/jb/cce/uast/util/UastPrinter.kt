@@ -4,9 +4,12 @@ import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.UnifiedAstRecursiveVisitor
 import org.jb.cce.uast.statements.declarations.DeclarationNode
 import org.jb.cce.uast.statements.expressions.NamedNode
+import org.jb.cce.uast.statements.expressions.references.ReferenceNode
 
 class UastPrinter : UnifiedAstRecursiveVisitor() {
     private var level = 0
+    private var isPrefix = false
+    private var isArgument = false
     private val builder = StringBuilder()
     override fun visit(node: UnifiedAstNode) {
         printNode(node, node::class.java.simpleName)
@@ -17,7 +20,28 @@ class UastPrinter : UnifiedAstRecursiveVisitor() {
     }
 
     override fun visitNamedNode(node: NamedNode) {
-        printNode(node, "${node::class.java.simpleName} (${node.name})")
+        val postfix =  when {
+            isPrefix -> " - prefix"
+            isArgument -> " - argument"
+            else -> ""
+        }
+        val prevValueArg = isArgument
+        isArgument = true
+        printNode(node, "${node::class.java.simpleName} (${node.name})" + postfix)
+        isArgument = prevValueArg
+    }
+
+    override fun visitReferenceNode(node: ReferenceNode) {
+        super.visitReferenceNode(node)
+        val prefix = node.prefix
+        if (prefix != null) {
+            val prevValuePrefix = isPrefix
+            isPrefix = true
+            level += 1
+            prefix.accept(this)
+            level -= 1
+            isPrefix = prevValuePrefix
+        }
     }
 
     private fun printNode(node: UnifiedAstNode, text: String) {

@@ -7,5 +7,10 @@ FileNode
           LambdaExpressionNode
             MethodBodyNode
               MethodCallNode (println)
+                FieldAccessNode (out) - prefix
+                  VariableAccessNode (System) - prefix
               MethodCallNode (println)
+                FieldAccessNode (out) - prefix
+                  VariableAccessNode (System) - prefix
         MethodCallNode (run)
+          VariableAccessNode (r) - prefix

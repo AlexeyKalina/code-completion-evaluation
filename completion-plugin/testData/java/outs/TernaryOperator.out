@@ -5,6 +5,7 @@ FileNode
       MethodBodyNode
         VariableDeclarationNode (value)
           MethodCallNode (currentTimeMillis)
+            VariableAccessNode (System) - prefix
           MethodCallNode (five)
     MethodDeclarationNode (five)
       MethodHeaderNode (five)

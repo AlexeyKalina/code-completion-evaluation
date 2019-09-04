@@ -3,9 +3,15 @@ FileNode
     MethodDeclarationNode (main)
       MethodHeaderNode (main)
       MethodBodyNode
-        VariableAccessNode (args)
         FieldAccessNode (length)
+          VariableAccessNode (args) - prefix
         MethodCallNode (println)
+          FieldAccessNode (out) - prefix
+            VariableAccessNode (System) - prefix
         MethodCallNode (println)
-          ArrayAccessNode (args)
+          ArrayAccessNode (args) - argument
+          FieldAccessNode (out) - prefix
+            VariableAccessNode (System) - prefix
         MethodCallNode (println)
+          FieldAccessNode (out) - prefix
+            VariableAccessNode (System) - prefix
