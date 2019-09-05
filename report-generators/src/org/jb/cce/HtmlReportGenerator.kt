@@ -2,8 +2,8 @@ package org.jb.cce
 
 import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.jb.cce.ReportColors.Companion.getColor
+import org.jb.cce.actions.Action
 import org.jb.cce.actions.ActionSerializer
-import org.jb.cce.actions.ActionsInfo
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.MetricsEvaluationInfo
 import org.jb.cce.info.SessionsEvaluationInfo
@@ -37,6 +37,7 @@ class HtmlReportGenerator(outputDir: String) {
     private val logsDir = Paths.get(baseDir, "logs")
     private val actionsDir = Paths.get(baseDir, "actions")
     private val reportsDir = Paths.get(baseDir, "reports")
+    private var filesCounter = 0
 
     private data class ResultPaths(val resourcePath: Path, val reportPath: Path)
     private val references: MutableMap<String, Path> = mutableMapOf()
@@ -60,9 +61,10 @@ class HtmlReportGenerator(outputDir: String) {
         return generateGlobalReport(metrics, errors)
     }
 
-    fun saveActions(info: ActionsInfo) {
-        val actionsPath = Paths.get(actionsDir.toString(), "actions.json")
-        actionsPath.toFile().writeText(actionSerializer.serialize(info))
+    fun saveActions(actions: List<Action>, fileName: String) {
+        val actionsPath = Paths.get(actionsDir.toString(), "$fileName($filesCounter).json")
+        filesCounter++
+        actionsPath.toFile().writeText(actionSerializer.serialize(actions))
     }
 
     private fun generateFileReports(evaluationResults: List<SessionsEvaluationInfo>) {

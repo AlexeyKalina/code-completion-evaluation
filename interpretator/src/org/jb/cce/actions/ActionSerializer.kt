@@ -7,8 +7,8 @@ class ActionSerializer {
 
     private val gson = Gson()
 
-    fun serialize(info: ActionsInfo): String {
-        return gson.toJson(info)
+    fun serialize(actions: List<Action>): String {
+        return gson.toJson(actions)
     }
 
     private fun deserialize(action: Map<String, Any>): Action {
@@ -25,9 +25,8 @@ class ActionSerializer {
         }
     }
 
-    fun deserialize(json: String): ActionsInfo {
-        val info = gson.fromJson(json, mutableMapOf<String, Any>().javaClass)
-        val actions = gson.fromJson(info["actions"] as String, mutableListOf<Map<String, Any>>().javaClass)
-        return ActionsInfo(info["projectPath"] as String, actions.map { deserialize(it) }.toList())
+    fun deserialize(json: String): List<Action> {
+        val list = gson.fromJson(json, mutableListOf<Map<String, Any>>().javaClass)
+        return list.asSequence().map { deserialize(it) }.toList()
     }
 }
