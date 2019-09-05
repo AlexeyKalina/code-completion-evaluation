@@ -1,0 +1,7 @@
+FileNode
+  ClassDeclarationNode (StaticFieldAccess)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        FieldAccessNode (a) static
+    VariableDeclarationNode (a)

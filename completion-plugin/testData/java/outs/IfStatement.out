@@ -3,11 +3,12 @@ FileNode
     MethodDeclarationNode (main)
       MethodHeaderNode (main)
       MethodBodyNode
-        MethodCallNode (currentTimeMillis)
-          VariableAccessNode (System) - prefix
-        MethodCallNode (println)
-          FieldAccessNode (out) - prefix
-            VariableAccessNode (System) - prefix
-        MethodCallNode (println)
-          FieldAccessNode (out) - prefix
-            VariableAccessNode (System) - prefix
+        MethodCallNode (random)
+        MethodCallNode (test)
+        MethodCallNode (test)
+    MethodDeclarationNode (test)
+      MethodHeaderNode (test)
+      MethodBodyNode
+    MethodDeclarationNode (random)
+      MethodHeaderNode (random)
+      MethodBodyNode

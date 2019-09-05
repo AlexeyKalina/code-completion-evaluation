@@ -8,7 +8,8 @@ FileNode
         FieldAccessNode (length)
           VariableAccessNode (args) - prefix
         VariableAccessNode (i)
-        MethodCallNode (println)
+        MethodCallNode (test)
           VariableAccessNode (i) - argument
-          FieldAccessNode (out) - prefix
-            VariableAccessNode (System) - prefix
+    MethodDeclarationNode (test)
+      MethodHeaderNode (test)
+      MethodBodyNode

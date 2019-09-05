@@ -4,6 +4,7 @@ import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.UnifiedAstRecursiveVisitor
 import org.jb.cce.uast.statements.declarations.DeclarationNode
 import org.jb.cce.uast.statements.expressions.NamedNode
+import org.jb.cce.uast.statements.expressions.references.ClassMemberAccessNode
 import org.jb.cce.uast.statements.expressions.references.ReferenceNode
 
 class UastPrinter : UnifiedAstRecursiveVisitor() {
@@ -20,11 +21,12 @@ class UastPrinter : UnifiedAstRecursiveVisitor() {
     }
 
     override fun visitNamedNode(node: NamedNode) {
-        val postfix =  when {
+        var postfix =  when {
             isPrefix -> " - prefix"
             isArgument -> " - argument"
             else -> ""
         }
+        if (node is ClassMemberAccessNode && node.isStatic) postfix += " static"
         val prevValueArg = isArgument
         isArgument = true
         printNode(node, "${node::class.java.simpleName} (${node.name})" + postfix)

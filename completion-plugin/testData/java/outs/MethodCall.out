@@ -3,7 +3,7 @@ FileNode
     MethodDeclarationNode (main)
       MethodHeaderNode (main)
       MethodBodyNode
-        MethodCallNode (method) static
+        MethodCallNode (method)
     MethodDeclarationNode (method)
       MethodHeaderNode (method)
       MethodBodyNode
