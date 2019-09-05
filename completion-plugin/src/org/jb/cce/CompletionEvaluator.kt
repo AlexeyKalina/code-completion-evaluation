@@ -140,8 +140,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
 
     private fun interpretActions(actions: List<Action>, completionTypes: List<CompletionType>, strategy: CompletionStrategy,
                                  project: Project, workspaceDir: String, saveLogs: Boolean, logsTrainingPercentage: Int, indicator: Progress): List<SessionsEvaluationInfo> {
-        val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project))
-        val interpreter = Interpreter(completionInvoker)
+        val interpreter = Interpreter()
         val logsWatcher = if (saveLogs) DirectoryWatcher(statsCollectorLogsDirectory(), workspaceDir, logsTrainingPercentage) else null
         logsWatcher?.start()
 
@@ -151,9 +150,10 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         LOG.info("Start interpreting actions")
         var completed = 0
         for (completionType in completionTypes) {
+            val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, completionType))
             setMLCompletion(completionType == CompletionType.ML)
             val fileSessions = mutableListOf<FileEvaluationInfo<Session>>()
-            interpreter.interpret(actions, completionType) { sessions, stats, filePath, fileText, actionsDone ->
+            interpreter.interpret(completionInvoker, actions, completionType) { sessions, stats, filePath, fileText, actionsDone ->
                 completed += actionsDone
                 fileSessions.add(FileEvaluationInfo(filePath, sessions, fileText))
                 actionStats.addAll(stats)

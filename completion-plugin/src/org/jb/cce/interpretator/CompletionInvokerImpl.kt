@@ -23,13 +23,18 @@ import org.jb.cce.Suggestion
 import java.io.File
 import kotlin.system.measureTimeMillis
 
-class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
+class CompletionInvokerImpl(private val project: Project, completionType: org.jb.cce.actions.CompletionType) : CompletionInvoker {
     private companion object {
         val LOG = Logger.getInstance(CompletionInvokerImpl::class.java)
         const val LOG_MAX_LENGTH = 50
         const val WAITING_TIME = 100L
     }
 
+    private val completionType = when (completionType) {
+        org.jb.cce.actions.CompletionType.BASIC -> CompletionType.BASIC
+        org.jb.cce.actions.CompletionType.SMART -> CompletionType.SMART
+        org.jb.cce.actions.CompletionType.ML -> CompletionType.BASIC
+    }
     private var editor: Editor? = null
 
     override fun moveCaret(offset: Int) {
@@ -38,14 +43,9 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         editor!!.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
-    override fun callCompletion(type: org.jb.cce.actions.CompletionType, expectedText: String, prefix: String): CallCompletionResult {
-        LOG.info("Call completion. Type: $type. ${positionToString(editor!!.caretModel.offset)}")
+    override fun callCompletion(expectedText: String, prefix: String): CallCompletionResult {
+        LOG.info("Call completion. Type: $completionType. ${positionToString(editor!!.caretModel.offset)}")
         LookupManager.getInstance(project).hideActiveLookup()
-        val completionType = when (type) {
-            org.jb.cce.actions.CompletionType.BASIC -> CompletionType.BASIC
-            org.jb.cce.actions.CompletionType.SMART -> CompletionType.SMART
-            org.jb.cce.actions.CompletionType.ML -> CompletionType.BASIC
-        }
 
         var latency = measureTimeMillis {
             CodeCompletionHandlerBase(completionType, false, false, true).invokeCompletion(project, editor)
@@ -85,13 +85,14 @@ class CompletionInvokerImpl(private val project: Project) : CompletionInvoker {
         WriteCommandAction.runWriteCommandAction(project, runnable)
     }
 
-    override fun openFile(file: String) {
+    override fun openFile(file: String): String {
         LOG.info("Open file: $file")
         val virtualFile = LocalFileSystem.getInstance().findFileByIoFile(File(file))
         val descriptor = OpenFileDescriptor(project, virtualFile!!)
         val fileEditor = FileEditorManager.getInstance(project).openTextEditor(descriptor, true)
                 ?: throw Exception("Can't open text editor for file: $file")
         editor = fileEditor
+        return fileEditor.document.text
     }
 
     override fun closeFile(file: String) {

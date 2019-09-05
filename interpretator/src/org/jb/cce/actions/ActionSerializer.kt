@@ -20,7 +20,7 @@ class ActionSerializer {
             Action.ActionType.PRINT_TEXT.name -> PrintText(action["text"] as String, action["completable"] as Boolean)
             Action.ActionType.DELETE_RANGE.name ->
                 DeleteRange((action["begin"] as Double).toInt(), (action["end"] as Double).toInt(), action["completable"] as Boolean)
-            Action.ActionType.OPEN_FILE.name -> OpenFile(action["path"] as String, action["text"] as String)
+            Action.ActionType.OPEN_FILE.name -> OpenFile(action["path"] as String, action["checksum"] as String)
             else -> throw UnexpectedActionException("Incorrect action type")
         }
     }

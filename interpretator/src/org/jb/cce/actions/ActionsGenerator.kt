@@ -2,6 +2,7 @@ package org.jb.cce.actions
 
 import org.jb.cce.uast.TextFragmentNode
 import org.jb.cce.visitors.*
+import java.security.MessageDigest
 
 class ActionsGenerator(val strategy: CompletionStrategy) {
 
@@ -21,11 +22,17 @@ class ActionsGenerator(val strategy: CompletionStrategy) {
 
         val actions: MutableList<Action> = mutableListOf()
         if (completionVisitor.getGeneratedActions().isNotEmpty()) {
-            actions.add(OpenFile(file.path, file.text))
+            actions.add(OpenFile(file.path, computeChecksum(file.text)))
             actions.addAll(deletionVisitor.getActions().reversed())
             actions.addAll(completionVisitor.getGeneratedActions())
         }
 
         return actions
+    }
+
+    private fun computeChecksum(text: String): String {
+        val sha = MessageDigest.getInstance("SHA-256")
+        val digest = sha.digest(text.toByteArray())
+        return digest.fold("", { str, it -> str + "%02x".format(it) })
     }
 }
