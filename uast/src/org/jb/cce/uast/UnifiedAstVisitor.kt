@@ -8,10 +8,7 @@ import org.jb.cce.uast.statements.expressions.ExpressionNode
 import org.jb.cce.uast.statements.expressions.LambdaExpressionNode
 import org.jb.cce.uast.statements.expressions.NamedNode
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
-import org.jb.cce.uast.statements.expressions.references.ArrayAccessNode
-import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
-import org.jb.cce.uast.statements.expressions.references.MethodCallNode
-import org.jb.cce.uast.statements.expressions.references.ReferenceNode
+import org.jb.cce.uast.statements.expressions.references.*
 
 interface UnifiedAstVisitor {
 
@@ -45,9 +42,12 @@ interface UnifiedAstVisitor {
 
     fun visitVariableDeclarationNode(node: VariableDeclarationNode) = visitDeclarationNode(node)
     fun visitArrayAccessNode(node: ArrayAccessNode) = visitReferenceNode(node)
-    fun visitMethodCallNode(node: MethodCallNode) = visitReferenceNode(node)
+    fun visitTypeReferenceNode(node: TypeReferenceNode) = visitReferenceNode(node)
 
-    fun visitFieldAccessNode(node: FieldAccessNode) = visitReferenceNode(node)
+    fun visitClassMemberAccessNode(node: ClassMemberAccessNode) = visitReferenceNode(node)
+    fun visitMethodCallNode(node: MethodCallNode) = visitClassMemberAccessNode(node)
+    fun visitFieldAccessNode(node: FieldAccessNode) = visitClassMemberAccessNode(node)
+
     fun visitAssignmentNode(node: AssignmentNode) = visitStatementNode(node)
 
     fun visitTokenNode(node: TokenNode) = visit(node)

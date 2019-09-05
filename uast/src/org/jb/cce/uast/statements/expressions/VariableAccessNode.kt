@@ -6,8 +6,7 @@ import org.jb.cce.uast.UnifiedAstVisitor
 
 class VariableAccessNode(name: String,
                          offset: Int,
-                         length: Int,
-                         isStatic: Boolean = false) : NamedNode(name, offset, length, isStatic), Completable {
+                         length: Int) : NamedNode(name, offset, length), Completable {
     override fun getChildren(): List<UnifiedAstNode> = listOf()
 
     override fun getText() = name

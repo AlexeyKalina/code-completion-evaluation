@@ -1,5 +1,6 @@
 package org.jb.cce.uast.statements.expressions.references
 
+import org.jb.cce.uast.Completable
 import org.jb.cce.uast.CompositeNode
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.UnifiedAstVisitor
@@ -8,8 +9,7 @@ import org.jb.cce.uast.statements.expressions.ExpressionNode
 
 class ArrayAccessNode(name: String,
                       offset: Int,
-                      length: Int,
-                      isStatic: Boolean = false) : ReferenceNode(name, offset, length, isStatic), CompositeNode {
+                      length: Int) : ReferenceNode(name, offset, length), CompositeNode, Completable {
     private val indices = mutableListOf<ExpressionNode>()
 
     fun addIndex(index: ExpressionNode) {

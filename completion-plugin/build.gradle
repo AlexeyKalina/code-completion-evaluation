@@ -9,7 +9,6 @@ dependencies {
     compile project(':uast')
     compile project(':interpretator')
     compile project(':metrics-evaluator')
-    compile project(':babelfish-converter')
     compile project(':report-generators')
     testCompile("org.junit.jupiter:junit-jupiter-params:5.5.1")
     testCompile("org.junit.jupiter:junit-jupiter-api:5.5.1")
