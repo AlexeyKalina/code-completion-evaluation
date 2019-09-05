@@ -15,7 +15,7 @@ object ConfigFactory {
 
     private val defaultConfig = Config("", listOf(""), Language.JAVA.displayName,
             CompletionStrategy(CompletionPrefix.NoPrefix, CompletionStatement.METHOD_CALLS, CompletionContext.ALL),
-            listOf(CompletionType.BASIC), "", interpretActions = false, saveLogs = true, logsTrainingPercentage = 70)
+            CompletionType.BASIC, "", interpretActions = false, saveLogs = true, logsTrainingPercentage = 70)
 
     fun load(path: String): Config {
         val configFile = File(path)
@@ -29,7 +29,7 @@ object ConfigFactory {
         return Config(map["projectPath"] as String, map["listOfFiles"] as List<String>, map["language"] as String,
                 CompletionStrategy(getPrefix(strategy), CompletionStatement.valueOf(strategy["statement"] as String),
                         CompletionContext.valueOf(strategy["context"] as String)),
-                (map["completionTypes"] as List<String>).map { CompletionType.valueOf(it) }, map["outputDir"] as String, map["interpretActions"] as Boolean,
+                CompletionType.valueOf(map["completionType"] as String), map["outputDir"] as String, map["interpretActions"] as Boolean,
                 map["saveLogs"] as Boolean, (map["logsTrainingPercentage"] as Double).toInt())
     }
 

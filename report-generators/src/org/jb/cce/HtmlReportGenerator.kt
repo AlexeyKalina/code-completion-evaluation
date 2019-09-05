@@ -55,6 +55,7 @@ class HtmlReportGenerator(outputDir: String) {
     fun logsDirectory() = logsDir.toString()
 
     fun generateReport(sessions: List<SessionsEvaluationInfo>, metrics: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {
+        filesCounter = 0
         saveEvaluationResults(sessions)
         generateFileReports(sessions)
         generateErrorReports(errors)
@@ -114,9 +115,15 @@ class HtmlReportGenerator(outputDir: String) {
 
     private fun saveEvaluationResults(evaluationResults: List<SessionsEvaluationInfo>) {
         for (results in evaluationResults) {
-            val json = sessionSerializer.serialize(results)
-            val dataPath = Paths.get(resultsDir.toString(), "${results.info.evaluationType}.json").toString()
-            FileWriter(dataPath).use { it.write(json) }
+            val typeFolder = Paths.get(resultsDir.toString(), results.info.evaluationType)
+            Files.createDirectories(typeFolder)
+            for (file in results.sessions) {
+                val json = sessionSerializer.serialize(file)
+                val dataPath = Paths.get(typeFolder.toString(), "${File(file.filePath).name}($filesCounter).json").toString()
+                FileWriter(dataPath).use { it.write(json) }
+            }
+            val json = sessionSerializer.serializeConfig(results.info)
+            FileWriter(Paths.get(resultsDir.toString(), "config.json").toString()).use { it.write(json) }
         }
     }
 

@@ -9,8 +9,10 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.HtmlReportGenerator
+import org.jb.cce.Session
 import org.jb.cce.SessionSerializer
 import org.jb.cce.generateReport
+import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.info.SessionsEvaluationInfo
 import java.nio.file.Paths
 
@@ -21,8 +23,14 @@ class GenerateReportAction : AnAction() {
 
         val sessionsInfo = mutableListOf<SessionsEvaluationInfo>()
         val serializer = SessionSerializer()
-        for (file in files) {
-            sessionsInfo.add(serializer.deserialize(VfsUtil.loadText(file)))
+        for (configFile in files) {
+            val config = serializer.deserializeConfig(VfsUtil.loadText(configFile))
+            val sessions = mutableListOf<FileEvaluationInfo<Session>>()
+            val sessionsDir = configFile.parent.children.find { it.isDirectory } ?: throw IllegalStateException("No sessions directory")
+            for (file in sessionsDir.children) {
+                sessions.add(serializer.deserialize(VfsUtil.loadText(file)))
+            }
+            sessionsInfo.add(SessionsEvaluationInfo(sessions, config))
         }
 
         val properties = PropertiesComponent.getInstance(project)
