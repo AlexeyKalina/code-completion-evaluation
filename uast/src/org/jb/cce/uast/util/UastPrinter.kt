@@ -3,6 +3,7 @@ package org.jb.cce.uast.util
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.UnifiedAstRecursiveVisitor
 import org.jb.cce.uast.statements.declarations.DeclarationNode
+import org.jb.cce.uast.statements.expressions.ArrayAccessNode
 import org.jb.cce.uast.statements.expressions.NamedNode
 import org.jb.cce.uast.statements.expressions.references.ClassMemberAccessNode
 import org.jb.cce.uast.statements.expressions.references.ReferenceNode
@@ -44,6 +45,21 @@ class UastPrinter : UnifiedAstRecursiveVisitor() {
             level -= 1
             isPrefix = prevValuePrefix
         }
+    }
+
+    override fun visitArrayAccessNode(node: ArrayAccessNode) {
+        builder.append("  ".repeat(level))
+        builder.appendln(node::class.java.simpleName)
+        level += 1
+        val prevValuePrefix = isPrefix
+        isPrefix = true
+        node.prefix?.accept(this)
+        isPrefix = prevValuePrefix
+        val prevValueArg = isArgument
+        isArgument = true
+        node.indices.forEach { it.accept(this) }
+        isArgument = prevValueArg
+        level -= 1
     }
 
     private fun printNode(node: UnifiedAstNode, text: String) {

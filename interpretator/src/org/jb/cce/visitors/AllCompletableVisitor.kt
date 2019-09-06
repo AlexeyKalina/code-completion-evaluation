@@ -2,7 +2,7 @@ package org.jb.cce.visitors
 
 import org.jb.cce.actions.CompletionStrategy
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
-import org.jb.cce.uast.statements.expressions.references.*
+import org.jb.cce.uast.statements.expressions.references.ClassMemberAccessNode
 
 class AllCompletableVisitor(override val text: String, strategy: CompletionStrategy, private val onlyStatic: Boolean, textStart: Int):
         CallCompletionsVisitor(text, strategy, textStart) {
@@ -10,12 +10,6 @@ class AllCompletableVisitor(override val text: String, strategy: CompletionStrat
     override fun visitClassMemberAccessNode(node: ClassMemberAccessNode) {
         node.prefix?.accept(this)
         if (!onlyStatic || node.isStatic) visitCompletable(node)
-        visitChildren(node)
-    }
-
-    override fun visitArrayAccessNode(node: ArrayAccessNode) {
-        node.prefix?.accept(this)
-        if (!onlyStatic) visitCompletable(node)
         visitChildren(node)
     }
 

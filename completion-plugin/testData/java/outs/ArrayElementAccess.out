@@ -4,5 +4,6 @@ FileNode
       MethodHeaderNode (main)
       MethodBodyNode
         VariableDeclarationNode (i)
-        ArrayAccessNode (args)
+        ArrayAccessNode
+          VariableAccessNode (args) - prefix
           VariableAccessNode (i) - argument

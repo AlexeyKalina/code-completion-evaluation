@@ -2,10 +2,9 @@ package org.jb.cce.visitors
 
 import org.jb.cce.actions.CompletionStrategy
 import org.jb.cce.uast.statements.declarations.DeclarationNode
-import org.jb.cce.uast.statements.expressions.references.ArrayAccessNode
-import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
 import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
+import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 
 class MethodCallsVisitor(override val text: String, strategy: CompletionStrategy, textStart: Int): CallCompletionsVisitor(text, strategy, textStart) {
 
@@ -39,14 +38,6 @@ class MethodCallsVisitor(override val text: String, strategy: CompletionStrategy
         insideMethodCall = false
         node.prefix?.accept(this)
         super.visitFieldAccessNode(node)
-        insideMethodCall = prevValue
-    }
-
-    override fun visitArrayAccessNode(node: ArrayAccessNode) {
-        val prevValue = insideMethodCall
-        insideMethodCall = false
-        node.prefix?.accept(this)
-        super.visitArrayAccessNode(node)
         insideMethodCall = prevValue
     }
 }

@@ -1,6 +1,8 @@
 package org.jb.cce.psi
 
 import com.intellij.psi.*
+import com.intellij.psi.impl.source.tree.ChildRole
+import com.intellij.psi.impl.source.tree.java.PsiArrayAccessExpressionImpl
 import com.intellij.psi.impl.source.tree.java.PsiNewExpressionImpl
 import org.jb.cce.psi.exceptions.PsiConverterException
 import org.jb.cce.uast.CompositeNode
@@ -11,7 +13,7 @@ import org.jb.cce.uast.statements.declarations.*
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 import org.jb.cce.uast.statements.expressions.LambdaExpressionNode
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
-import org.jb.cce.uast.statements.expressions.references.ArrayAccessNode
+import org.jb.cce.uast.statements.expressions.ArrayAccessNode
 import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 import org.jb.cce.uast.statements.expressions.references.TypeReferenceNode
@@ -113,19 +115,17 @@ class PsiJavaVisitor(private val path: String, private val text: String) : PsiVi
     }
 
     override fun visitArrayAccessExpression(expression: PsiArrayAccessExpression) {
-        val prefix = expression.arrayExpression
-        if (prefix is PsiJavaCodeReferenceElement) {
-            val resolvedPrefix = prefix.resolve()
-            val name = prefix.referenceName ?: expression.arrayExpression.text
-            if (resolvedPrefix is PsiVariable) {
-                val arrayAccess = ArrayAccessNode(name, expression.arrayExpression.textOffset, name.length)
+        if (expression is PsiArrayAccessExpressionImpl) {
+            val bracket = expression.findChildByRole(ChildRole.LBRACKET)
+            if (bracket != null) {
+                val arrayAccess = ArrayAccessNode(expression.textOffset, expression.textLength, bracket.startOffset)
                 addToParent(arrayAccess)
                 stackOfNodes.addLast(arrayAccess)
+                visitPotentialExpression(expression.arrayExpression)
                 visitPotentialExpression(expression.indexExpression)
                 stackOfNodes.removeLast()
             }
-        }
-        else super.visitArrayAccessExpression(expression)
+        } else super.visitArrayAccessExpression(expression)
     }
 
     override fun visitReferenceElement(reference: PsiJavaCodeReferenceElement) {

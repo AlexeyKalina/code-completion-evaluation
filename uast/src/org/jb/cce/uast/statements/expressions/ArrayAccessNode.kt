@@ -1,29 +1,28 @@
-package org.jb.cce.uast.statements.expressions.references
+package org.jb.cce.uast.statements.expressions
 
-import org.jb.cce.uast.Completable
 import org.jb.cce.uast.CompositeNode
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.exceptions.UnifiedAstException
-import org.jb.cce.uast.statements.expressions.ExpressionNode
 
-class ArrayAccessNode(name: String,
-                      offset: Int,
-                      length: Int) : ReferenceNode(name, offset, length), CompositeNode, Completable {
-    private val indices = mutableListOf<ExpressionNode>()
+class ArrayAccessNode(offset: Int,
+                      length: Int,
+                      private val bracketOffset: Int) : ExpressionNode(offset, length), CompositeNode {
+    val indices = mutableListOf<ExpressionNode>()
+    var prefix: ExpressionNode? = null
 
     fun addIndex(index: ExpressionNode) {
         indices += index
     }
 
-    override fun getText() = name
-
     override fun addChild(node: UnifiedAstNode) {
         if (node !is ExpressionNode) throw UnifiedAstException("Unexpected child: $node for $this")
+
+        if (bracketOffset > node.getOffset()) this.prefix = node
         else addIndex(node)
     }
 
-    override fun getChildren() = indices
+    override fun getChildren() = listOfNotNull(prefix) + indices
 
     override fun accept(visitor: UnifiedAstVisitor) {
         visitor.visitArrayAccessNode(this)

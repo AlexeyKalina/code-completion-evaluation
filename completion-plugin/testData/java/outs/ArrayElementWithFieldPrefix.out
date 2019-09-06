@@ -1,0 +1,12 @@
+FileNode
+  ClassDeclarationNode (ArrayElementWithFieldPrefix)
+    VariableDeclarationNode (array)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        VariableDeclarationNode (i)
+        ArrayAccessNode
+          FieldAccessNode (array) - prefix static
+            TypeReferenceNode (ArrayElementWithFieldPrefix) - prefix
+          VariableAccessNode (i) - argument
+        VariableAccessNode (i)

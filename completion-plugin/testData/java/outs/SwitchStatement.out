@@ -7,7 +7,8 @@ FileNode
           VariableAccessNode (args) - prefix
         MethodCallNode (test)
         MethodCallNode (test)
-          ArrayAccessNode (args) - argument
+          ArrayAccessNode
+            VariableAccessNode (args) - prefix
         MethodCallNode (test)
     MethodDeclarationNode (test)
       MethodHeaderNode (test)
