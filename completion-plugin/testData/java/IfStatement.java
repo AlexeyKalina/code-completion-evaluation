@@ -1,9 +1,16 @@
 public class IfStatement {
     public static void main(String[] args) {
-        if (System.currentTimeMillis() % 2 == 0) {
-            System.out.println("true");
+        if (random() % 2 == 0) {
+            test("true");
         } else {
-            System.out.println("false");
+            test("false");
         }
+    }
+
+    private void test(Object a) {
+    }
+
+    private int random() {
+        return 3;
     }
 }

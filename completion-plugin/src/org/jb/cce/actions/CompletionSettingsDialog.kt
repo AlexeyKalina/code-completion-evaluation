@@ -76,11 +76,12 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         val methodsButton = getStatementButton(CompletionStatement.METHOD_CALLS, "Method calls", blockPreviousContext)
         val argumentsButton = getStatementButton(CompletionStatement.ARGUMENTS, "Method arguments", blockPreviousContext)
         val variablesButton = getStatementButton(CompletionStatement.VARIABLES, "Variables", blockPreviousContext)
-        val allStatementsButton = getStatementButton(CompletionStatement.ALL, "All of these", blockPreviousContext)
+        val staticStatementsButton = getStatementButton(CompletionStatement.ALL_STATIC, "All static members", blockPreviousContext)
+        val allStatementsButton = getStatementButton(CompletionStatement.ALL, "All members", blockPreviousContext)
         val allTokensButton = getStatementButton(CompletionStatement.ALL_TOKENS, allTokensText, false)
 
         methodsButton.isSelected = true
-        statementButtons = listOf(methodsButton, argumentsButton, variablesButton, allStatementsButton, allTokensButton)
+        statementButtons = listOf(methodsButton, argumentsButton, variablesButton, staticStatementsButton, allStatementsButton, allTokensButton)
     }
 
     private fun getStatementButton(statement: CompletionStatement, title: String, blockPreviousContext: Boolean): JRadioButton {

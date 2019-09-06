@@ -1,5 +1,7 @@
 public class FieldAccess {
     public static void main(String[] args) {
-        System.out.println(args.length);
+        test(args.length);
+    }
+    private void test(Object a) {
     }
 }

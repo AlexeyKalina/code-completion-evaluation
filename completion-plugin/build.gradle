@@ -9,7 +9,6 @@ dependencies {
     compile project(':uast')
     compile project(':interpretator')
     compile project(':metrics-evaluator')
-    compile project(':babelfish-converter')
     compile project(':report-generators')
     testCompile("org.junit.jupiter:junit-jupiter-params:5.5.1")
     testCompile("org.junit.jupiter:junit-jupiter-api:5.5.1")
@@ -18,7 +17,7 @@ dependencies {
 
 intellij {
     version '192.5728.12-EAP-SNAPSHOT'
-    plugins "PythonCore:2019.2.192.5728.12", "sh"
+    plugins "PythonCore:2019.2.192.5728.12", "sh", 'java'
 }
 
 task runIdeHeadless (type: RunIdeTask) {

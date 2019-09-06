@@ -6,4 +6,4 @@ FileNode
         VariableDeclarationNode (i)
         VariableAccessNode (Length)
         MethodCallNode (WriteLine)
-          VariableAccessNode (i)
+          VariableAccessNode (i) - argument

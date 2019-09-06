@@ -1,6 +1,10 @@
 public class MethodCallInLambda {
     public static void main(String[] args) {
-        Runnable r = () -> System.out.println("Hello from lambda");
+        Runnable r = () -> test("Hello from lambda");
         r.run();
+    }
+
+
+    private void test(Object a) {
     }
 }

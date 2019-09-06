@@ -4,7 +4,6 @@ enum class Language(val displayName: String, private val extension: String) {
     JAVA("Java", "java"),
     PYTHON("Python", "py"),
     BASH("Shell Script", "sh"),
-    CSHARP("C#", "cs"),
     ANOTHER("Another", "*"),
     UNSUPPORTED("Unsupported", ""); // TODO: There are no unsupported languages
 

@@ -4,4 +4,7 @@ FileNode
       MethodHeaderNode (main)
       MethodBodyNode
         VariableDeclarationNode (a)
-          MethodCallNode (currentTimeMillis)
+          MethodCallNode (three)
+    MethodDeclarationNode (three)
+      MethodHeaderNode (three)
+      MethodBodyNode

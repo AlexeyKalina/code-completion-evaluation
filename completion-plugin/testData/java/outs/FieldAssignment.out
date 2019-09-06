@@ -6,7 +6,5 @@ FileNode
       MethodBodyNode
         VariableDeclarationNode (fieldAssignment)
           MethodCallNode (FieldAssignment)
-        VariableAccessNode (fieldAssignment)
         FieldAccessNode (field)
-        MethodCallNode (println)
-          VariableAccessNode (fieldAssignment)
+          VariableAccessNode (fieldAssignment) - prefix

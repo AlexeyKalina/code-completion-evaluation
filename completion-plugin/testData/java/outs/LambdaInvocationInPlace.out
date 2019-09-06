@@ -6,4 +6,7 @@ FileNode
         MethodCallNode (run)
           LambdaExpressionNode
             MethodBodyNode
-              MethodCallNode (println)
+              MethodCallNode (test) - prefix
+    MethodDeclarationNode (test)
+      MethodHeaderNode (test)
+      MethodBodyNode

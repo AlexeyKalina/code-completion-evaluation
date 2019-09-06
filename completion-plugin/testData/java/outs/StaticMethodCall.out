@@ -1,13 +1,9 @@
 FileNode
-  ClassDeclarationNode (MethodCallAsArgument)
+  ClassDeclarationNode (MethodCall)
     MethodDeclarationNode (main)
       MethodHeaderNode (main)
       MethodBodyNode
         MethodCallNode (method) static
-          MethodCallNode (method2) - argument static
     MethodDeclarationNode (method)
       MethodHeaderNode (method)
-      MethodBodyNode
-    MethodDeclarationNode (method2)
-      MethodHeaderNode (method2)
       MethodBodyNode

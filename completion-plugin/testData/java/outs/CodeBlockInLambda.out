@@ -6,6 +6,10 @@ FileNode
         VariableDeclarationNode (r)
           LambdaExpressionNode
             MethodBodyNode
-              MethodCallNode (println)
-              MethodCallNode (println)
+              MethodCallNode (test)
+              MethodCallNode (test)
         MethodCallNode (run)
+          VariableAccessNode (r) - prefix
+    MethodDeclarationNode (test)
+      MethodHeaderNode (test)
+      MethodBodyNode

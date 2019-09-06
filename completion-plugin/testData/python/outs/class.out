@@ -12,8 +12,8 @@ FileNode
   VariableDeclarationNode (p1)
   MethodCallNode (Person)
   MethodCallNode (repr)
-    VariableAccessNode (p1)
-    VariableAccessNode (name)
+    VariableAccessNode (p1) - argument
+    VariableAccessNode (name) - argument
   MethodCallNode (repr)
-    VariableAccessNode (p1)
-    VariableAccessNode (age)
+    VariableAccessNode (p1) - argument
+    VariableAccessNode (age) - argument

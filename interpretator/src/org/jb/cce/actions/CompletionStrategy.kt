@@ -15,6 +15,7 @@ enum class CompletionStatement {
     ARGUMENTS,
     VARIABLES,
     ALL,
+    ALL_STATIC,
     ALL_TOKENS
 }
 

@@ -10,7 +10,8 @@ class ActionsGenerator(val strategy: CompletionStrategy) {
         if (strategy.context == CompletionContext.PREVIOUS) file.accept(deletionVisitor)
 
         val completionVisitor = when (strategy.statement) {
-            CompletionStatement.ALL -> AllCompletableVisitor(file.text, strategy, file.getOffset())
+            CompletionStatement.ALL -> AllCompletableVisitor(file.text, strategy, false, file.getOffset())
+            CompletionStatement.ALL_STATIC -> AllCompletableVisitor(file.text, strategy, true, file.getOffset())
             CompletionStatement.METHOD_CALLS -> MethodCallsVisitor(file.text, strategy, file.getOffset())
             CompletionStatement.ARGUMENTS -> MethodArgumentsVisitor(file.text, strategy, file.getOffset())
             CompletionStatement.VARIABLES -> VariableAccessVisitor(file.text, strategy, file.getOffset())

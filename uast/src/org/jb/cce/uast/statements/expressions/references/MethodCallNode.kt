@@ -1,7 +1,5 @@
 package org.jb.cce.uast.statements.expressions.references
 
-import org.jb.cce.uast.Completable
-import org.jb.cce.uast.CompositeNode
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.exceptions.UnifiedAstException
@@ -10,7 +8,8 @@ import org.jb.cce.uast.statements.expressions.ExpressionNode
 
 class MethodCallNode(name: String,
                      offset: Int,
-                     length: Int) : ReferenceNode(name, offset, length), Completable, CompositeNode {
+                     length: Int,
+                     isStatic: Boolean = false) : ClassMemberAccessNode(name, offset, length, isStatic) {
     override fun getText() = name
 
     private val arguments = mutableListOf<ExpressionNode>()

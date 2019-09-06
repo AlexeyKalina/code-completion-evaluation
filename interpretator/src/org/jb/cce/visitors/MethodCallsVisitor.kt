@@ -2,10 +2,9 @@ package org.jb.cce.visitors
 
 import org.jb.cce.actions.CompletionStrategy
 import org.jb.cce.uast.statements.declarations.DeclarationNode
-import org.jb.cce.uast.statements.expressions.references.ArrayAccessNode
-import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
 import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
+import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 
 class MethodCallsVisitor(override val text: String, strategy: CompletionStrategy, textStart: Int): CallCompletionsVisitor(text, strategy, textStart) {
 
@@ -14,8 +13,7 @@ class MethodCallsVisitor(override val text: String, strategy: CompletionStrategy
     override fun visitMethodCallNode(node: MethodCallNode) {
         val prevValue = insideMethodCall
         insideMethodCall = true
-        val prefix = node.prefix
-        if (prefix != null) visit(prefix)
+        node.prefix?.accept(this)
         visitCompletable(node)
         visitChildren(node)
         insideMethodCall = prevValue
@@ -38,14 +36,8 @@ class MethodCallsVisitor(override val text: String, strategy: CompletionStrategy
     override fun visitFieldAccessNode(node: FieldAccessNode) {
         val prevValue = insideMethodCall
         insideMethodCall = false
+        node.prefix?.accept(this)
         super.visitFieldAccessNode(node)
-        insideMethodCall = prevValue
-    }
-
-    override fun visitArrayAccessNode(node: ArrayAccessNode) {
-        val prevValue = insideMethodCall
-        insideMethodCall = false
-        super.visitArrayAccessNode(node)
         insideMethodCall = prevValue
     }
 }

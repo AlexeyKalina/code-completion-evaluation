@@ -2,7 +2,7 @@ package org.jb.cce.visitors
 
 import org.jb.cce.actions.CompletionStrategy
 import org.jb.cce.uast.statements.declarations.DeclarationNode
-import org.jb.cce.uast.statements.expressions.references.ArrayAccessNode
+import org.jb.cce.uast.statements.expressions.ArrayAccessNode
 import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
 import org.jb.cce.uast.statements.expressions.references.FieldAccessNode

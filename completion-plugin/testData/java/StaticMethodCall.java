@@ -3,6 +3,6 @@ public class MethodCall {
         method();
     }
 
-    private void method() {
+    private static void method() {
     }
 }
