@@ -1,11 +1,11 @@
 package org.jb.cce
 
 import com.google.gson.*
-import com.google.gson.stream.JsonReader
-import com.google.gson.stream.JsonWriter
+import com.google.gson.reflect.TypeToken
 import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.jb.cce.actions.CompletionPrefix
-import org.jb.cce.info.SessionsEvaluationInfo
+import org.jb.cce.info.EvaluationInfo
+import org.jb.cce.info.FileEvaluationInfo
 import java.lang.reflect.Type
 import java.util.*
 
@@ -19,16 +19,16 @@ class SessionSerializer {
                     override fun serialize(src: Suggestion, typeOfSrc: Type, context: JsonSerializationContext): JsonObject {
                         val jsonObject = JsonObject()
                         jsonObject.addProperty("text", src.text)
-                        jsonObject.addProperty("presentationText", escapeHtml4(src.presentationText.replace("★", "*")))
+                        jsonObject.addProperty("presentationText", escapeHtml4(src.presentationText))
                         return jsonObject
                     }
                 })
                 .create()
     }
 
-    fun serialize(results: SessionsEvaluationInfo): String {
-        return gson.toJson(results)
-    }
+    fun serialize(sessions: FileEvaluationInfo<Session>): String = gson.toJson(sessions)
+
+    fun serializeConfig(config: EvaluationInfo): String = gson.toJson(config)
 
     fun serialize(sessions: List<Session>): String {
         val map = HashMap<UUID, Session>()
@@ -36,10 +36,14 @@ class SessionSerializer {
             map[session.id] = session
         }
         return gson.toJson(map)
+                .replace("""(\\r|\\n|\\t)""".toRegex(), "")
+                .replace("★", "*")
     }
 
-    fun deserialize(json: String) : SessionsEvaluationInfo {
-        val list = gson.fromJson(json, SessionsEvaluationInfo::class.java)
-        return list!!
+    fun deserialize(json: String) : FileEvaluationInfo<Session> {
+        val type = object : TypeToken<FileEvaluationInfo<Session>>() {}.type
+        return gson.fromJson(json, type)
     }
+
+    fun deserializeConfig(json: String): EvaluationInfo = gson.fromJson(json, EvaluationInfo::class.java)
 }

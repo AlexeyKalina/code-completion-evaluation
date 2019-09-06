@@ -13,5 +13,5 @@ data class CallCompletion(val prefix: String, val expectedText: String, val toke
 class FinishSession : Action(ActionType.FINISH_SESSION)
 data class PrintText(val text: String, val completable: Boolean = false) : Action(ActionType.PRINT_TEXT)
 data class DeleteRange(val begin: Int, val end: Int, val completable: Boolean = false) : Action(ActionType.DELETE_RANGE)
-data class OpenFile(val path: String, val text: String) : Action(ActionType.OPEN_FILE)
+data class OpenFile(val path: String, val checksum: String) : Action(ActionType.OPEN_FILE)
 

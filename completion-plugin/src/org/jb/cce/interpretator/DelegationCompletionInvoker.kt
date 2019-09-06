@@ -13,10 +13,10 @@ class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : Comp
         invoker.moveCaret(offset)
     }
 
-    override fun callCompletion(type: CompletionType, expectedText: String, prefix: String): CallCompletionResult {
+    override fun callCompletion(expectedText: String, prefix: String): CallCompletionResult {
         applicationListenersRestriction.waitForSize(100)
         return readAction {
-            invoker.callCompletion(type, expectedText, prefix)
+            invoker.callCompletion(expectedText, prefix)
         }
     }
 
@@ -28,7 +28,7 @@ class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : Comp
         invoker.deleteRange(begin, end)
     }
 
-    override fun openFile(file: String) = onEdt {
+    override fun openFile(file: String): String = readAction {
         invoker.openFile(file)
     }
 

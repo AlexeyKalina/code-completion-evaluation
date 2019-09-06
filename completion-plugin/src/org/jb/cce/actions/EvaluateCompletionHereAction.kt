@@ -34,7 +34,7 @@ class EvaluateCompletionHereAction : AnAction() {
 
         val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionStatement, settingsDialog.completionContext)
         CompletionEvaluator(false).evaluateCompletionHere(project, file, language.displayName, caret.offset,
-                if (strategy.statement == CompletionStatement.ALL_TOKENS) getParentOnSameLine(psi, caret.offset, editor) else null, strategy, settingsDialog.completionTypes)
+                if (strategy.statement == CompletionStatement.ALL_TOKENS) getParentOnSameLine(psi, caret.offset, editor) else null, strategy, settingsDialog.completionType)
     }
 
     private fun getParentOnSameLine(element: PsiElement, offset: Int, editor: Editor): PsiElement {

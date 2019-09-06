@@ -6,7 +6,6 @@ import com.intellij.openapi.extensions.PluginId
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.openapi.ui.ValidationInfo
 import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.uast.Language
 import java.awt.FlowLayout
@@ -32,7 +31,7 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
 
     private val statsCollectorId = "com.intellij.stats.completion"
     var workspaceDir = properties.getValue(workspaceDirProperty) ?: Paths.get(project.basePath ?: "", completionEvaluationDir).toString()
-    var completionTypes = arrayListOf(CompletionType.BASIC)
+    var completionType = CompletionType.BASIC
     var saveLogs = true
     var trainingPercentage = 70
     var completionContext = CompletionContext.ALL
@@ -64,12 +63,6 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         if (fullSettings) dialogPanel.add(createLogsPanel())
 
         return dialogPanel
-    }
-
-    override fun doValidate(): ValidationInfo? {
-        if (completionTypes.isEmpty())
-            return ValidationInfo("Select at least one of the completion types.")
-        return super.doValidate()
     }
 
     private fun createStatementButtons(blockPreviousContext: Boolean) {
@@ -161,29 +154,26 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     }
 
     private fun createTypePanel(): JPanel {
-        val typeLabel = JLabel("Completion type:")
         val completionTypePanel = JPanel(FlowLayout(FlowLayout.LEFT))
-        val basicCompletionCheckbox = completionTypeCheckbox("Basic", CompletionType.BASIC)
-        val smartCompletionCheckbox = completionTypeCheckbox("Smart", CompletionType.SMART)
-        val mlCompletionCheckbox = completionTypeCheckbox("ML", CompletionType.ML)
-
-        basicCompletionCheckbox.isSelected = true
-
+        val typeLabel = JLabel("Completion type:")
         completionTypePanel.add(typeLabel)
-        completionTypePanel.add(basicCompletionCheckbox)
-        completionTypePanel.add(smartCompletionCheckbox)
-        completionTypePanel.add(mlCompletionCheckbox)
+        val typeGroup =  ButtonGroup()
+
+        completionTypeButton("Basic", CompletionType.BASIC, typeGroup, completionTypePanel).isSelected = true
+        completionTypeButton("Smart", CompletionType.SMART, typeGroup, completionTypePanel)
+        completionTypeButton("ML", CompletionType.ML, typeGroup, completionTypePanel)
 
         return completionTypePanel
     }
 
-    private fun completionTypeCheckbox(name: String, type: CompletionType): JCheckBox {
-        val checkBox = JCheckBox(name)
-        checkBox.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED && !completionTypes.contains(type)) completionTypes.add(type)
-            else if (event.stateChange == ItemEvent.DESELECTED) completionTypes.removeIf { it == type }
+    private fun completionTypeButton(name: String, type: CompletionType, group: ButtonGroup, panel: JPanel): JRadioButton {
+        val button = JRadioButton(name)
+        button.addItemListener { event ->
+            if (event.stateChange == ItemEvent.SELECTED) completionType = type
         }
-        return checkBox
+        group.add(button)
+        panel.add(button)
+        return button
     }
 
     private fun createContextPanel(): JPanel {

@@ -2,12 +2,10 @@ package org.jb.cce
 
 import org.jb.cce.actions.*
 import org.jb.cce.exception.UnexpectedActionException
-import java.security.Timestamp
-import java.time.Instant
 
-class Interpreter(private val invoker: CompletionInvoker) {
+class Interpreter {
 
-    fun interpret(actions: List<Action>, completionType: CompletionType, callbackPerFile: (List<Session>, List<ActionStat>, String, String, Int) -> Boolean) {
+    fun interpret(invoker: CompletionInvoker, actions: List<Action>, completionType: CompletionType, callbackPerFile: (List<Session>, List<ActionStat>, String, String, Int) -> Boolean) {
         if (actions.isEmpty()) return
         val result = mutableListOf<Session>()
         val stats = mutableListOf<ActionStat>()
@@ -29,7 +27,7 @@ class Interpreter(private val invoker: CompletionInvoker) {
                 is CallCompletion -> {
                     if (completionType == CompletionType.SMART || session?.success != true) {
                         if (session == null) session = Session(position, action.expectedText, action.tokenType)
-                        val completionResult = invoker.callCompletion(completionType, action.expectedText, action.prefix)
+                        val completionResult = invoker.callCompletion(action.expectedText, action.prefix)
                         session.addLookup(completionResult.lookup)
                         session.success = completionResult.success
                     }
@@ -59,9 +57,8 @@ class Interpreter(private val invoker: CompletionInvoker) {
                         actionsDone = 0
                     }
                     needToClose = !invoker.isOpen(action.path)
-                    invoker.openFile(action.path)
+                    currentOpenedFileText = invoker.openFile(action.path)
                     currentOpenedFilePath = action.path
-                    currentOpenedFileText = action.text
                 }
             }
             actionsDone++
