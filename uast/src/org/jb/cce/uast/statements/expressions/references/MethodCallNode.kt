@@ -14,16 +14,12 @@ class MethodCallNode(name: String,
 
     private val arguments = mutableListOf<ExpressionNode>()
 
-    fun addArgument(argument: ExpressionNode) {
-        arguments += argument
-    }
-
     override fun addChild(node: UnifiedAstNode) {
         if (node is VariableDeclarationNode) return
         if (node !is ExpressionNode) throw UnifiedAstException("Unexpected child: $node for $this")
 
         if (this.getOffset() > node.getOffset()) this.prefix = node
-        else this.addArgument(node)
+        else arguments.add(node)
     }
 
     override fun getChildren() = arguments
