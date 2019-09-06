@@ -43,7 +43,7 @@ class ListSizeRestriction private constructor(private val list: List<*>) {
       }
     }
 
-    if (currentSize < size) {
+    if (initialSize != currentSize && currentSize < size) {
       System.err.println("List size decreased: $initialSize -> $currentSize")
     }
     if (currentSize >= size) {
