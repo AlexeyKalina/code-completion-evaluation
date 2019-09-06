@@ -36,7 +36,8 @@ object ConfigFactory {
     fun save(config: Config, path: String) {
         val json = gson.toJsonTree(config)
         val prefix = json.asJsonObject["strategy"].asJsonObject["prefix"].asJsonObject
-        prefix.add("name", JsonPrimitive(config.strategy.prefix.javaClass.name))
+        val className = config.strategy.prefix.javaClass.name
+        prefix.add("name", JsonPrimitive(className.substring(className.indexOf('$') + 1)))
         val strategyPrefix = config.strategy.prefix
         if (strategyPrefix !is CompletionPrefix.NoPrefix) prefix.add("emulateTyping", JsonPrimitive(strategyPrefix.emulateTyping))
         if (strategyPrefix is CompletionPrefix.SimplePrefix) prefix.add("n", JsonPrimitive(strategyPrefix.n))
@@ -46,9 +47,9 @@ object ConfigFactory {
     private fun getPrefix(strategy: Map<String, Any>): CompletionPrefix {
         val prefix = strategy["prefix"] as Map<String, Any>
         return when (prefix["name"]) {
-            CompletionPrefix.NoPrefix::class.java.name -> CompletionPrefix.NoPrefix
-            CompletionPrefix.CapitalizePrefix::class.java.name -> CompletionPrefix.CapitalizePrefix(prefix["emulateTyping"] as Boolean)
-            CompletionPrefix.SimplePrefix::class.java.name -> CompletionPrefix.SimplePrefix(prefix["emulateTyping"] as Boolean, (prefix["n"] as Double).toInt())
+            "NoPrefix" -> CompletionPrefix.NoPrefix
+            "CapitalizePrefix" -> CompletionPrefix.CapitalizePrefix(prefix["emulateTyping"] as Boolean)
+            "SimplePrefix" -> CompletionPrefix.SimplePrefix(prefix["emulateTyping"] as Boolean, (prefix["n"] as Double).toInt())
             else -> throw IllegalArgumentException("Unknown completion prefix")
         }
     }

@@ -27,7 +27,7 @@
         </action>
         <action id="org.jb.cce.actions.GenerateReportAction"
                 class="org.jb.cce.actions.GenerateReportAction"
-                text="Generate Report By Selected Logs"
+                text="Generate Report By Selected Evaluations"
                 description="Generate completion quality report by selected logs">
             <add-to-group group-id="ProjectViewPopupMenu" anchor="after"
                           relative-to-action="org.jb.cce.actions.EvaluateCompletionForSelectedFilesAction"/>
