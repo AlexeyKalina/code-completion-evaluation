@@ -103,7 +103,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 generatedActions.add(actions)
             } catch (e: Exception) {
                 errors.add(FileErrorInfo(file.path, e))
-                LOG.error("Error for file ${file.path}. Message: ${e.message}")
+                LOG.error("Error for file ${file.path}.", e)
             }
             completed++
             LOG.info("Generating actions for file ${file.path} completed. Done: $completed/${files.size}. With error: ${errors.size}")
