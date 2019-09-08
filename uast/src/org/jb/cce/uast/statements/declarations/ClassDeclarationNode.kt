@@ -5,6 +5,7 @@ import org.jb.cce.uast.EvaluationRoot
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.exceptions.UnifiedAstException
+import org.jb.cce.uast.statements.expressions.references.TypeReferenceNode
 
 class ClassDeclarationNode(private val header: ClassHeaderNode,
                            offset: Int,
@@ -17,6 +18,7 @@ class ClassDeclarationNode(private val header: ClassHeaderNode,
     }
 
     override fun addChild(node: UnifiedAstNode) {
+        if (node is TypeReferenceNode) return // In case of anonymous class
         if (node is DeclarationNode) addMember(node)
         else throw UnifiedAstException("Unexpected child: $node for $this")
     }

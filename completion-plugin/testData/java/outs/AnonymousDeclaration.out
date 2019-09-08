@@ -1,0 +1,10 @@
+FileNode
+  ClassDeclarationNode (AnonymousDeclaration)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+    ClassDeclarationNode (NestedClass)
+      MethodDeclarationNode (method)
+        MethodHeaderNode (method)
+        MethodBodyNode
+    ClassDeclarationNode (Producer)

@@ -1,0 +1,12 @@
+FileNode
+  ClassDeclarationNode (AnonymousAsParameter)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        MethodCallNode (invoke) static
+    MethodDeclarationNode (invoke)
+      MethodHeaderNode (invoke)
+      MethodBodyNode
+        MethodCallNode (run)
+          VariableAccessNode (runnable) - prefix
+    ClassDeclarationNode (Runnable)
