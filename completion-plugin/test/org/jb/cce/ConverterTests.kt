@@ -32,7 +32,6 @@ class ConverterTests : BasePlatformTestCase() {
     @ArgumentsSource(FileArgumentProvider::class)
     @ParameterizedTest(name = "{0}")
     fun doTest(testName: String, language: Language, testFile: File, testOutput: File) {
-        Assumptions.assumeTrue(language != Language.ANOTHER)
         println(testName)
         val virtualFile = VfsUtil.findFileByIoFile(testFile, false) ?: kotlin.test.fail("virtual file not found")
         val uast = ReadAction.compute<TextFragmentNode, Exception> {

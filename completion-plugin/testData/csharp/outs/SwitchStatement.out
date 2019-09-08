@@ -1,9 +1,0 @@
-FileNode
-  ClassDeclarationNode (SwitchStatement)
-    MethodDeclarationNode (Main)
-      MethodHeaderNode (Main)
-      MethodBodyNode
-        VariableAccessNode (Length)
-        MethodCallNode (WriteLine)
-        MethodCallNode (WriteLine)
-        MethodCallNode (WriteLine)

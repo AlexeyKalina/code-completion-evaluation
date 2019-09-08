@@ -1,6 +1,0 @@
-FileNode
-  ClassDeclarationNode (NestedClasses)
-    ClassDeclarationNode (Nested)
-      MethodDeclarationNode (A)
-        MethodHeaderNode (A)
-        MethodBodyNode
