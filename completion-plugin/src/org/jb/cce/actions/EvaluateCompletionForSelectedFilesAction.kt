@@ -15,7 +15,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
 
         val evaluator = CompletionEvaluator(false)
 
-        val language2files = FilesHelper.getFiles(files)
+        val language2files = FilesHelper.getFiles(project, files)
         if (language2files.isEmpty()) {
             Messages.showInfoMessage(project, "Languages of selected files aren't supported.", "Nothing to complete")
             return
