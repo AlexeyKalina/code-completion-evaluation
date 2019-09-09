@@ -21,6 +21,7 @@ interface UnifiedAstVisitor {
 
     fun visitExpressionNode(node: ExpressionNode) = visitStatementNode(node)
     fun visitLambdaExpressionNode(node: LambdaExpressionNode) = visitExpressionNode(node)
+    fun visitAnonymousClassNode(node: AnonymousClassNode) = visitExpressionNode(node)
 
     fun visitArrayAccessNode(node: ArrayAccessNode) = visitExpressionNode(node)
     fun visitNamedNode(node: NamedNode) = visitExpressionNode(node)

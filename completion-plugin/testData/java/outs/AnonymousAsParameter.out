@@ -3,7 +3,13 @@ FileNode
     MethodDeclarationNode (main)
       MethodHeaderNode (main)
       MethodBodyNode
-        MethodCallNode (invoke) static
+        MethodCallNode (invoke) - static
+          AnonymousClassNode - argument
+            MethodCallNode (Runnable)
+            ClassDeclarationNode (<no_name>)
+              MethodDeclarationNode (run)
+                MethodHeaderNode (run)
+                MethodBodyNode
     MethodDeclarationNode (invoke)
       MethodHeaderNode (invoke)
       MethodBodyNode

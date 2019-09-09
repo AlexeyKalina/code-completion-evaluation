@@ -27,10 +27,7 @@ class ConverterTests : BasePlatformTestCase() {
     companion object {
         private const val TEST_DATA_PATH = "testData"
         private const val OUTPUTS_NAME = "outs"
-
-        private val MUTED_TESTS:Set<String> = setOf(
-            "Java:InvocationOnAnonymous"
-        )
+        private val MUTED_TESTS:Set<String> = setOf()
     }
 
     @ArgumentsSource(FileArgumentProvider::class)
