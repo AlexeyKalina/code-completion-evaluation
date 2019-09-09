@@ -62,7 +62,7 @@ class HtmlReportGenerator(outputDir: String) {
         saveEvaluationResults(sessions)
         generateFileReports(sessions)
         generateErrorReports(errors)
-        return generateGlobalReport(metrics, errors)
+        return generateGlobalReport(metrics, errors, sessions)
     }
 
     fun saveActions(actions: List<Action>, fileName: String) {
@@ -104,7 +104,7 @@ class HtmlReportGenerator(outputDir: String) {
         }
     }
 
-    private fun generateGlobalReport(evaluationResults: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {
+    private fun generateGlobalReport(evaluationResults: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>, sessions: List<SessionsEvaluationInfo>): String {
         val sb = StringBuilder()
         reportTitle = "Code Completion Report"
         sb.appendln("<html><head><title>$reportTitle</title>")
@@ -115,7 +115,7 @@ class HtmlReportGenerator(outputDir: String) {
         sb.append("<h3>${getDistinctFiles(evaluationResults).size} file(s) successfully processed; ")
         if (errors.isEmpty()) sb.appendln("no errors occurred</h3>") else sb.appendln("${errors.size} with errors</h3>")
         sb.appendln(createFilteringCheckboxes(evaluationResults))
-        sb.appendln(getMetricsTable(evaluationResults, errors))
+        sb.appendln(getMetricsTable(evaluationResults, errors, sessions))
         sb.appendln("<script>var table = new Tabulator(\"#metrics-table\", {layout:\"fitColumns\"})</script>")
         sb.appendln("</body></html>")
         val reportPath = Paths.get(baseDir, globalReportName).toString()
@@ -216,18 +216,20 @@ class HtmlReportGenerator(outputDir: String) {
         return "$opened$text$closed"
     }
 
-    private fun getMetricsTable(evaluationResults: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {
+    private fun getMetricsTable(evaluationResults: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>, sessions: List<SessionsEvaluationInfo>): String {
         val headerBuilder = StringBuilder()
         val contentBuilder = StringBuilder()
 
         headerBuilder.appendln("<th tabulator-formatter=\"html\">File Report</th>")
         for (metric in evaluationResults.flatMap { res -> res.globalMetrics.map { "${it.name} ${res.info.evaluationType}" } }.sorted())
             headerBuilder.appendln("<th tabulator-field=\"$metric\">$metric</th>")
+        for (type in evaluationResults.map { it.info.evaluationType }) headerBuilder.appendln("<th>Sessions $type</th>")
 
         for (fileError in errors) {
             val path = Paths.get(baseDir).relativize(references[fileError.path]!!)
             writeRow(contentBuilder, "<a href=\"$path\" style=\"color:red;\">${File(fileError.path).name}</a>",
-                    evaluationResults.flatMap { it.globalMetrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name })
+                    evaluationResults.flatMap { it.globalMetrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name },
+                    evaluationResults.map { null })
         }
 
         for (filePath in getDistinctFiles(evaluationResults)) {
@@ -236,10 +238,12 @@ class HtmlReportGenerator(outputDir: String) {
                     evaluationResults.flatMap {
                         it.fileMetrics.find { it.filePath == filePath }?.results
                                 ?: it.globalMetrics.map { MetricInfo(it.name, null) }
-                    }.sortedBy { it.name })
+                    }.sortedBy { it.name },
+                    sessions.map { it.sessions.find { it.filePath == filePath }?.results?.size })
         }
 
-        writeRow(contentBuilder, "Summary", evaluationResults.flatMap { it.globalMetrics }.sortedBy { it.name })
+        writeRow(contentBuilder, "Summary", evaluationResults.flatMap { it.globalMetrics }.sortedBy { it.name },
+                sessions.map { it.sessions.sumBy { it.results.size } })
         contentBuilder.appendln("</tr>")
 
         return """
@@ -256,11 +260,15 @@ class HtmlReportGenerator(outputDir: String) {
         """
     }
 
-    private fun writeRow(sb: StringBuilder, name: String, metrics: List<MetricInfo>) {
+    private fun writeRow(sb: StringBuilder, name: String, metrics: List<MetricInfo>, sessionsCount: List<Int?>) {
         sb.appendln("<tr><td>$name</td>")
         for (metric in metrics) {
             if (metric.value == null) sb.appendln("<td>----</td>")
             else sb.appendln("<td>%.3f</td>".format(metric.value))
+        }
+        for (count in sessionsCount) {
+            if (count == null) sb.appendln("<td>----</td>")
+            else sb.appendln("<td>$count</td>")
         }
         sb.appendln("</tr>")
     }
