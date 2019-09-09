@@ -1,17 +1,28 @@
 FileNode
-  ClassDeclarationNode (AnonymousDeclaration)
+  ClassDeclarationNode (AnonymousWithArgs)
     MethodDeclarationNode (main)
       MethodHeaderNode (main)
       MethodBodyNode
         AnonymousClassNode
           MethodCallNode (Producer)
+            MethodCallNode (one) - argument static
           ClassDeclarationNode (<no_name>)
             MethodDeclarationNode (produce)
               MethodHeaderNode (produce)
               MethodBodyNode
                 MethodCallNode (NestedClass)
+    MethodDeclarationNode (one)
+      MethodHeaderNode (one)
+      MethodBodyNode
     ClassDeclarationNode (NestedClass)
       MethodDeclarationNode (method)
         MethodHeaderNode (method)
         MethodBodyNode
     ClassDeclarationNode (Producer)
+      MethodDeclarationNode (Producer)
+        MethodHeaderNode (Producer)
+        MethodBodyNode
+      MethodDeclarationNode (produce)
+        MethodHeaderNode (produce)
+        MethodBodyNode
+          MethodCallNode (NestedClass)

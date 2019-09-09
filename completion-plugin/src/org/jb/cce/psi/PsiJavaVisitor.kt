@@ -11,6 +11,7 @@ import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.exceptions.UnifiedAstException
 import org.jb.cce.uast.statements.declarations.*
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
+import org.jb.cce.uast.statements.expressions.AnonymousClassNode
 import org.jb.cce.uast.statements.expressions.LambdaExpressionNode
 import org.jb.cce.uast.statements.expressions.VariableAccessNode
 import org.jb.cce.uast.statements.expressions.ArrayAccessNode
@@ -39,7 +40,11 @@ class PsiJavaVisitor(private val path: String, private val text: String) : PsiVi
         val classNode = ClassDeclarationNode(header, node.textOffset, node.textLength)
         addToParent(classNode)
         stackOfNodes.addLast(classNode)
-        super.visitClass(node)
+        var bodyNode: PsiElement? = node.lBrace
+        while (bodyNode != null) {
+            bodyNode.accept(this)
+            bodyNode = bodyNode.nextSibling
+        }
         stackOfNodes.removeLast()
     }
 
@@ -83,18 +88,32 @@ class PsiJavaVisitor(private val path: String, private val text: String) : PsiVi
 
     override fun visitCallExpression(callExpression: PsiCallExpression) {
         if (callExpression is PsiNewExpressionImpl) {
-            if (callExpression.arrayInitializer != null) {
-                visitArrayInitializerExpression(callExpression.arrayInitializer)
-            } else {
-                val typeName = callExpression.classReference ?: return
-                val name = typeName.referenceName ?: typeName.text
-                val methodCall = MethodCallNode(name, typeName.textOffset, name.length)
-                addToParent(methodCall)
-                stackOfNodes.addLast(methodCall)
-                if (callExpression.argumentList != null) super.visitElement(callExpression.argumentList)
-                stackOfNodes.removeLast()
+            when {
+                callExpression.arrayInitializer != null -> visitArrayInitializerExpression(callExpression.arrayInitializer)
+                callExpression.anonymousClass != null -> visitAnonymousClass(callExpression)
+                callExpression.classReference != null -> visitConstructorInvocation(callExpression)
             }
         } else super.visitCallExpression(callExpression)
+    }
+
+    private fun visitAnonymousClass(callExpression: PsiNewExpressionImpl) {
+        val classNode = callExpression.anonymousClass ?: return
+        val anonymousClass = AnonymousClassNode(classNode.textOffset, classNode.textLength)
+        addToParent(anonymousClass)
+        stackOfNodes.addLast(anonymousClass)
+        visitConstructorInvocation(callExpression)
+        visitClass(classNode)
+        stackOfNodes.removeLast()
+    }
+
+    private fun visitConstructorInvocation(callExpression: PsiNewExpressionImpl) {
+        val typeName = callExpression.classOrAnonymousClassReference ?: return
+        val name = typeName.referenceName ?: typeName.text
+        val methodCall = MethodCallNode(name, typeName.textOffset, name.length)
+        addToParent(methodCall)
+        stackOfNodes.addLast(methodCall)
+        if (callExpression.argumentList != null) super.visitElement(callExpression.argumentList)
+        stackOfNodes.removeLast()
     }
 
     override fun visitLambdaExpression(expression: PsiLambdaExpression) {
@@ -195,6 +214,7 @@ class PsiJavaVisitor(private val path: String, private val text: String) : PsiVi
         when {
             element is PsiReferenceExpression -> visitReferenceElement(element)
             element is PsiMethodCallExpression -> visitMethodCallExpression(element)
+            element is PsiCallExpression -> visitCallExpression(element)
             element is PsiExpression -> super.visitExpression(element)
             element != null -> super.visitElement(element)
         }

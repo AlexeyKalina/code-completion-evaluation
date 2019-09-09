@@ -4,9 +4,9 @@ FileNode
       MethodHeaderNode (main)
       MethodBodyNode
         MethodCallNode (run)
-          LambdaExpressionNode
+          LambdaExpressionNode - prefix
             MethodBodyNode
-              MethodCallNode (test) - prefix
+              MethodCallNode (test)
     MethodDeclarationNode (test)
       MethodHeaderNode (test)
       MethodBodyNode

@@ -4,7 +4,13 @@ FileNode
       MethodHeaderNode (main)
       MethodBodyNode
         MethodCallNode (produce)
-          ClassDeclarationNode (TODO: Anonymous)
+          AnonymousClassNode - prefix
+            MethodCallNode (Producer)
+            ClassDeclarationNode (<no_name>)
+              MethodDeclarationNode (produce)
+                MethodHeaderNode (produce)
+                MethodBodyNode
+                  MethodCallNode (NestedClass)
     ClassDeclarationNode (NestedClass)
       MethodDeclarationNode (method)
         MethodHeaderNode (method)

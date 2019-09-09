@@ -4,6 +4,7 @@ import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.UnifiedAstRecursiveVisitor
 import org.jb.cce.uast.statements.declarations.DeclarationNode
 import org.jb.cce.uast.statements.expressions.ArrayAccessNode
+import org.jb.cce.uast.statements.expressions.ExpressionNode
 import org.jb.cce.uast.statements.expressions.NamedNode
 import org.jb.cce.uast.statements.expressions.references.ClassMemberAccessNode
 import org.jb.cce.uast.statements.expressions.references.ReferenceNode
@@ -21,16 +22,18 @@ class UastPrinter : UnifiedAstRecursiveVisitor() {
         printNode(node, "${node::class.java.simpleName} (${node.getName()})")
     }
 
+    override fun visitExpressionNode(node: ExpressionNode) {
+        val role = getRole(node)
+        isPrefix = false
+        isArgument = false
+        printNode(node, "${node::class.java.simpleName}$role")
+    }
+
     override fun visitNamedNode(node: NamedNode) {
-        var postfix =  when {
-            isPrefix -> " - prefix"
-            isArgument -> " - argument"
-            else -> ""
-        }
-        if (node is ClassMemberAccessNode && node.isStatic) postfix += " static"
+        val role = getRole(node)
         val prevValueArg = isArgument
         isArgument = true
-        printNode(node, "${node::class.java.simpleName} (${node.name})" + postfix)
+        printNode(node, "${node::class.java.simpleName} (${node.name})$role")
         isArgument = prevValueArg
     }
 
@@ -68,6 +71,17 @@ class UastPrinter : UnifiedAstRecursiveVisitor() {
         level += 1
         super.visitChildren(node)
         level -= 1
+    }
+
+    private fun getRole(node: UnifiedAstNode): String {
+        var role = when {
+            isPrefix -> "prefix"
+            isArgument -> "argument"
+            else -> ""
+        }
+        if (node is ClassMemberAccessNode && node.isStatic)
+            role += if (role.isBlank()) "static" else " static"
+        return if (role.isNotBlank()) " - $role" else ""
     }
 
     fun getText(): String {
