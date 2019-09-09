@@ -20,6 +20,7 @@ class MetricsEvaluator private constructor() {
         registerMetric(ESavedMetric())
         registerMetric(MeanLatencyMetric())
         registerMetric(MaxLatencyMetric())
+        registerMetric(AverageSelectedPositionMetric())
     }
 
     fun registerMetric(metric: Metric) {

@@ -13,10 +13,10 @@ class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : Comp
         invoker.moveCaret(offset)
     }
 
-    override fun callCompletion(expectedText: String, prefix: String): CallCompletionResult {
+    override fun callCompletion(expectedText: String, prefix: String, tryFinish: Boolean): CallCompletionResult {
         applicationListenersRestriction.waitForSize(100)
         return readAction {
-            invoker.callCompletion(expectedText, prefix)
+            invoker.callCompletion(expectedText, prefix, tryFinish)
         }
     }
 

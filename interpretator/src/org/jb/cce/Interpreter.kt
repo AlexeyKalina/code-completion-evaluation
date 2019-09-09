@@ -27,7 +27,7 @@ class Interpreter {
                 is CallCompletion -> {
                     if (completionType == CompletionType.SMART || session?.success != true) {
                         if (session == null) session = Session(position, action.expectedText, action.tokenType)
-                        val completionResult = invoker.callCompletion(action.expectedText, action.prefix)
+                        val completionResult = invoker.callCompletion(action.expectedText, action.prefix, action.isLast)
                         session.addLookup(completionResult.lookup)
                         session.success = completionResult.success
                     }
