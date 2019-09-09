@@ -1,0 +1,18 @@
+FileNode
+  ClassDeclarationNode (FieldInAnonymousClass)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        AnonymousClassNode
+          MethodCallNode (Producer)
+          ClassDeclarationNode (<no_name>)
+            VariableDeclarationNode (a)
+            MethodDeclarationNode (produce)
+              MethodHeaderNode (produce)
+              MethodBodyNode
+                MethodCallNode (NestedClass)
+    ClassDeclarationNode (NestedClass)
+      MethodDeclarationNode (method)
+        MethodHeaderNode (method)
+        MethodBodyNode
+    ClassDeclarationNode (Producer)

@@ -179,7 +179,7 @@ class PsiJavaVisitor(private val path: String, private val text: String) : PsiVi
                 name.textOffset, name.textLength)
         addToParent(variableDeclaration)
         stackOfNodes.addLast(variableDeclaration)
-        super.visitVariable(variable)
+        if (variable !is PsiEnumConstant) super.visitVariable(variable)
         stackOfNodes.removeLast()
     }
 
