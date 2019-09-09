@@ -1,0 +1,12 @@
+FileNode
+  ClassDeclarationNode (InvocationOnAnonymous)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        MethodCallNode (produce)
+          ClassDeclarationNode (TODO: Anonymous)
+    ClassDeclarationNode (NestedClass)
+      MethodDeclarationNode (method)
+        MethodHeaderNode (method)
+        MethodBodyNode
+    ClassDeclarationNode (Producer)

@@ -1,9 +1,0 @@
-FileNode
-  ClassDeclarationNode (ForStatement)
-    MethodDeclarationNode (Main)
-      MethodHeaderNode (Main)
-      MethodBodyNode
-        VariableDeclarationNode (i)
-        VariableAccessNode (Length)
-        MethodCallNode (WriteLine)
-          VariableAccessNode (i) - argument

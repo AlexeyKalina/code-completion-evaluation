@@ -38,7 +38,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
 
     fun evaluateCompletion(project: Project, files: List<VirtualFile>, languageName: String, strategy: CompletionStrategy,
                            completionType: CompletionType, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
-        val language2files = FilesHelper.getFiles(files)
+        val language2files = FilesHelper.getFiles(project, files)
         if (language2files.isEmpty()) {
             println("Languages of selected files aren't supported.")
             return finishWork(null)
@@ -103,7 +103,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 generatedActions.add(actions)
             } catch (e: Exception) {
                 errors.add(FileErrorInfo(file.path, e))
-                LOG.error("Error for file ${file.path}. Message: ${e.message}")
+                LOG.error("Error for file ${file.path}.", e)
             }
             completed++
             LOG.info("Generating actions for file ${file.path} completed. Done: $completed/${files.size}. With error: ${errors.size}")

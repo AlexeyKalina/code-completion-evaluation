@@ -1,5 +1,0 @@
-FileNode
-  ClassDeclarationNode (ClassWithSingleMethod)
-    MethodDeclarationNode (Main)
-      MethodHeaderNode (Main)
-      MethodBodyNode
