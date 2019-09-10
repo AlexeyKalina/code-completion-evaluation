@@ -41,11 +41,10 @@ class CompletionEvaluationStarter : ApplicationStarter {
     private fun List<String>.findFilesInProject(projectRootPath: String): List<VirtualFile> {
         val fileSystem = LocalFileSystem.getInstance()
         val projectRoot = Paths.get(projectRootPath)
-        return this.asSequence()
-            .map { Paths.get(it) }
-            .map { projectRoot.resolve(it).toFile() }
-            .map(fileSystem::findFileByIoFile)
-            .requireNoNulls()
-            .toList()
+        val path2file = this.associateWith { fileSystem.findFileByIoFile(projectRoot.resolve(it).toFile()) }
+        val unknownFiles = path2file.filterValues { it == null }
+        require(unknownFiles.isEmpty()) { "Evaluation roots not found: ${unknownFiles.keys}" }
+
+        return path2file.values.filterNotNull()
     }
 }
