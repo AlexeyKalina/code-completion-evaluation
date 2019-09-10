@@ -21,6 +21,7 @@ class HtmlReportGenerator(outputDir: String) {
         private const val globalReportName = "index.html"
         private const val tabulatorScript = "/tabulator.min.js"
         private const val tabulatorStyle = "/tabulator.min.css"
+        private const val options = "/options.css"
 
         private val script = HtmlReportGenerator::class.java.getResource("/script.js").readText()
         private val style = HtmlReportGenerator::class.java.getResource("/style.css").readText()
@@ -50,6 +51,7 @@ class HtmlReportGenerator(outputDir: String) {
         Files.createDirectories(reportsDir)
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorStyle), Paths.get(resourcesDir.toString(), tabulatorStyle))
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(resourcesDir.toString(), tabulatorScript))
+        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(options), Paths.get(resourcesDir.toString(), options))
     }
 
     fun logsDirectory() = logsDir.toString()
@@ -102,12 +104,21 @@ class HtmlReportGenerator(outputDir: String) {
         reportTitle = "Code Completion Report"
         sb.appendln("<html><head><title>$reportTitle</title>")
         sb.appendln("<script src=\"res/tabulator.min.js\"></script>")
-        sb.appendln("<link href=\"res/tabulator.min.css\" rel=\"stylesheet\"></head>")
+        sb.appendln("<link href=\"res/tabulator.min.css\" rel=\"stylesheet\">")
+        sb.appendln("<link href=\"res/options.css\" rel=\"stylesheet\"></head>")
         sb.appendln("<body><h1>$reportTitle</h1>")
-        sb.append("<h3>${ getDistinctFiles(evaluationResults).size } file(s) successfully processed; ")
+        sb.append("<h3>${getDistinctFiles(evaluationResults).size} file(s) successfully processed; ")
         if (errors.isEmpty()) sb.appendln("no errors occurred</h3>") else sb.appendln("${errors.size} with errors</h3>")
+        sb.appendln("<div class=\"options\"><button class=\"options-btn\" id=\"dropdownBtn\">Metrics visibility</button><ul class=\"dropdown\">")
+        for (metric in evaluationResults.first().globalMetrics.map { it.name }.sorted())
+            sb.appendln("<li><input type=\"checkbox\" checked onclick=\"toggleColumn('$metric');\">$metric</li>")
+        sb.appendln("</ul></div><div class=\"options\"><button class=\"options-btn\" id=\"redrawBtn\" onclick=\"table.redraw()\">Redraw table</button></div>")
         sb.appendln(getMetricsTable(evaluationResults, errors))
-        sb.appendln("<script>var table = new Tabulator(\"#metrics-table\", {layout:\"fitColumns\"});</script></body></html>")
+        sb.appendln("<script>var table = new Tabulator(\"#metrics-table\", {layout:\"fitColumns\"});")
+        sb.appendln("function toggleColumn(name) {")
+        for (type in evaluationResults.map { it.info.evaluationType }.toSet())
+            sb.appendln("table.toggleColumn(name + ' $type');")
+        sb.appendln("}</script></body></html>")
         val reportPath = Paths.get(baseDir, globalReportName).toString()
         FileWriter(reportPath).use { it.write(sb.toString()) }
         return reportPath
@@ -211,8 +222,8 @@ class HtmlReportGenerator(outputDir: String) {
         val contentBuilder = StringBuilder()
 
         headerBuilder.appendln("<th tabulator-formatter=\"html\">File Report</th>")
-        for (metric in evaluationResults.flatMap { res -> res.globalMetrics.map { Pair(it.name, res.info.evaluationType) } }.sortedBy { it.first })
-            headerBuilder.appendln("<th>${metric.first} ${metric.second}</th>")
+        for (metric in evaluationResults.flatMap { res -> res.globalMetrics.map { "${it.name} ${res.info.evaluationType}" } }.sorted())
+            headerBuilder.appendln("<th tabulator-field=\"$metric\">$metric</th>")
 
         for (fileError in errors) {
             val path = Paths.get(baseDir).relativize(references[fileError.path]!!)

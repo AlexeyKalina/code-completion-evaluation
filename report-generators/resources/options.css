@@ -1,0 +1,54 @@
+.options {
+    position: relative;
+    display: inline-block;
+    font-size: 15px;
+    margin-bottom: 15px;
+}
+
+.options-btn {
+    border: 2px solid gray;
+    border-radius: 5px;
+    margin: 2px;
+    outline: none;
+    font-size: 15px;
+}
+
+.dropdown {
+    display: none;
+    position: absolute;
+    background-color: white;
+    padding: 0;
+    margin: 0;
+    border-radius: 0 0 5px 5px;
+    width: 100%;
+    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.3);
+    z-index: 1;
+}
+
+.dropdown li {
+    margin: 4px 0 4px 3px;
+}
+
+.options:hover #dropdownBtn {
+    color: white;
+    background-color: gray;
+    border-radius: 5px 5px 0 0;
+}
+
+.options:hover .dropdown {
+    display: block;
+}
+
+#redrawBtn:hover {
+    border-color: lightgray;
+}
+
+#redrawBtn:active {
+    color: white;
+    background-color: gray;
+    border-color: gray;
+}
+
+.tabulator {
+    background-color: transparent;
+}
