@@ -8,8 +8,7 @@ import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.MetricsEvaluationInfo
 import org.jb.cce.info.SessionsEvaluationInfo
 import org.jb.cce.metrics.MetricInfo
-import java.io.File
-import java.io.FileWriter
+import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -93,7 +92,9 @@ class HtmlReportGenerator(outputDir: String) {
             reportTitle = "Error on actions generation for file <b>${file.name}</b>"
             val report = """<html><head><title>$reportTitle</title></head><body><h1>$reportTitle</h1>
                             <h2>Message:</h2>${fileError.exception.message}
-                            <h2>StackTrace:</h2>${fileError.exception.stackTrace?.contentToString()}</body></html>"""
+                            <h2>StackTrace:</h2>
+                            <pre><code>${exceptionStackTraceToString(fileError.exception)}</code></pre>
+                            </body></html>"""
             FileWriter(reportPath.toString()).use { it.write(report) }
             references[file.path] = reportPath
         }
@@ -285,5 +286,11 @@ class HtmlReportGenerator(outputDir: String) {
             sb.appendln("table.toggleColumn(name + ' $type');")
         sb.appendln("}</script>")
         return sb.toString()
+    }
+
+    private fun exceptionStackTraceToString(e: Exception): String {
+        val sw = StringWriter()
+        e.printStackTrace(PrintWriter(sw))
+        return sw.toString()
     }
 }
