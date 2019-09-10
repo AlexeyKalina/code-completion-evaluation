@@ -70,12 +70,12 @@ abstract class CallCompletionsVisitor(protected open val text: String,
         var currentPrefix = ""
         if (prefixCreator.completePrevious) {
             for (symbol in prefix) {
-                actions += CallCompletion(currentPrefix, node.getText(), tokenType, false)
+                actions += CallCompletion(currentPrefix, node.getText(), tokenType)
                 actions += PrintText(symbol.toString(), true)
                 currentPrefix += symbol
             }
         } else if (prefix.isNotEmpty()) actions += PrintText(prefix, true)
-        actions += CallCompletion(prefix, node.getText(), tokenType, true)
+        actions += CallCompletion(prefix, node.getText(), tokenType)
 
         if (prefix.isNotEmpty())
             actions += DeleteRange(node.getOffset(), node.getOffset() + prefix.length, true)

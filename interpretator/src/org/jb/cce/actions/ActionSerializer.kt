@@ -15,7 +15,7 @@ class ActionSerializer {
         return when (action["type"]) {
             Action.ActionType.MOVE_CARET.name -> MoveCaret((action["offset"] as Double).toInt())
             Action.ActionType.CALL_COMPLETION.name -> CallCompletion(action["prefix"] as String, action["expectedText"] as String,
-                    TokenType.valueOf(action["tokenType"] as String), action["isLast"] as Boolean)
+                    TokenType.valueOf(action["tokenType"] as String))
             Action.ActionType.FINISH_SESSION.name -> FinishSession()
             Action.ActionType.PRINT_TEXT.name -> PrintText(action["text"] as String, action["completable"] as Boolean)
             Action.ActionType.DELETE_RANGE.name ->

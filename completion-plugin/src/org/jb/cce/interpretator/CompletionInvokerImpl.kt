@@ -43,7 +43,7 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
         editor!!.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
-    override fun callCompletion(expectedText: String, prefix: String, tryFinish: Boolean): CallCompletionResult {
+    override fun callCompletion(expectedText: String, prefix: String): CallCompletionResult {
         LOG.info("Call completion. Type: $completionType. ${positionToString(editor!!.caretModel.offset)}")
         LookupManager.getInstance(project).hideActiveLookup()
 
@@ -58,12 +58,14 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
                 lookup.waitForResult(1000)
             }
             val suggestions = lookup.items.map { Suggestion(it.lookupString, lookupElementText(it)) }
-            val expectedItemIndex = lookup.items.indexOfFirst { it.lookupString == expectedText }
-            return if (tryFinish && expectedItemIndex != -1 && completionType != CompletionType.SMART)
-                CallCompletionResult(org.jb.cce.Lookup(prefix, suggestions, latency), lookup.finish(expectedItemIndex, expectedText.length - prefix.length))
-            else
-                CallCompletionResult(org.jb.cce.Lookup(prefix, suggestions, latency), false)
+            return CallCompletionResult(org.jb.cce.Lookup(prefix, suggestions, latency), lookup.items.any { it.lookupString == expectedText })
         }
+    }
+
+    override fun finishCompletion(expectedText: String, prefix: String): Boolean {
+        val lookup = LookupManager.getActiveLookup(editor) as? LookupImpl ?: return false
+        val expectedItemIndex = lookup.items.indexOfFirst { it.lookupString == expectedText }
+        return if (expectedItemIndex != -1) lookup.finish(expectedItemIndex, expectedText.length - prefix.length) else false
     }
 
     override fun printText(text: String) {

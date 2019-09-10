@@ -27,15 +27,15 @@ class Interpreter {
                 is CallCompletion -> {
                     if (completionType == CompletionType.SMART || session?.success != true) {
                         if (session == null) session = Session(position, action.expectedText, action.tokenType)
-                        val completionResult = invoker.callCompletion(action.expectedText, action.prefix, action.isLast)
+                        val completionResult = invoker.callCompletion(action.expectedText, action.prefix)
                         session.addLookup(completionResult.lookup)
-                        session.success = completionResult.success
                     }
                 }
                 is FinishSession -> {
                     if (session == null) {
                         throw UnexpectedActionException("Session canceled before created")
                     }
+                    session.success = invoker.finishCompletion(session.expectedText, session.lookups.last().text)
                     result.add(session)
                     session = null
                 }
