@@ -57,6 +57,8 @@ class HtmlReportGenerator(outputDir: String) {
 
     fun logsDirectory() = logsDir.toString()
 
+    fun actionsDirectory() = actionsDir.toString()
+
     fun generateReport(sessions: List<SessionsEvaluationInfo>, metrics: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {
         filesCounter = 0
         saveEvaluationResults(sessions)

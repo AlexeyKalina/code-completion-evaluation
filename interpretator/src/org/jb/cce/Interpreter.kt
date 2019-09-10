@@ -8,11 +8,11 @@ class Interpreter {
 
     fun interpret(invoker: CompletionInvoker, actions: List<Action>, handler: InterpretationHandler) {
         if (actions.isEmpty()) return
-        val result = mutableListOf<Session>()
-        val stats = mutableListOf<ActionStat>()
         var currentOpenedFilePath = ""
         var currentOpenedFileText = ""
         var needToClose = false
+        val result = mutableListOf<Session>()
+        val stats = mutableListOf<ActionStat>()
         var isFinished = false
         var skipFile = false
         var session: Session? = null
@@ -32,7 +32,7 @@ class Interpreter {
                     val completionResult = invoker.callCompletion(action.expectedText, action.prefix)
                     session.addLookup(completionResult.lookup)
                     session.success = completionResult.success
-                    val isCanceled = handler.invokeOnCompletion(stats.toList())
+                    val isCanceled = handler.invokeOnCompletion(stats.toList(), currentOpenedFilePath)
                     if (isCanceled) return
                     stats.clear()
                     isFinished = false
@@ -54,15 +54,9 @@ class Interpreter {
                         invoker.deleteRange(action.begin, action.end)
                 }
                 is OpenFile -> {
-                    skipFile = false
-                    if (needToClose) invoker.closeFile(currentOpenedFilePath)
                     needToClose = !invoker.isOpen(action.path)
                     currentOpenedFileText = invoker.openFile(action.path)
                     currentOpenedFilePath = action.path
-                    val isCanceled = handler.invokeOnFile(result.toList(), stats.toList(), currentOpenedFilePath, currentOpenedFileText)
-                    if (isCanceled) return
-                    result.clear()
-                    stats.clear()
                     if (action.checksum != computeChecksum(currentOpenedFileText)) {
                         skipFile = true
                         handler.invokeOnError(IllegalStateException("File $currentOpenedFilePath has been modified."))

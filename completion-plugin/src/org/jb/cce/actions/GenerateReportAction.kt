@@ -1,17 +1,15 @@
 package org.jb.cce.actions
 
-import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.HtmlReportGenerator
 import org.jb.cce.Session
 import org.jb.cce.SessionSerializer
-import org.jb.cce.generateReport
+import org.jb.cce.generateReportUnderProgress
 import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.info.SessionsEvaluationInfo
 import java.nio.file.Paths
@@ -38,10 +36,7 @@ class GenerateReportAction : AnAction() {
             Paths.get(project.basePath ?: "", CompletionSettingsDialog.completionEvaluationDir).toString()
 
         val reportGenerator = HtmlReportGenerator(outputDir)
-        val reportPath = generateReport(reportGenerator, sessionsInfo, emptyList())
-        ApplicationManager.getApplication().invokeAndWait {
-            if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
-        }
+        generateReportUnderProgress(sessionsInfo, emptyList(), reportGenerator, project, false)
     }
 
     override fun update(e: AnActionEvent) {
