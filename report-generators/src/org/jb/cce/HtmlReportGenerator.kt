@@ -109,16 +109,10 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln("<body><h1>$reportTitle</h1>")
         sb.append("<h3>${getDistinctFiles(evaluationResults).size} file(s) successfully processed; ")
         if (errors.isEmpty()) sb.appendln("no errors occurred</h3>") else sb.appendln("${errors.size} with errors</h3>")
-        sb.appendln("<div class=\"options\"><button class=\"options-btn\" id=\"dropdownBtn\">Metrics visibility</button><ul class=\"dropdown\">")
-        for (metric in evaluationResults.first().globalMetrics.map { it.name }.sorted())
-            sb.appendln("<li><input type=\"checkbox\" checked onclick=\"toggleColumn('$metric');\">$metric</li>")
-        sb.appendln("</ul></div><div class=\"options\"><button class=\"options-btn\" id=\"redrawBtn\" onclick=\"table.redraw()\">Redraw table</button></div>")
+        sb.appendln(createFilteringCheckboxes(evaluationResults))
         sb.appendln(getMetricsTable(evaluationResults, errors))
-        sb.appendln("<script>var table = new Tabulator(\"#metrics-table\", {layout:\"fitColumns\"});")
-        sb.appendln("function toggleColumn(name) {")
-        for (type in evaluationResults.map { it.info.evaluationType }.toSet())
-            sb.appendln("table.toggleColumn(name + ' $type');")
-        sb.appendln("}</script></body></html>")
+        sb.appendln("<script>var table = new Tabulator(\"#metrics-table\", {layout:\"fitColumns\"})</script>")
+        sb.appendln("</body></html>")
         val reportPath = Paths.get(baseDir, globalReportName).toString()
         FileWriter(reportPath).use { it.write(sb.toString()) }
         return reportPath
@@ -268,5 +262,28 @@ class HtmlReportGenerator(outputDir: String) {
 
     private fun getDistinctFiles(results: List<MetricsEvaluationInfo>): List<String> {
         return results.flatMap { it.fileMetrics.map { it.filePath } }.distinct()
+    }
+
+    private fun createFilteringCheckboxes(evaluationResults: List<MetricsEvaluationInfo>): String {
+        val sb = StringBuilder()
+        sb.appendln("""
+            <div class="options">
+                <button class="options-btn" id="dropdownBtn">Metrics visibility</button>
+                <ul class="dropdown">
+                """)
+        for (metric in evaluationResults.first().globalMetrics.map { it.name }.sorted())
+            sb.appendln("<li><input type=\"checkbox\" checked onclick=\"toggleColumn('$metric');\">$metric</li>")
+        sb.appendln("""
+                </ul>
+            </div>
+            <div class="options">
+                <button class="options-btn" id="redrawBtn" onclick="table.redraw()">Redraw table</button>
+            </div>
+            """)
+        sb.appendln("<script> function toggleColumn(name) {")
+        for (type in evaluationResults.map { it.info.evaluationType }.toSet())
+            sb.appendln("table.toggleColumn(name + ' $type');")
+        sb.appendln("}</script>")
+        return sb.toString()
     }
 }
