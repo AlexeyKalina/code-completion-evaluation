@@ -30,10 +30,10 @@ class ActionsGenerator(val strategy: CompletionStrategy) {
 
         return actions
     }
+}
 
-    private fun computeChecksum(text: String): String {
-        val sha = MessageDigest.getInstance("SHA-256")
-        val digest = sha.digest(text.toByteArray())
-        return digest.fold("", { str, it -> str + "%02x".format(it) })
-    }
+fun computeChecksum(text: String): String {
+    val sha = MessageDigest.getInstance("SHA-256")
+    val digest = sha.digest(text.toByteArray())
+    return digest.fold("", { str, it -> str + "%02x".format(it) })
 }

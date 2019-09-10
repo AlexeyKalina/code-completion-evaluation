@@ -63,6 +63,7 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
     }
 
     override fun finishCompletion(expectedText: String, prefix: String): Boolean {
+        if (completionType == CompletionType.SMART) return false
         val lookup = LookupManager.getActiveLookup(editor) as? LookupImpl ?: return false
         val expectedItemIndex = lookup.items.indexOfFirst { it.lookupString == expectedText }
         return if (expectedItemIndex != -1) lookup.finish(expectedItemIndex, expectedText.length - prefix.length) else false

@@ -17,15 +17,14 @@ import org.jb.cce.actions.*
 import org.jb.cce.highlighter.Highlighter
 import org.jb.cce.info.EvaluationInfo
 import org.jb.cce.info.FileErrorInfo
-import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.info.SessionsEvaluationInfo
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.interpretator.DelegationCompletionInvoker
+import org.jb.cce.interpretator.InterpretationHandlerImpl
 import org.jb.cce.util.*
 import org.jb.cce.visitors.DefaultEvaluationRootVisitor
 import org.jb.cce.visitors.EvaluationRootByOffsetVisitor
 import org.jb.cce.visitors.EvaluationRootByRangeVisitor
-import java.io.File
 import java.nio.file.Paths
 import java.util.*
 import kotlin.system.exitProcess
@@ -141,31 +140,14 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         val interpreter = Interpreter()
         val logsWatcher = if (saveLogs) DirectoryWatcher(statsCollectorLogsDirectory(), workspaceDir, logsTrainingPercentage) else null
         logsWatcher?.start()
-
         val sessionsInfo = mutableListOf<SessionsEvaluationInfo>()
-        val actionStats = mutableListOf<ActionStat>()
         val mlCompletionFlag = isMLCompletionEnabled()
         LOG.info("Start interpreting actions")
-        var completed = 0
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, completionType))
         setMLCompletion(completionType == CompletionType.ML)
-        val fileSessions = mutableListOf<FileEvaluationInfo<Session>>()
-        interpreter.interpret(completionInvoker, actions, completionType) { sessions, stats, filePath, fileText, actionsDone ->
-            completed += actionsDone
-            fileSessions.add(FileEvaluationInfo(filePath, sessions, fileText))
-            actionStats.addAll(stats)
-            val perMinute = actionStats.count { it.timestamp > Date().time - minInMs }
-            indicator.setProgress("$completionType ${File(filePath).name} ($completed/${actions.size} act, $perMinute act/min)",
-                    completed.toDouble() / actions.size)
-            LOG.info("Interpreting actions for file $filePath ($completionType completion) completed. Done: $completed/${actions.size}, $perMinute act/min")
-            if (indicator.isCanceled()) {
-                LOG.info("Interpreting actions is canceled by user.")
-                logsWatcher?.stop()
-                return@interpret true
-            }
-            return@interpret false
-        }
-        sessionsInfo.add(SessionsEvaluationInfo(fileSessions, EvaluationInfo(completionType.name, strategy)))
+        val handler = InterpretationHandlerImpl(indicator, actions.size)
+        interpreter.interpret(completionInvoker, actions, handler)
+        sessionsInfo.add(SessionsEvaluationInfo(handler.getSessions(), EvaluationInfo(completionType.name, strategy)))
         setMLCompletion(mlCompletionFlag)
         logsWatcher?.stop()
         return sessionsInfo
