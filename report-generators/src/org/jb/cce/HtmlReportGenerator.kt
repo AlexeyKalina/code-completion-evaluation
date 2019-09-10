@@ -232,14 +232,18 @@ class HtmlReportGenerator(outputDir: String) {
                     evaluationResults.map { null })
         }
 
-        for (filePath in getDistinctFiles(evaluationResults)) {
-            val path = Paths.get(baseDir).relativize(references[filePath]!!)
-            writeRow(contentBuilder, "<a href=\"$path\">${File(filePath).name}</a>",
-                    evaluationResults.flatMap {
-                        it.fileMetrics.find { it.filePath == filePath }?.results
-                                ?: it.globalMetrics.map { MetricInfo(it.name, null) }
+        for (file in getDistinctFiles(evaluationResults)) {
+            val path = Paths.get(baseDir).relativize(references[file.filePath]!!)
+            writeRow(contentBuilder, "<a href=\"$path\">${File(file.filePath).name}</a>",
+                    evaluationResults.withIndex().flatMap {
+                        val fileIndex = file.indices[it.index]
+                        if (fileIndex != null) it.value.fileMetrics[fileIndex].results
+                        else it.value.globalMetrics.map { MetricInfo(it.name, null) }
                     }.sortedBy { it.name },
-                    sessions.map { it.sessions.find { it.filePath == filePath }?.results?.size })
+                    sessions.withIndex().map {
+                        val fileIndex = file.indices[it.index]
+                        if (fileIndex != null) it.value.sessions[fileIndex].results.size else null
+                    })
         }
 
         writeRow(contentBuilder, "Summary", evaluationResults.flatMap { it.globalMetrics }.sortedBy { it.name },
@@ -273,9 +277,25 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln("</tr>")
     }
 
-    private fun getDistinctFiles(results: List<MetricsEvaluationInfo>): List<String> {
-        return results.flatMap { it.fileMetrics.map { it.filePath } }.distinct()
+    private fun getDistinctFiles(results: List<MetricsEvaluationInfo>): List<FileIndexInfo> {
+        val distinctFiles = results.flatMap { it.fileMetrics.map { it.filePath } }.distinct().sorted()
+        val indices = MutableList(results.size) { 0 }
+        val fileMetrics = results.map { it.fileMetrics.sortedBy { it.filePath } }
+        val evaluationFiles = mutableListOf<FileIndexInfo>()
+        for (file in distinctFiles) {
+            val resultIndices = mutableListOf<Int?>()
+            for ((i, index) in indices.withIndex()) {
+                if (fileMetrics[i][index].filePath == file) {
+                    resultIndices.add(index)
+                    indices[i] += 1
+                } else resultIndices.add(null)
+            }
+            evaluationFiles.add(FileIndexInfo(file, resultIndices))
+        }
+        return evaluationFiles
     }
+
+    private class FileIndexInfo(val filePath: String, val indices: List<Int?>)
 
     private fun createFilteringCheckboxes(evaluationResults: List<MetricsEvaluationInfo>): String {
         val sb = StringBuilder()
