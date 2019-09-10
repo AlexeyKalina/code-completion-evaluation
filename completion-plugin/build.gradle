@@ -28,6 +28,7 @@ task runIdeHeadless (type: RunIdeTask) {
     configDirectory = { runIde.configDirectory }
     systemDirectory = { runIde.systemDirectory }
     dependsOn = runIde.dependsOn
+    group 'intellij'
 }
 
 runIde {
