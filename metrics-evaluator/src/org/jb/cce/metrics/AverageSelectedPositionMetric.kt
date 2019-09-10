@@ -2,7 +2,6 @@ package org.jb.cce.metrics
 
 import org.jb.cce.Session
 import org.jb.cce.metrics.util.Sample
-import java.util.stream.Collectors
 
 class AverageSelectedPositionMetric : Metric {
     private val sample = Sample()
@@ -11,20 +10,16 @@ class AverageSelectedPositionMetric : Metric {
         get() = sample.mean()
 
     override fun evaluate(sessions: List<Session>): Double {
-        val listOfCompletions = sessions.stream()
-                .map { session -> Pair(session.lookups.last().suggestions, session.expectedText) }
-                .collect(Collectors.toList())
+        val completions = sessions.map { session -> Pair(session.lookups.last().suggestions, session.expectedText) }
 
         val fileSample = Sample()
-        listOfCompletions.stream()
-                .forEach { (suggests, expectedText) ->
-                    val position = suggests.indexOfFirst { it.text == expectedText }
-                    if (position != -1) {
-                        val positionToAdd = (position + 1).toDouble()
-                        fileSample.add(positionToAdd)
-                        sample.add(positionToAdd)
-                    }
-                }
+        completions.forEach { (suggests, expectedText) ->
+            val position = suggests.indexOfFirst { it.text == expectedText }
+            if (position != -1) {
+                fileSample.add(position.toDouble())
+                sample.add(position.toDouble())
+            }
+        }
 
         return fileSample.mean()
     }
