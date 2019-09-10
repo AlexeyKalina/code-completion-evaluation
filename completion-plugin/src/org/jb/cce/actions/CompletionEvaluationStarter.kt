@@ -3,9 +3,9 @@ package org.jb.cce.actions
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.CompletionEvaluator
 import org.jb.cce.util.ConfigFactory
-import java.io.File
 import java.nio.file.Paths
 
 class CompletionEvaluationStarter : ApplicationStarter {
@@ -27,10 +27,25 @@ class CompletionEvaluationStarter : ApplicationStarter {
             println("Project ${config.projectPath} not found.")
             return
         }
-        val fileSystem = LocalFileSystem.getInstance()
-        val files  = config.listOfFiles.map { fileSystem.findFileByIoFile(File(it))!! }
+        val projectBasePath = project.basePath
+        if (projectBasePath == null) {
+            println("Evaluation for default project impossible. Path: ${config.projectPath}")
+            return
+        }
+        val files = config.listOfFiles.findFilesInProject(projectBasePath)
 
         CompletionEvaluator(true).evaluateCompletion(project, files, config.language, config.strategy,
                 config.completionType, config.outputDir, config.interpretActions, config.saveLogs, config.logsTrainingPercentage)
+    }
+
+    private fun List<String>.findFilesInProject(projectRootPath: String): List<VirtualFile> {
+        val fileSystem = LocalFileSystem.getInstance()
+        val projectRoot = Paths.get(projectRootPath)
+        return this.asSequence()
+            .map { Paths.get(it) }
+            .map { projectRoot.resolve(it).toFile() }
+            .map(fileSystem::findFileByIoFile)
+            .requireNoNulls()
+            .toList()
     }
 }
