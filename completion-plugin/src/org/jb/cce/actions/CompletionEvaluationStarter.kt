@@ -7,6 +7,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.CompletionEvaluator
 import org.jb.cce.util.ConfigFactory
 import java.nio.file.Paths
+import kotlin.system.exitProcess
 
 class CompletionEvaluationStarter : ApplicationStarter {
     override fun getCommandName(): String = "evaluate-completion"
@@ -19,29 +20,32 @@ class CompletionEvaluationStarter : ApplicationStarter {
         val config = try {
             ConfigFactory.load(configPath)
         } catch (e: Exception) {
-            println("Error for loading config: $configPath, $e")
-            return
+            fatalError("Error for loading config: $configPath, $e")
         }
         val project = ProjectUtil.openProject(config.projectPath, null, false)
-        if (project == null) {
-            println("Project ${config.projectPath} not found.")
-            return
-        }
+            ?: fatalError("Project ${config.projectPath} not found.")
         val projectBasePath = project.basePath
-        if (projectBasePath == null) {
-            println("Evaluation for default project impossible. Path: ${config.projectPath}")
-            return
-        }
-        val files = config.listOfFiles.findFilesInProject(projectBasePath)
+            ?: fatalError("Evaluation for default project impossible. Path: ${config.projectPath}")
 
-        CompletionEvaluator(true).evaluateCompletion(project, files, config.language, config.strategy,
+        try {
+            val files = config.listOfFiles.findFilesInProject(projectBasePath)
+            CompletionEvaluator(true).evaluateCompletion(project, files, config.language, config.strategy,
                 config.completionType, config.outputDir, config.interpretActions, config.saveLogs, config.logsTrainingPercentage)
+        } catch (e: Exception) {
+            e.printStackTrace(System.err)
+            fatalError("Could start evaluation: ${e.message}")
+        }
     }
 
-    private fun List<String>.findFilesInProject(projectRootPath: String): List<VirtualFile> {
+    private fun fatalError(msg: String): Nothing {
+        System.err.println("Evaluation failed: $msg")
+        exitProcess(1)
+    }
+
+    private fun List<String?>.findFilesInProject(projectRootPath: String): List<VirtualFile> {
         val fileSystem = LocalFileSystem.getInstance()
         val projectRoot = Paths.get(projectRootPath)
-        val path2file = this.associateWith { fileSystem.findFileByIoFile(projectRoot.resolve(it).toFile()) }
+        val path2file = filterNotNull().associateWith { fileSystem.findFileByIoFile(projectRoot.resolve(it).toFile()) }
         val unknownFiles = path2file.filterValues { it == null }
         require(unknownFiles.isEmpty()) { "Evaluation roots not found: ${unknownFiles.keys}" }
 
