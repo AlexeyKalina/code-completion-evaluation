@@ -1,3 +1,9 @@
+# build commits in pull requests once
+# https://stackoverflow.com/questions/31882306/how-to-configure-travis-ci-to-build-pull-requests-merges-to-master-w-o-redunda
+branches:
+  only:
+    - master
+
 language: java
 install: true
 
