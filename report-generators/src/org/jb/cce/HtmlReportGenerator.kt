@@ -8,8 +8,7 @@ import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.MetricsEvaluationInfo
 import org.jb.cce.info.SessionsEvaluationInfo
 import org.jb.cce.metrics.MetricInfo
-import java.io.File
-import java.io.FileWriter
+import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -21,7 +20,8 @@ class HtmlReportGenerator(outputDir: String) {
         private const val globalReportName = "index.html"
         private const val tabulatorScript = "/tabulator.min.js"
         private const val tabulatorStyle = "/tabulator.min.css"
-        private const val options = "/options.css"
+        private const val errorScript = "/error.js"
+        private const val optionsStyle = "/options.css"
 
         private val script = HtmlReportGenerator::class.java.getResource("/script.js").readText()
         private val style = HtmlReportGenerator::class.java.getResource("/style.css").readText()
@@ -51,7 +51,8 @@ class HtmlReportGenerator(outputDir: String) {
         Files.createDirectories(reportsDir)
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorStyle), Paths.get(resourcesDir.toString(), tabulatorStyle))
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(resourcesDir.toString(), tabulatorScript))
-        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(options), Paths.get(resourcesDir.toString(), options))
+        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(optionsStyle), Paths.get(resourcesDir.toString(), optionsStyle))
+        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(errorScript), Paths.get(resourcesDir.toString(), errorScript))
     }
 
     fun logsDirectory() = logsDir.toString()
@@ -88,13 +89,17 @@ class HtmlReportGenerator(outputDir: String) {
 
     private fun generateErrorReports(errors: List<FileErrorInfo>) {
         for (fileError in errors) {
+            val sb = StringBuilder()
             val file = File(fileError.path)
-            val (_, reportPath) = getPaths(file.name)
             reportTitle = "Error on actions generation for file <b>${file.name}</b>"
-            val report = """<html><head><title>$reportTitle</title></head><body><h1>$reportTitle</h1>
-                            <h2>Message:</h2>${fileError.exception.message}
-                            <h2>StackTrace:</h2>${fileError.exception.stackTrace?.contentToString()}</body></html>"""
-            FileWriter(reportPath.toString()).use { it.write(report) }
+            sb.appendln("<html><head><title>$reportTitle</title></head>")
+            sb.appendln("<body><h1>$reportTitle</h1><h2>Message</h2>")
+            sb.appendln("<pre><code>${fileError.exception.message}</code></pre>")
+            sb.appendln("<h2>StackTrace <button id=\"copyBtn\">&#128203</button></h2>")
+            sb.appendln("<pre><code id=\"stackTrace\">${stackTraceToString(fileError.exception)}</code></pre>")
+            sb.appendln("<script src=\"../res/error.js\"></script></body></html>")
+            val (_, reportPath) = getPaths(file.name)
+            FileWriter(reportPath.toString()).use { it.write(sb.toString()) }
             references[file.path] = reportPath
         }
     }
@@ -285,5 +290,11 @@ class HtmlReportGenerator(outputDir: String) {
             sb.appendln("table.toggleColumn(name + ' $type');")
         sb.appendln("}</script>")
         return sb.toString()
+    }
+
+    private fun stackTraceToString(e: Exception): String {
+        val sw = StringWriter()
+        e.printStackTrace(PrintWriter(sw))
+        return sw.toString()
     }
 }
