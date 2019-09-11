@@ -97,7 +97,7 @@ class HtmlReportGenerator(outputDir: String) {
             sb.appendln("<pre><code>${fileError.exception.message}</code></pre>")
             sb.appendln("<h2>StackTrace <button id=\"copyBtn\">&#128203</button></h2>")
             sb.appendln("<pre><code id=\"stackTrace\">${stackTraceToString(fileError.exception)}</code></pre>")
-            sb.appendln("<script src=\"error.js\"></script></body></html>")
+            sb.appendln("<script src=\"../res/error.js\"></script></body></html>")
             val (_, reportPath) = getPaths(file.name)
             FileWriter(reportPath.toString()).use { it.write(sb.toString()) }
             references[file.path] = reportPath
