@@ -68,7 +68,7 @@ For comparision of two modes, a project with about a thousand java files was use
 
 ### Usage
 
-To start the evaluation in the headless mode you should describe where the project to evaluate is placed and rules for evaluation (language, strategy, output directories, etc.).
+To start the evaluation in the headless mode you should describe where the project to evaluate is placed and rules for evaluation (language, strategy, output directories, etc.). We use JSON file for such king of description. Here is an example of such file with description for possible options.
 ```javascript
     {
       "projectPath": "", // string with path to idea project
@@ -91,12 +91,12 @@ To start the evaluation in the headless mode you should describe where the proje
     }
 ```
 
-There are many options to use the evaluation in headless mode. Some of them are listed below.
+There are many options to start the evaluation in headless mode. Some of them are listed below.
 
 #### Run from command line:
   1. Add `-Djava.awt.headless=true` to jvm-options. [Instruction](https://www.jetbrains.com/help/idea/tuning-the-ide.html).
   2. Create command line launcher for Intellij IDEA. [Instruction](https://www.jetbrains.com/help/idea/working-with-the-ide-features-from-command-line.html).
-  3. Run command `<Intellij IDEA> evaluate-completion [path_to_config]`.
+  3. Run command `<Intellij IDEA> evaluate-completion [PATH-TO-CONFIG]`.
   4. If `path_to_config` missing, default config path will be used (`config.json`). 
   5. If config missing, default config will be created. Fill settings in default config before restarting evaluation.
 
@@ -122,5 +122,5 @@ task evaluateCompletion(type: RunIdeTask) {
 }
 ```
 2. Install the plugin inside sandbox IDE (the IDE started by executing `runIde` gradle task)
-3. Create `config.json` and set `PATH-TO-CONFIG`
-4. Start the gradle `evaluateCompletion` task
+3. Configure evaluation using `config.json` file and set `PATH-TO-CONFIG`
+4. Start `evaluateCompletion` task
