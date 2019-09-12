@@ -46,7 +46,8 @@ class InterpretationHandlerImpl(private val indicator: Progress, private val ses
 
     private fun updateProgress(path: String) {
         val perMinute = actionStats.count { it.timestamp > Date().time - minInMs }
-        indicator.setProgress("${File(path).name} ($completed/$sessionsCount sessions, $perMinute act/min)",
+        val fileName = File(path).name
+        indicator.setProgress(fileName, "$fileName ($completed/$sessionsCount sessions, $perMinute act/min)",
                 completed.toDouble() / sessionsCount)
     }
 }

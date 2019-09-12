@@ -85,7 +85,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 break
             }
             LOG.info("Start generating actions for file ${file.path}. Done: $completed/${files.size}. With error: ${errors.size}")
-            indicator.setProgress(file.name, completed.toDouble() / files.size)
+            indicator.setProgress(file.name, file.name, completed.toDouble() / files.size)
             try {
                 val rootVisitor = when {
                     psi != null -> EvaluationRootByRangeVisitor(psi.textRange?.startOffset ?: psi.textOffset,
