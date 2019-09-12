@@ -6,6 +6,6 @@ interface InterpretationHandler {
     fun onActionStarted(action: Action)
     fun onSessionFinished(path: String): Boolean
     fun onFileProcessed(path: String)
-    fun onErrorOccurred(error: Throwable)
+    fun onErrorOccurred(error: Throwable, sessionsSkipped: Int)
     fun isCancelled(): Boolean
 }

@@ -16,11 +16,10 @@ class Interpreter(private val invoker: CompletionInvoker,
         val needToClose = !invoker.isOpen(fileActions.path)
         val text = invoker.openFile(fileActions.path)
         if (fileActions.checksum != computeChecksum(text)) {
-            handler.onErrorOccurred(IllegalStateException("File $fileActions.path has been modified."))
+            handler.onErrorOccurred(IllegalStateException("File $fileActions.path has been modified."), fileActions.sessionsCount)
             return emptyList()
         }
 
-        iterateActions@
         for (action in fileActions.actions) {
             handler.onActionStarted(action)
             when (action) {

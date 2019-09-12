@@ -85,20 +85,20 @@ class HtmlReportGenerator(private val baseDir: String,
 
     private fun getPaths(fileName: String): ResultPaths {
         return if (Files.exists(Paths.get(resourcesDir, "$fileName.js"))) {
-            return getNextFilePaths(Paths.get(resourcesDir, fileName).toString())
+            return getNextFilePaths(fileName)
         } else {
             ResultPaths(Paths.get(resourcesDir, "$fileName.js"),
                     Paths.get(reportsDir, "$fileName.html"))
         }
     }
 
-    private fun getNextFilePaths(filePath: String): ResultPaths {
+    private fun getNextFilePaths(fileName: String): ResultPaths {
         var index = 1
         do {
             index++
-            val nextFile = "$filePath-$index.js"
-        } while (File(nextFile).exists())
-        return ResultPaths(Paths.get("$filePath-$index.js"), Paths.get("$filePath-$index.html"))
+            val nextFile = Paths.get(resourcesDir, "$fileName-$index.js").toFile()
+        } while (nextFile.exists())
+        return ResultPaths(Paths.get(resourcesDir, "$fileName-$index.js"), Paths.get(reportsDir, "$fileName-$index.html"))
     }
 
     private fun getHtml(sessions: List<List<Session>>, fileName: String, resourcePath: String, text: String) : String {

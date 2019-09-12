@@ -12,7 +12,7 @@ class FileErrorsStorage(val storageDir: String) {
 
     fun saveError(error: FileErrorInfo) {
         val json = fileErrorSerializer.serialize(error)
-        Paths.get(storageDir, File(error.path).name).toFile().writeText(json)
+        Paths.get(storageDir, "${File(error.path).name}.json").toFile().writeText(json)
     }
 
     fun getErrors(): List<FileErrorInfo> {

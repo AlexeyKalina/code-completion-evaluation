@@ -7,7 +7,7 @@ import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.*
 
-class Workspace(outputDir: String) {
+class EvaluationWorkspace(outputDir: String) {
     companion object {
         private val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
     }

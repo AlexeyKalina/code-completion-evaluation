@@ -55,7 +55,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                                       completionType: CompletionType, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean,
                                       logsTrainingPercentage: Int, offset: Int?, psi: PsiElement?) {
         val task = object : Task.Backgroundable(project, "Generating actions for selected files", true) {
-            private val workspace = Workspace(workspaceDir)
+            private val workspace = EvaluationWorkspace(workspaceDir)
             private val actionsStorage = ActionsStorage(workspace.actionsDirectory())
             private val errorsStorage = FileErrorsStorage(workspace.errorsDirectory())
 
@@ -108,7 +108,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
     }
 
     private fun interpretUnderProgress(actionsStorage: ActionsStorage, errorsStorage: FileErrorsStorage, completionType: CompletionType, strategy: CompletionStrategy,
-                                       project: Project, languageName: String, workspace: Workspace, generateReport: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
+                                       project: Project, languageName: String, workspace: EvaluationWorkspace, generateReport: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
         val task = object : Task.Backgroundable(project, "Interpretation of the generated actions") {
             private val sessionsStorage = SessionsStorage(workspace.sessionsDirectory(), completionType.name)
             private lateinit var lastFileSessions: List<Session>

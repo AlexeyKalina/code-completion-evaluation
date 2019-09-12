@@ -11,7 +11,7 @@ import com.intellij.openapi.ui.Messages
 import org.jb.cce.actions.OpenBrowserDialog
 import kotlin.system.exitProcess
 
-fun generateReportUnderProgress(workspace: Workspace, sessionsStorage: List<SessionsStorage>, errorsStorage: FileErrorsStorage?, project: Project, isHeadless: Boolean) {
+fun generateReportUnderProgress(workspace: EvaluationWorkspace, sessionsStorage: List<SessionsStorage>, errorsStorage: FileErrorsStorage?, project: Project, isHeadless: Boolean) {
     val task = object : Task.Backgroundable(project, "Report generation") {
         private var reportPath: String? = null
 

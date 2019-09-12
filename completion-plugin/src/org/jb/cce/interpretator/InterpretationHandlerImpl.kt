@@ -31,7 +31,8 @@ class InterpretationHandlerImpl(private val indicator: Progress, private val ses
         LOG.info("Interpreting actions for file $path completed. Done: $completed/$sessionsCount")
     }
 
-    override fun onErrorOccurred(error: Throwable) {
+    override fun onErrorOccurred(error: Throwable, sessionsSkipped: Int) {
+        completed += sessionsSkipped
         LOG.error(error)
     }
 
