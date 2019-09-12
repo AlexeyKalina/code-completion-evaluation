@@ -4,12 +4,10 @@ import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import org.jb.cce.SessionSerializer
-import org.jb.cce.SessionsStorage
-import org.jb.cce.EvaluationWorkspace
-import org.jb.cce.generateReportUnderProgress
+import org.jb.cce.*
 import java.nio.file.Paths
 
 class GenerateReportAction : AnAction() {
@@ -17,19 +15,20 @@ class GenerateReportAction : AnAction() {
         val project = e.project ?: return
         val files = getFiles(e)
         val serializer = SessionSerializer()
-        val storages = mutableListOf<SessionsStorage>()
+        val workspaces = mutableListOf<EvaluationWorkspace>()
 
         for (configFile in files) {
             val config = serializer.deserializeConfig(VfsUtil.loadText(configFile))
-            storages.add(SessionsStorage(configFile.parent.path, config.evaluationType))
+            workspaces.add(EvaluationWorkspace(configFile.parent.parent.path, config.evaluationType, true))
         }
 
         val properties = PropertiesComponent.getInstance(project)
         val workspaceDir = properties.getValue(CompletionSettingsDialog.workspaceDirProperty) ?:
             Paths.get(project.basePath ?: "", CompletionSettingsDialog.completionEvaluationDir).toString()
 
-        val workspace = EvaluationWorkspace(workspaceDir)
-        generateReportUnderProgress(workspace, storages, null, project, false)
+        val workspace = EvaluationWorkspace(workspaceDir, "COMPARE_MULTIPLE")
+        val reportGenerator = HtmlReportGenerator(workspace.baseDirectory(), workspace.reportsDirectory(), workspace.resourcesDirectory())
+        ReportGeneration(reportGenerator).generateReportUnderProgress(workspaces, project, false)
     }
 
     override fun update(e: AnActionEvent) {

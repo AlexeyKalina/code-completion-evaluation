@@ -55,26 +55,24 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                                       completionType: CompletionType, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean,
                                       logsTrainingPercentage: Int, offset: Int?, psi: PsiElement?) {
         val task = object : Task.Backgroundable(project, "Generating actions for selected files", true) {
-            private val workspace = EvaluationWorkspace(workspaceDir)
-            private val actionsStorage = ActionsStorage(workspace.actionsDirectory())
-            private val errorsStorage = FileErrorsStorage(workspace.errorsDirectory())
+            private val workspace = EvaluationWorkspace(workspaceDir, completionType.name)
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
-                generateActions(project, languageName, files, strategy, offset, psi, actionsStorage, errorsStorage, getProcess(indicator))
+                generateActions(workspace, project, languageName, files, strategy, offset, psi, getProcess(indicator))
             }
 
             override fun onSuccess() {
                 if (interpretActions)
-                    interpretUnderProgress(actionsStorage, errorsStorage, completionType, strategy, project, languageName, workspace,
+                    interpretUnderProgress(workspace, completionType, strategy, project, languageName,
                             offset == null, saveLogs, logsTrainingPercentage)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    private fun generateActions(project: Project, languageName: String, files: Collection<VirtualFile>, strategy: CompletionStrategy,
-                                offset: Int?, psi: PsiElement?, actionsStorage: ActionsStorage, errorsStorage: FileErrorsStorage, indicator: Progress) {
+    private fun generateActions(workspace: EvaluationWorkspace, project: Project, languageName: String, files: Collection<VirtualFile>,
+                                strategy: CompletionStrategy, offset: Int?, psi: PsiElement?, indicator: Progress) {
         val actionsGenerator = ActionsGenerator(strategy)
         val uastBuilder = UastBuilder.create(project, languageName, strategy.statement == CompletionStatement.ALL_TOKENS)
 
@@ -97,9 +95,9 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 }
                 val uast = uastBuilder.build(file, rootVisitor)
                 val fileActions = actionsGenerator.generate(uast)
-                actionsStorage.saveActions(fileActions)
+                workspace.actionsStorage.saveActions(fileActions)
             } catch (e: Exception) {
-                errorsStorage.saveError(FileErrorInfo(file.path, e.message ?: "No Message", stackTraceToString(e)))
+                workspace.errorsStorage.saveError(FileErrorInfo(file.path, e.message ?: "No Message", stackTraceToString(e)))
                 LOG.error("Error for file ${file.path}.", e)
             }
             completed++
@@ -107,17 +105,17 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         }
     }
 
-    private fun interpretUnderProgress(actionsStorage: ActionsStorage, errorsStorage: FileErrorsStorage, completionType: CompletionType, strategy: CompletionStrategy,
-                                       project: Project, languageName: String, workspace: EvaluationWorkspace, generateReport: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
+    private fun interpretUnderProgress(workspace: EvaluationWorkspace, completionType: CompletionType, strategy: CompletionStrategy,
+                                       project: Project, languageName: String, generateReport: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
         val task = object : Task.Backgroundable(project, "Interpretation of the generated actions") {
-            private val sessionsStorage = SessionsStorage(workspace.sessionsDirectory(), completionType.name)
+            private val sessionsStorage = workspace.sessionsStorage
             private lateinit var lastFileSessions: List<Session>
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
                 val logsPath = Paths.get(workspace.logsDirectory(), languageName.toLowerCase()).toString()
                 val logsWatcher = if (saveLogs) DirectoryWatcher(statsCollectorLogsDirectory(), logsPath, logsTrainingPercentage) else null
-                lastFileSessions = interpretActions(actionsStorage, sessionsStorage, completionType, strategy, project, logsWatcher, getProcess(indicator))
+                lastFileSessions = interpretActions(workspace.actionsStorage, sessionsStorage, completionType, strategy, project, logsWatcher, getProcess(indicator))
             }
 
             override fun onSuccess() = finish()
@@ -125,7 +123,8 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
 
             private fun finish() {
                 if (!generateReport) return Highlighter(project).highlight(lastFileSessions)
-                generateReportUnderProgress(workspace, listOf(sessionsStorage), errorsStorage, project, isHeadless)
+                val reportGenerator = HtmlReportGenerator(workspace.baseDirectory(), workspace.reportsDirectory(), workspace.resourcesDirectory())
+                ReportGeneration(reportGenerator).generateReportUnderProgress(listOf(workspace), project, isHeadless)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
@@ -138,7 +137,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         val computingTime = measureTimeMillis {
             sessionsCount = actionsStorage.computeSessionsCount()
         }
-        LOG.info("Computing of sessions count take $computingTime mls")
+        LOG.info("Computing of sessions count took $computingTime ms")
         val handler = InterpretationHandlerImpl(indicator, sessionsCount)
         val interpreter = Interpreter(completionInvoker, handler)
         logsWatcher?.start()
