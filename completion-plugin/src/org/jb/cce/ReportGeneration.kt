@@ -7,37 +7,32 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
 import org.jb.cce.actions.OpenBrowserDialog
-import org.jb.cce.info.FileErrorInfo
-import org.jb.cce.info.FileEvaluationInfo
-import org.jb.cce.info.MetricsEvaluationInfo
-import org.jb.cce.info.SessionsEvaluationInfo
-import org.jb.cce.metrics.MetricInfo
-import org.jb.cce.metrics.MetricsEvaluator
 import kotlin.system.exitProcess
 
-fun generateReport(reportGenerator: HtmlReportGenerator, sessionsInfo: List<SessionsEvaluationInfo>, errors: List<FileErrorInfo>): String {
-    val metricsInfo = evaluateMetrics(sessionsInfo)
-    return reportGenerator.generateReport(sessionsInfo, metricsInfo, errors)
-}
-
-fun generateReportUnderProgress(sessions: List<SessionsEvaluationInfo>, errors: List<FileErrorInfo>,
-                                        reportGenerator: HtmlReportGenerator, project: Project, isHeadless: Boolean) {
+fun generateReportUnderProgress(workspace: Workspace, sessionsStorage: List<SessionsStorage>, errorsStorage: FileErrorsStorage?, project: Project, isHeadless: Boolean) {
     val task = object : Task.Backgroundable(project, "Report generation") {
         private var reportPath: String? = null
 
         override fun run(indicator: ProgressIndicator) {
-            reportPath = generateReport(reportGenerator, sessions, errors)
+            reportPath = workspace.generateReport(sessionsStorage, errorsStorage)
         }
 
-        override fun onSuccess() = finishWork(reportPath, isHeadless)
+        override fun onSuccess() = finishWork(reportPath, project, isHeadless)
     }
     ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
 }
 
-fun finishWork(reportPath: String?, isHeadless: Boolean) {
+fun finishWork(reportPath: String?, project: Project, isHeadless: Boolean) {
     if (reportPath == null)
-        if (isHeadless) exitProcess(1) else return
+        if (isHeadless) {
+            System.err.println("Evaluation completed. Report wasn't generated")
+            exitProcess(1)
+        } else{
+            Messages.showInfoMessage(project, "Report wasn't generated", "Evaluation completed")
+            return
+        }
 
     if (isHeadless) {
         println("Evaluation completed. Report: $reportPath")
@@ -47,17 +42,4 @@ fun finishWork(reportPath: String?, isHeadless: Boolean) {
             if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
         }
     }
-}
-
-private fun evaluateMetrics(evaluationsInfo: List<SessionsEvaluationInfo>): List<MetricsEvaluationInfo> {
-    val metricsInfo = mutableListOf<MetricsEvaluationInfo>()
-    for (sessionsInfo in evaluationsInfo) {
-        val metricsEvaluator = MetricsEvaluator.withDefaultMetrics()
-        val filesInfo = mutableListOf<FileEvaluationInfo<MetricInfo>>()
-        for (file in sessionsInfo.sessions) {
-            filesInfo.add(FileEvaluationInfo(file.filePath, metricsEvaluator.evaluate(file.results), file.text))
-        }
-        metricsInfo.add(MetricsEvaluationInfo(metricsEvaluator.result(), filesInfo, sessionsInfo.info))
-    }
-    return metricsInfo
 }

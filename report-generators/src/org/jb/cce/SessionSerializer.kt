@@ -1,11 +1,10 @@
 package org.jb.cce
 
 import com.google.gson.*
-import com.google.gson.reflect.TypeToken
 import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.jb.cce.actions.CompletionPrefix
 import org.jb.cce.info.EvaluationInfo
-import org.jb.cce.info.FileEvaluationInfo
+import org.jb.cce.info.FileSessionsInfo
 import java.lang.reflect.Type
 import java.util.*
 
@@ -26,7 +25,7 @@ class SessionSerializer {
                 .create()
     }
 
-    fun serialize(sessions: FileEvaluationInfo<Session>): String = gson.toJson(sessions)
+    fun serialize(sessions: FileSessionsInfo): String = gson.toJson(sessions)
 
     fun serializeConfig(config: EvaluationInfo): String = gson.toJson(config)
 
@@ -40,9 +39,8 @@ class SessionSerializer {
                 .replace("★", "*")
     }
 
-    fun deserialize(json: String) : FileEvaluationInfo<Session> {
-        val type = object : TypeToken<FileEvaluationInfo<Session>>() {}.type
-        return gson.fromJson(json, type)
+    fun deserialize(json: String) : FileSessionsInfo {
+        return gson.fromJson(json, FileSessionsInfo::class.java)
     }
 
     fun deserializeConfig(json: String): EvaluationInfo = gson.fromJson(json, EvaluationInfo::class.java)

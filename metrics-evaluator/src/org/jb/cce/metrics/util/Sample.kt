@@ -7,6 +7,7 @@ class Sample {
 
     fun mean(): Double = sum / count
     fun max(): Double = max
+    fun sum(): Double = sum
 
     fun add(value: Double) {
         if (max.isNaN() || max < value) max = value

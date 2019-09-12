@@ -4,24 +4,25 @@ import org.jb.cce.actions.*
 import org.jb.cce.exception.UnexpectedActionException
 import java.lang.IllegalStateException
 
-class Interpreter {
+class Interpreter(private val invoker: CompletionInvoker,
+                  private val handler: InterpretationHandler) {
 
-    fun interpret(invoker: CompletionInvoker, actions: List<Action>, handler: InterpretationHandler) {
-        if (actions.isEmpty()) return
-        var currentOpenedFilePath = ""
-        var currentOpenedFileText = ""
-        var needToClose = false
-        val result = mutableListOf<Session>()
-        val stats = mutableListOf<ActionStat>()
+    fun interpret(fileActions: FileActions): List<Session> {
+        val sessions = mutableListOf<Session>()
         var isFinished = false
-        var skipFile = false
         var session: Session? = null
         var position = 0
 
+        val needToClose = !invoker.isOpen(fileActions.path)
+        val text = invoker.openFile(fileActions.path)
+        if (fileActions.checksum != computeChecksum(text)) {
+            handler.onErrorOccurred(IllegalStateException("File $fileActions.path has been modified."))
+            return emptyList()
+        }
+
         iterateActions@
-        for (action in actions) {
-            stats.add(ActionStat(action, System.currentTimeMillis()))
-            if (skipFile && action !is OpenFile) continue
+        for (action in fileActions.actions) {
+            handler.onActionStarted(action)
             when (action) {
                 is MoveCaret -> {
                     invoker.moveCaret(action.offset)
@@ -29,20 +30,18 @@ class Interpreter {
                 }
                 is CallCompletion -> {
                     if (session == null) session = Session(position, action.expectedText, action.tokenType)
-                    val completionResult = invoker.callCompletion(action.expectedText, action.prefix)
-                    session.addLookup(completionResult.lookup)
-                    session.success = completionResult.success
-                    val isCanceled = handler.invokeOnCompletion(stats.toList(), currentOpenedFilePath)
-                    if (isCanceled) return
-                    stats.clear()
+                    val lookup = invoker.callCompletion(action.expectedText, action.prefix)
+                    session.addLookup(lookup)
                     isFinished = false
                 }
                 is FinishSession -> {
-                    if (session == null) {
-                        throw UnexpectedActionException("Session canceled before created")
-                    }
-                    isFinished = invoker.finishCompletion(session.expectedText, session.lookups.last().text)
-                    result.add(session)
+                    if (session == null) throw UnexpectedActionException("Session canceled before created")
+                    val expectedText = session.expectedText
+                    isFinished = invoker.finishCompletion(expectedText, session.lookups.last().text)
+                    session.success = session.lookups.last().suggestions.any { it.text == expectedText }
+                    sessions.add(session)
+                    val isCanceled = handler.onSessionFinished(fileActions.path)
+                    if (isCanceled) return sessions
                     session = null
                 }
                 is PrintText -> {
@@ -53,18 +52,11 @@ class Interpreter {
                     if (!action.completable || !isFinished)
                         invoker.deleteRange(action.begin, action.end)
                 }
-                is OpenFile -> {
-                    needToClose = !invoker.isOpen(action.path)
-                    currentOpenedFileText = invoker.openFile(action.path)
-                    currentOpenedFilePath = action.path
-                    if (action.checksum != computeChecksum(currentOpenedFileText)) {
-                        skipFile = true
-                        handler.invokeOnError(IllegalStateException("File $currentOpenedFilePath has been modified."))
-                    }
-                }
             }
         }
-        if (needToClose) invoker.closeFile(currentOpenedFilePath)
-        handler.invokeOnFile(result, stats, currentOpenedFilePath, currentOpenedFileText)
+
+        if (needToClose) invoker.closeFile(fileActions.path)
+        handler.onFileProcessed(fileActions.path)
+        return sessions
     }
 }

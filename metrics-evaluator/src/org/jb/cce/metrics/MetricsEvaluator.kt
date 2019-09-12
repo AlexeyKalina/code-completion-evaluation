@@ -2,10 +2,10 @@ package org.jb.cce.metrics
 
 import org.jb.cce.Session
 
-class MetricsEvaluator private constructor() {
+class MetricsEvaluator private constructor(private val evaluationType: String) {
     companion object {
-        fun withDefaultMetrics(): MetricsEvaluator {
-            val evaluator = MetricsEvaluator()
+        fun withDefaultMetrics(evaluationType: String): MetricsEvaluator {
+            val evaluator = MetricsEvaluator(evaluationType)
             evaluator.registerDefaultMetrics()
             return evaluator
         }
@@ -21,6 +21,7 @@ class MetricsEvaluator private constructor() {
         registerMetric(MeanLatencyMetric())
         registerMetric(MaxLatencyMetric())
         registerMetric(AverageSelectedPositionMetric())
+        registerMetric(SessionsCountMetric())
     }
 
     fun registerMetric(metric: Metric) {
@@ -28,10 +29,10 @@ class MetricsEvaluator private constructor() {
     }
 
     fun evaluate(sessions: List<Session>): List<MetricInfo> {
-        return metrics.map { MetricInfo(it.name, it.evaluate(sessions)) }
+        return metrics.map { MetricInfo(it.name, it.evaluate(sessions), evaluationType) }
     }
 
     fun result(): List<MetricInfo> {
-        return metrics.map { MetricInfo(it.name, it.value) }
+        return metrics.map { MetricInfo(it.name, it.value, evaluationType) }
     }
 }

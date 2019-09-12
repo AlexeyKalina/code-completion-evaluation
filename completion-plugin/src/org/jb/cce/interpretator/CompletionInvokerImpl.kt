@@ -17,7 +17,6 @@ import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
-import org.jb.cce.CallCompletionResult
 import org.jb.cce.CompletionInvoker
 import org.jb.cce.Suggestion
 import java.io.File
@@ -43,7 +42,7 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
         editor!!.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
     }
 
-    override fun callCompletion(expectedText: String, prefix: String): CallCompletionResult {
+    override fun callCompletion(expectedText: String, prefix: String): org.jb.cce.Lookup {
         LOG.info("Call completion. Type: $completionType. ${positionToString(editor!!.caretModel.offset)}")
         LookupManager.getInstance(project).hideActiveLookup()
 
@@ -51,14 +50,14 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
             CodeCompletionHandlerBase(completionType, false, false, true).invokeCompletion(project, editor)
         }
         if (LookupManager.getActiveLookup(editor) == null) {
-            return CallCompletionResult(org.jb.cce.Lookup(prefix, emptyList(), latency), false)
+            return org.jb.cce.Lookup(prefix, emptyList(), latency)
         } else {
             val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
             latency += measureTimeMillis {
                 lookup.waitForResult(1000)
             }
             val suggestions = lookup.items.map { Suggestion(it.lookupString, lookupElementText(it)) }
-            return CallCompletionResult(org.jb.cce.Lookup(prefix, suggestions, latency), lookup.items.any { it.lookupString == expectedText })
+            return org.jb.cce.Lookup(prefix, suggestions, latency)
         }
     }
 
