@@ -35,6 +35,7 @@ class PsiConverter(private val project: Project, val language: Language) : UastB
 
     private fun<T> getUast(visitor: T, psi: PsiElement): FileNode where T: PsiElementVisitor, T : PsiVisitor {
         dumbService.runReadActionInSmartMode {
+            assert(!dumbService.isDumb)
             psi.accept(visitor)
         }
         return visitor.getFile()

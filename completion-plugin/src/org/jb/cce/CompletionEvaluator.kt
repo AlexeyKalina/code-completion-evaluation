@@ -98,7 +98,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 workspace.actionsStorage.saveActions(fileActions)
             } catch (e: Exception) {
                 workspace.errorsStorage.saveError(FileErrorInfo(file.path, e.message ?: "No Message", stackTraceToString(e)))
-                LOG.error("Error for file ${file.path}.", e)
+                LOG.error("Generating actions error for file ${file.path}.", e)
             }
             completed++
             LOG.info("Generating actions for file ${file.path} completed. Done: $completed/${files.size}. With error: ${errors.size}")
@@ -147,9 +147,13 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         val files = actionsStorage.getActionFiles()
         var lastFileSessions = listOf<Session>()
         for (file in files) {
-            val fileActions = actionsStorage.getActions(file)
-            lastFileSessions = interpreter.interpret(fileActions)
-            sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, File(fileActions.path).readText(), lastFileSessions))
+            try {
+                val fileActions = actionsStorage.getActions(file)
+                lastFileSessions = interpreter.interpret(fileActions)
+                sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, File(fileActions.path).readText(), lastFileSessions))
+            } catch (e: Exception) {
+                LOG.error("Actions interpretation error for file ${file.path}.", e)
+            }
             if (handler.isCancelled()) break
         }
         sessionsStorage.saveEvaluationInfo(EvaluationInfo(completionType.name, strategy))
