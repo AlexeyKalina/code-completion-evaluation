@@ -7,7 +7,7 @@ class ActionSerializer {
 
     private val gson = Gson()
 
-    fun serialize(actions: List<Action>): String {
+    fun serialize(actions: FileActions): String {
         return gson.toJson(actions)
     }
 
@@ -20,13 +20,23 @@ class ActionSerializer {
             Action.ActionType.PRINT_TEXT.name -> PrintText(action["text"] as String, action["completable"] as Boolean)
             Action.ActionType.DELETE_RANGE.name ->
                 DeleteRange((action["begin"] as Double).toInt(), (action["end"] as Double).toInt(), action["completable"] as Boolean)
-            Action.ActionType.OPEN_FILE.name -> OpenFile(action["path"] as String, action["checksum"] as String)
             else -> throw UnexpectedActionException("Incorrect action type")
         }
     }
 
-    fun deserialize(json: String): List<Action> {
-        val list = gson.fromJson(json, mutableListOf<Map<String, Any>>().javaClass)
-        return list.asSequence().map { deserialize(it) }.toList()
+    private fun deserialize(actions: List<Map<String, Any>>): List<Action> {
+        return actions.asSequence().map { deserialize(it) }.toList()
+    }
+
+    fun deserialize(json: String): FileActions {
+        val map = gson.fromJson(json, mutableMapOf<String, Any>().javaClass)
+        return FileActions(map["path"] as String, map["checksum"] as String,
+                (map["sessionsCount"] as Double).toInt(), deserialize(map["actions"] as List<Map<String, Any>>))
+    }
+
+    private data class FakeFileActions(val sessionsCount: Int)
+
+    fun getSessionsCount(json: String): Int {
+        return gson.fromJson(json, FakeFileActions::class.java).sessionsCount
     }
 }

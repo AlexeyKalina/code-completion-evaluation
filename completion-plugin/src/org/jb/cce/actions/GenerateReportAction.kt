@@ -1,47 +1,36 @@
 package org.jb.cce.actions
 
-import com.intellij.ide.BrowserUtil
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
+import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.HtmlReportGenerator
-import org.jb.cce.Session
+import org.jb.cce.ReportGeneration
 import org.jb.cce.SessionSerializer
-import org.jb.cce.generateReport
-import org.jb.cce.info.FileEvaluationInfo
-import org.jb.cce.info.SessionsEvaluationInfo
 import java.nio.file.Paths
 
 class GenerateReportAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val files = getFiles(e)
-
-        val sessionsInfo = mutableListOf<SessionsEvaluationInfo>()
         val serializer = SessionSerializer()
+        val workspaces = mutableListOf<EvaluationWorkspace>()
+
         for (configFile in files) {
             val config = serializer.deserializeConfig(VfsUtil.loadText(configFile))
-            val sessions = mutableListOf<FileEvaluationInfo<Session>>()
-            val sessionsDir = configFile.parent.children.find { it.isDirectory } ?: throw IllegalStateException("No sessions directory")
-            for (file in sessionsDir.children) {
-                sessions.add(serializer.deserialize(VfsUtil.loadText(file)))
-            }
-            sessionsInfo.add(SessionsEvaluationInfo(sessions, config))
+            workspaces.add(EvaluationWorkspace(configFile.parent.parent.path, config.evaluationType, true))
         }
 
         val properties = PropertiesComponent.getInstance(project)
-        val outputDir = properties.getValue(CompletionSettingsDialog.workspaceDirProperty) ?:
+        val workspaceDir = properties.getValue(CompletionSettingsDialog.workspaceDirProperty) ?:
             Paths.get(project.basePath ?: "", CompletionSettingsDialog.completionEvaluationDir).toString()
 
-        val reportGenerator = HtmlReportGenerator(outputDir)
-        val reportPath = generateReport(reportGenerator, sessionsInfo, emptyList())
-        ApplicationManager.getApplication().invokeAndWait {
-            if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath)
-        }
+        val workspace = EvaluationWorkspace(workspaceDir, "COMPARE_MULTIPLE")
+        val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
+        ReportGeneration(reportGenerator).generateReportUnderProgress(workspaces.map { it.sessionsStorage }, workspaces.map { it.errorsStorage }, project, false)
     }
 
     override fun update(e: AnActionEvent) {

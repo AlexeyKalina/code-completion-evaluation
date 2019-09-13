@@ -1,3 +1,5 @@
 package org.jb.cce.info
 
-data class FileEvaluationInfo<T>(val filePath: String, val results: List<T>, val text: String)
+import org.jb.cce.metrics.MetricInfo
+
+data class FileEvaluationInfo(val sessionsInfo: FileSessionsInfo, val metrics: List<MetricInfo>, val evaluationType: String)

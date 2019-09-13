@@ -1,9 +1,8 @@
 package org.jb.cce.interpretator
 
 import com.intellij.openapi.application.ApplicationManager
-import org.jb.cce.CallCompletionResult
 import org.jb.cce.CompletionInvoker
-import org.jb.cce.actions.CompletionType
+import org.jb.cce.Lookup
 import org.jb.cce.util.ListSizeRestriction
 
 class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : CompletionInvoker {
@@ -13,11 +12,15 @@ class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : Comp
         invoker.moveCaret(offset)
     }
 
-    override fun callCompletion(expectedText: String, prefix: String): CallCompletionResult {
+    override fun callCompletion(expectedText: String, prefix: String): Lookup {
         applicationListenersRestriction.waitForSize(100)
         return readAction {
             invoker.callCompletion(expectedText, prefix)
         }
+    }
+
+    override fun finishCompletion(expectedText: String, prefix: String) = readAction {
+        invoker.finishCompletion(expectedText, prefix)
     }
 
     override fun printText(text: String) = writeAction {

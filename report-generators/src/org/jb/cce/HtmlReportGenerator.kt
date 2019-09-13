@@ -1,19 +1,13 @@
 package org.jb.cce
 
-import org.apache.commons.text.StringEscapeUtils.escapeHtml4
-import org.jb.cce.ReportColors.Companion.getColor
-import org.jb.cce.actions.Action
-import org.jb.cce.actions.ActionSerializer
+import org.apache.commons.text.StringEscapeUtils
 import org.jb.cce.info.FileErrorInfo
-import org.jb.cce.info.MetricsEvaluationInfo
-import org.jb.cce.info.SessionsEvaluationInfo
+import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.metrics.MetricInfo
 import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.text.SimpleDateFormat
-import java.util.*
 
 class HtmlReportGenerator(outputDir: String) {
     companion object {
@@ -22,89 +16,60 @@ class HtmlReportGenerator(outputDir: String) {
         private const val tabulatorStyle = "/tabulator.min.css"
         private const val errorScript = "/error.js"
         private const val optionsStyle = "/options.css"
-
         private val script = HtmlReportGenerator::class.java.getResource("/script.js").readText()
         private val style = HtmlReportGenerator::class.java.getResource("/style.css").readText()
-        private val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
-
         private val sessionSerializer = SessionSerializer()
-        private val actionSerializer = ActionSerializer()
     }
     private lateinit var reportTitle: String
 
-    private val baseDir: String = Paths.get(outputDir, formatter.format(Date())).toString()
-    private val resourcesDir = Paths.get(baseDir, "res")
-    private val resultsDir = Paths.get(baseDir, "data")
-    private val logsDir = Paths.get(baseDir, "logs")
-    private val actionsDir = Paths.get(baseDir, "actions")
-    private val reportsDir = Paths.get(baseDir, "reports")
-    private var filesCounter = 0
-
     private data class ResultPaths(val resourcePath: Path, val reportPath: Path)
-    private val references: MutableMap<String, Path> = mutableMapOf()
+    private data class ReferenceInfo(val pathToReport: Path, val metrics: List<MetricInfo>)
+    private val reportReferences: MutableMap<String, ReferenceInfo> = mutableMapOf()
+    private val errorReferences: MutableMap<String, Path> = mutableMapOf()
+
+    private val baseDir = Paths.get(outputDir, "html")
+    private val filesDir = Paths.get(baseDir.toString(), "files")
+    private val resourcesDir = Paths.get(baseDir.toString(), "res")
 
     init {
+        Files.createDirectories(baseDir)
+        Files.createDirectories(filesDir)
         Files.createDirectories(resourcesDir)
-        Files.createDirectories(resultsDir)
-        Files.createDirectories(logsDir)
-        Files.createDirectories(actionsDir)
-        Files.createDirectories(reportsDir)
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorStyle), Paths.get(resourcesDir.toString(), tabulatorStyle))
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(resourcesDir.toString(), tabulatorScript))
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(optionsStyle), Paths.get(resourcesDir.toString(), optionsStyle))
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(errorScript), Paths.get(resourcesDir.toString(), errorScript))
     }
 
-    fun logsDirectory() = logsDir.toString()
-
-    fun generateReport(sessions: List<SessionsEvaluationInfo>, metrics: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {
-        filesCounter = 0
-        saveEvaluationResults(sessions)
-        generateFileReports(sessions)
-        generateErrorReports(errors)
-        return generateGlobalReport(metrics, errors)
+    fun generateFileReport(sessions: List<FileEvaluationInfo>) {
+        val json = sessionSerializer.serialize(sessions.map { it.sessionsInfo.sessions }.flatten())
+        val fileInfo = sessions.first()
+        val fileName = File(fileInfo.sessionsInfo.filePath).name
+        val (resourcePath, reportPath) = getPaths(fileName)
+        FileWriter(resourcePath.toString()).use { it.write("sessions = '$json'") }
+        val report = getHtml(sessions.map { it.sessionsInfo.sessions }, fileName, filesDir.relativize(resourcePath).toString(), fileInfo.sessionsInfo.text)
+        FileWriter(reportPath.toString()).use { it.write(report) }
+        reportReferences[fileInfo.sessionsInfo.filePath] = ReferenceInfo(reportPath, sessions.map { it.metrics }.flatten())
     }
 
-    fun saveActions(actions: List<Action>, fileName: String) {
-        val actionsPath = Paths.get(actionsDir.toString(), "$fileName($filesCounter).json")
-        filesCounter++
-        actionsPath.toFile().writeText(actionSerializer.serialize(actions))
-    }
-
-    private fun generateFileReports(evaluationResults: List<SessionsEvaluationInfo>) {
-        if (evaluationResults.isEmpty()) return
-
-        for (filePath in evaluationResults.flatMap { it.sessions.map { it.filePath } }.distinct()) {
-            val sessions = evaluationResults.map { it.sessions.find { it.filePath == filePath }?.results ?: listOf() }
-            val json = sessionSerializer.serialize(sessions.flatten())
-            val file = File(filePath)
-            val (resourcePath, reportPath) = getPaths(file.name)
-            FileWriter(resourcePath.toString()).use { it.write("sessions = '$json'") }
-            val report = getHtml(sessions, file.name, reportsDir.relativize(resourcePath).toString(),
-                    evaluationResults.mapNotNull { it.sessions.find { it.filePath == filePath }?.text }.first() )
-            FileWriter(reportPath.toString()).use { it.write(report) }
-            references[filePath] = reportPath
-        }
-    }
-
-    private fun generateErrorReports(errors: List<FileErrorInfo>) {
+    fun generateErrorReports(errors: List<FileErrorInfo>) {
         for (fileError in errors) {
             val sb = StringBuilder()
             val file = File(fileError.path)
             reportTitle = "Error on actions generation for file <b>${file.name}</b>"
             sb.appendln("<html><head><title>$reportTitle</title></head>")
             sb.appendln("<body><h1>$reportTitle</h1><h2>Message</h2>")
-            sb.appendln("<pre><code>${fileError.exception.message}</code></pre>")
+            sb.appendln("<pre><code>${fileError.message}</code></pre>")
             sb.appendln("<h2>StackTrace <button id=\"copyBtn\">&#128203</button></h2>")
-            sb.appendln("<pre><code id=\"stackTrace\">${stackTraceToString(fileError.exception)}</code></pre>")
+            sb.appendln("<pre><code id=\"stackTrace\">${fileError.stackTrace}</code></pre>")
             sb.appendln("<script src=\"../res/error.js\"></script></body></html>")
             val (_, reportPath) = getPaths(file.name)
             FileWriter(reportPath.toString()).use { it.write(sb.toString()) }
-            references[file.path] = reportPath
+            errorReferences[file.path] = reportPath
         }
     }
 
-    private fun generateGlobalReport(evaluationResults: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {
+    fun generateGlobalReport(globalMetrics: List<MetricInfo>): String {
         val sb = StringBuilder()
         reportTitle = "Code Completion Report"
         sb.appendln("<html><head><title>$reportTitle</title>")
@@ -112,47 +77,33 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln("<link href=\"res/tabulator.min.css\" rel=\"stylesheet\">")
         sb.appendln("<link href=\"res/options.css\" rel=\"stylesheet\"></head>")
         sb.appendln("<body><h1>$reportTitle</h1>")
-        sb.append("<h3>${getDistinctFiles(evaluationResults).size} file(s) successfully processed; ")
-        if (errors.isEmpty()) sb.appendln("no errors occurred</h3>") else sb.appendln("${errors.size} with errors</h3>")
-        sb.appendln(createFilteringCheckboxes(evaluationResults))
-        sb.appendln(getMetricsTable(evaluationResults, errors))
+        sb.append("<h3>${ reportReferences.size } file(s) successfully processed; ")
+        if (errorReferences.isEmpty()) sb.appendln("no errors occurred</h3>") else sb.appendln("${errorReferences.size} with errors</h3>")
+        sb.appendln(createFilteringCheckboxes(globalMetrics))
+        sb.appendln(getMetricsTable(globalMetrics))
         sb.appendln("<script>var table = new Tabulator(\"#metrics-table\", {layout:\"fitColumns\"})</script>")
         sb.appendln("</body></html>")
-        val reportPath = Paths.get(baseDir, globalReportName).toString()
+        val reportPath = Paths.get(baseDir.toString(), globalReportName).toString()
         FileWriter(reportPath).use { it.write(sb.toString()) }
         return reportPath
     }
 
-    private fun saveEvaluationResults(evaluationResults: List<SessionsEvaluationInfo>) {
-        for (results in evaluationResults) {
-            val typeFolder = Paths.get(resultsDir.toString(), results.info.evaluationType)
-            Files.createDirectories(typeFolder)
-            for (file in results.sessions) {
-                val json = sessionSerializer.serialize(file)
-                val dataPath = Paths.get(typeFolder.toString(), "${File(file.filePath).name}($filesCounter).json").toString()
-                FileWriter(dataPath).use { it.write(json) }
-            }
-            val json = sessionSerializer.serializeConfig(results.info)
-            FileWriter(Paths.get(resultsDir.toString(), "config.json").toString()).use { it.write(json) }
-        }
-    }
-
     private fun getPaths(fileName: String): ResultPaths {
         return if (Files.exists(Paths.get(resourcesDir.toString(), "$fileName.js"))) {
-            return getNextFilePaths(Paths.get(resourcesDir.toString(), fileName).toString())
+            return getNextFilePaths(fileName)
         } else {
             ResultPaths(Paths.get(resourcesDir.toString(), "$fileName.js"),
-                    Paths.get(reportsDir.toString(), "$fileName.html"))
+                    Paths.get(filesDir.toString(), "$fileName.html"))
         }
     }
 
-    private fun getNextFilePaths(filePath: String): ResultPaths {
+    private fun getNextFilePaths(fileName: String): ResultPaths {
         var index = 1
         do {
             index++
-            val nextFile = "$filePath-$index.js"
-        } while (File(nextFile).exists())
-        return ResultPaths(Paths.get("$filePath-$index.js"), Paths.get("$filePath-$index.html"))
+            val nextFile = Paths.get(resourcesDir.toString(), "$fileName-$index.js").toFile()
+        } while (nextFile.exists())
+        return ResultPaths(Paths.get(resourcesDir.toString(), "$fileName-$index.js"), Paths.get(filesDir.toString(), "$fileName-$index.html"))
     }
 
     private fun getHtml(sessions: List<List<Session>>, fileName: String, resourcePath: String, text: String) : String {
@@ -172,14 +123,14 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln("<pre>")
         sb.appendln(prepareCode(text, sessions))
         sb.appendln("</pre>")
-        sb.appendln("<script>$script</script>")
+        sb.appendln("<script>${script}</script>")
         sb.appendln("</body>")
     }
 
     private fun getHead(resourcePath: String) =
             """<head><title>$reportTitle</title>
                 <script type="text/javascript" src="$resourcePath"></script>
-                <style>$style</style></head>"""
+                <style>${style}</style></head>"""
 
     private fun prepareCode(text: String, _sessions: List<List<Session>>) : String {
         if (_sessions.isEmpty() || _sessions.all { it.isEmpty() }) return text
@@ -193,7 +144,7 @@ class HtmlReportGenerator(outputDir: String) {
 
         for (sessionGroup in sessionGroups) {
             val session = sessionGroup.filterNotNull().first()
-            val commonText = escapeHtml4(text.substring(offset, session.offset))
+            val commonText = StringEscapeUtils.escapeHtml4(text.substring(offset, session.offset))
             sb.append(commonText)
 
             val center = session.expectedText.length / sessions.size
@@ -206,40 +157,39 @@ class HtmlReportGenerator(outputDir: String) {
             sb.append(getDiv(sessionGroup.last(), session.expectedText.substring(shift)))
             offset = session.offset + session.expectedText.length
         }
-        sb.append(escapeHtml4(text.substring(offset)))
+        sb.append(StringEscapeUtils.escapeHtml4(text.substring(offset)))
         return sb.toString()
     }
 
     private fun getDiv(session: Session?, text: String) : String {
-        val opened = "<div class=\"completion\" id=\"${session?.id}\" style=\"color: ${getColor(session, HtmlColors)}; font-weight: bold\">"
+        val opened = "<div class=\"completion\" id=\"${session?.id}\" style=\"color: ${ReportColors.getColor(session, HtmlColors)}; font-weight: bold\">"
         val closed = "</div>"
         return "$opened$text$closed"
     }
 
-    private fun getMetricsTable(evaluationResults: List<MetricsEvaluationInfo>, errors: List<FileErrorInfo>): String {
+    private fun getMetricsTable(globalMetrics: List<MetricInfo>): String {
         val headerBuilder = StringBuilder()
         val contentBuilder = StringBuilder()
+        val sortedMetrics = globalMetrics.sortedWith(compareBy({ it.name }, { it.evaluationType }))
 
         headerBuilder.appendln("<th tabulator-formatter=\"html\">File Report</th>")
-        for (metric in evaluationResults.flatMap { res -> res.globalMetrics.map { "${it.name} ${res.info.evaluationType}" } }.sorted())
+        for (metric in sortedMetrics.map { "${it.name} ${it.evaluationType}" })
             headerBuilder.appendln("<th tabulator-field=\"$metric\">$metric</th>")
 
-        for (fileError in errors) {
-            val path = Paths.get(baseDir).relativize(references[fileError.path]!!)
-            writeRow(contentBuilder, "<a href=\"$path\" style=\"color:red;\">${File(fileError.path).name}</a>",
-                    evaluationResults.flatMap { it.globalMetrics.map { MetricInfo(it.name, null)} }.sortedBy { it.name })
+        for (fileError in errorReferences) {
+            val path = baseDir.relativize(fileError.value)
+            writeRow(contentBuilder, "<a href=\"$path\" style=\"color:red;\">${File(fileError.key).name}</a>",
+                    sortedMetrics.map { MetricInfo(it.name, null, it.evaluationType) })
         }
 
-        for (filePath in getDistinctFiles(evaluationResults)) {
-            val path = Paths.get(baseDir).relativize(references[filePath]!!)
-            writeRow(contentBuilder, "<a href=\"$path\">${File(filePath).name}</a>",
-                    evaluationResults.flatMap {
-                        it.fileMetrics.find { it.filePath == filePath }?.results
-                                ?: it.globalMetrics.map { MetricInfo(it.name, null) }
-                    }.sortedBy { it.name })
+        for (file in reportReferences) {
+            val path = baseDir.relativize(file.value.pathToReport)
+            writeRow(contentBuilder,"<a href=\"$path\">${File(file.key).name}</a>",
+                    sortedMetrics.map { MetricInfo(it.name, file.value.metrics.find { m ->
+                        it.name == m.name && it.evaluationType == m.evaluationType }?.value, it.evaluationType) })
         }
 
-        writeRow(contentBuilder, "Summary", evaluationResults.flatMap { it.globalMetrics }.sortedBy { it.name })
+        writeRow(contentBuilder, "Summary", sortedMetrics)
         contentBuilder.appendln("</tr>")
 
         return """
@@ -265,18 +215,14 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln("</tr>")
     }
 
-    private fun getDistinctFiles(results: List<MetricsEvaluationInfo>): List<String> {
-        return results.flatMap { it.fileMetrics.map { it.filePath } }.distinct()
-    }
-
-    private fun createFilteringCheckboxes(evaluationResults: List<MetricsEvaluationInfo>): String {
+    private fun createFilteringCheckboxes(globalMetrics: List<MetricInfo>): String {
         val sb = StringBuilder()
         sb.appendln("""
             <div class="options">
                 <button class="options-btn" id="dropdownBtn">Metrics visibility</button>
                 <ul class="dropdown">
                 """)
-        for (metric in evaluationResults.first().globalMetrics.map { it.name }.sorted())
+        for (metric in globalMetrics.map { it.name }.toSet().sorted())
             sb.appendln("<li><input type=\"checkbox\" checked onclick=\"toggleColumn('$metric');\">$metric</li>")
         sb.appendln("""
                 </ul>
@@ -286,15 +232,9 @@ class HtmlReportGenerator(outputDir: String) {
             </div>
             """)
         sb.appendln("<script> function toggleColumn(name) {")
-        for (type in evaluationResults.map { it.info.evaluationType }.toSet())
+        for (type in globalMetrics.map { it.evaluationType }.toSet())
             sb.appendln("table.toggleColumn(name + ' $type');")
         sb.appendln("}</script>")
         return sb.toString()
-    }
-
-    private fun stackTraceToString(e: Exception): String {
-        val sw = StringWriter()
-        e.printStackTrace(PrintWriter(sw))
-        return sw.toString()
     }
 }

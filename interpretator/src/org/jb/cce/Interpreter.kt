@@ -2,68 +2,60 @@ package org.jb.cce
 
 import org.jb.cce.actions.*
 import org.jb.cce.exception.UnexpectedActionException
+import java.lang.IllegalStateException
 
-class Interpreter {
+class Interpreter(private val invoker: CompletionInvoker,
+                  private val handler: InterpretationHandler) {
 
-    fun interpret(invoker: CompletionInvoker, actions: List<Action>, completionType: CompletionType, callbackPerFile: (List<Session>, List<ActionStat>, String, String, Int) -> Boolean) {
-        if (actions.isEmpty()) return
-        val result = mutableListOf<Session>()
-        val stats = mutableListOf<ActionStat>()
-        var currentOpenedFilePath = ""
-        var currentOpenedFileText = ""
-        var needToClose = false
+    fun interpret(fileActions: FileActions): List<Session> {
+        val sessions = mutableListOf<Session>()
+        var isFinished = false
         var session: Session? = null
         var position = 0
-        var actionsDone = 0
 
-        iterateActions@
-        for (action in actions) {
-            stats.add(ActionStat(action, System.currentTimeMillis()))
+        val needToClose = !invoker.isOpen(fileActions.path)
+        val text = invoker.openFile(fileActions.path)
+        if (fileActions.checksum != computeChecksum(text)) {
+            handler.onErrorOccurred(IllegalStateException("File $fileActions.path has been modified."), fileActions.sessionsCount)
+            return emptyList()
+        }
+
+        for (action in fileActions.actions) {
+            handler.onActionStarted(action)
             when (action) {
                 is MoveCaret -> {
                     invoker.moveCaret(action.offset)
                     position = action.offset
                 }
                 is CallCompletion -> {
-                    if (completionType == CompletionType.SMART || session?.success != true) {
-                        if (session == null) session = Session(position, action.expectedText, action.tokenType)
-                        val completionResult = invoker.callCompletion(action.expectedText, action.prefix)
-                        session.addLookup(completionResult.lookup)
-                        session.success = completionResult.success
-                    }
+                    if (session == null) session = Session(position, action.expectedText, action.tokenType)
+                    val lookup = invoker.callCompletion(action.expectedText, action.prefix)
+                    session.addLookup(lookup)
+                    isFinished = false
                 }
                 is FinishSession -> {
-                    if (session == null) {
-                        throw UnexpectedActionException("Session canceled before created")
-                    }
-                    result.add(session)
+                    if (session == null) throw UnexpectedActionException("Session canceled before created")
+                    val expectedText = session.expectedText
+                    isFinished = invoker.finishCompletion(expectedText, session.lookups.last().text)
+                    session.success = session.lookups.last().suggestions.any { it.text == expectedText }
+                    sessions.add(session)
+                    val isCanceled = handler.onSessionFinished(fileActions.path)
+                    if (isCanceled) return sessions
                     session = null
                 }
                 is PrintText -> {
-                    if (completionType == CompletionType.SMART || !action.completable || session?.success != true)
+                    if (!action.completable || !isFinished)
                         invoker.printText(action.text)
                 }
                 is DeleteRange -> {
-                    if (completionType == CompletionType.SMART || !action.completable || session?.success != true)
+                    if (!action.completable || !isFinished)
                         invoker.deleteRange(action.begin, action.end)
                 }
-                is OpenFile -> {
-                    if (!currentOpenedFilePath.isEmpty()) {
-                        if (needToClose) invoker.closeFile(currentOpenedFilePath)
-                        val isCanceled = callbackPerFile(result.toList(), stats.toList(), currentOpenedFilePath, currentOpenedFileText, actionsDone)
-                        if (isCanceled) return
-                        result.clear()
-                        stats.clear()
-                        actionsDone = 0
-                    }
-                    needToClose = !invoker.isOpen(action.path)
-                    currentOpenedFileText = invoker.openFile(action.path)
-                    currentOpenedFilePath = action.path
-                }
             }
-            actionsDone++
         }
-        if (needToClose) invoker.closeFile(currentOpenedFilePath)
-        callbackPerFile(result, stats, currentOpenedFilePath, currentOpenedFileText, actionsDone)
+
+        if (needToClose) invoker.closeFile(fileActions.path)
+        handler.onFileProcessed(fileActions.path)
+        return sessions
     }
 }

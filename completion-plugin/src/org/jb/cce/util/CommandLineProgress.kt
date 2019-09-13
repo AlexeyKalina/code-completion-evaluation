@@ -5,20 +5,30 @@ import java.util.Collections.nCopies
 import kotlin.math.log10
 
 class CommandLineProgress(private val title: String) : Progress {
+    companion object {
+        private const val progressLength = 20
+    }
     private val progress = StringBuilder(140)
+    private var currentFile = ""
+    private var currentPercent = 0
 
-    override fun setProgress(text: String, fraction: Double) {
-        progress.clear()
+    override fun setProgress(fileName: String, text: String, fraction: Double) {
         val percent = (fraction * 100).toInt()
+        if (percent == currentPercent && currentFile == fileName) return
+
+        currentPercent = percent
+        currentFile = fileName
+
+        progress.clear()
         progress
                 .append('\r')
+                .append("$title:")
                 .append(join("", nCopies(if (percent == 0) 2 else 2 - log10(percent.toDouble()).toInt(), " ")))
                 .append(String.format(" %d%% [", percent))
-                .append(join("", nCopies(percent, "=")))
+                .append(join("", nCopies(percent * progressLength / 100, "=")))
                 .append('>')
-                .append(join("", nCopies(100 - percent, " ")))
-                .append(']')
-        println("$title: $text")
+                .append(join("", nCopies((100 - percent) * progressLength / 100, " ")))
+                .append("] $text")
         println(progress)
     }
 
