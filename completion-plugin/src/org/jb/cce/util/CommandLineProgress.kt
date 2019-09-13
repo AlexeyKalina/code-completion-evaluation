@@ -6,7 +6,7 @@ import kotlin.math.log10
 
 class CommandLineProgress(private val title: String) : Progress {
     companion object {
-        private const val progressLengthFactor = 5
+        private const val progressLength = 20
     }
     private val progress = StringBuilder(140)
     private var currentFile = ""
@@ -25,9 +25,9 @@ class CommandLineProgress(private val title: String) : Progress {
                 .append("$title:")
                 .append(join("", nCopies(if (percent == 0) 2 else 2 - log10(percent.toDouble()).toInt(), " ")))
                 .append(String.format(" %d%% [", percent))
-                .append(join("", nCopies(percent / progressLengthFactor, "=")))
+                .append(join("", nCopies(percent * progressLength / 100, "=")))
                 .append('>')
-                .append(join("", nCopies((100 - percent) / progressLengthFactor, " ")))
+                .append(join("", nCopies((100 - percent) * progressLength / 100, " ")))
                 .append("] $text")
         println(progress)
     }
