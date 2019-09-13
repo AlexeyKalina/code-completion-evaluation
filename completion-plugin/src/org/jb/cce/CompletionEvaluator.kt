@@ -54,7 +54,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
     private fun evaluateUnderProgress(project: Project, languageName: String, files: Collection<VirtualFile>, strategy: CompletionStrategy,
                                       completionType: CompletionType, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean,
                                       logsTrainingPercentage: Int, offset: Int?, psi: PsiElement?) {
-        val task = object : Task.Backgroundable(project, "Generating actions for selected files", true) {
+        val task = object : Task.Backgroundable(project, "Generating actions", true) {
             private val workspace = EvaluationWorkspace(workspaceDir, completionType.name)
 
             override fun run(indicator: ProgressIndicator) {
@@ -123,8 +123,8 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
 
             private fun finish() {
                 if (!generateReport) return Highlighter(project).highlight(lastFileSessions)
-                val reportGenerator = HtmlReportGenerator(workspace.baseDirectory(), workspace.reportsDirectory(), workspace.resourcesDirectory())
-                ReportGeneration(reportGenerator).generateReportUnderProgress(listOf(workspace), project, isHeadless)
+                val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
+                ReportGeneration(reportGenerator).generateReportUnderProgress(listOf(workspace.sessionsStorage), listOf(workspace.errorsStorage), project, isHeadless)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))

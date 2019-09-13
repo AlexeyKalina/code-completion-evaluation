@@ -11,7 +11,6 @@ class EvaluationWorkspace(outputDir: String, evaluationType: String, existing: B
     }
     private val baseDir: String = if (existing) outputDir else Paths.get(outputDir, formatter.format(Date())).toString()
 
-    private val resourcesDir = Paths.get(baseDir, "res")
     private val sessionsDir = Paths.get(baseDir, "data")
     private val logsDir = Paths.get(baseDir, "logs")
     private val actionsDir = Paths.get(baseDir, "actions")
@@ -19,7 +18,6 @@ class EvaluationWorkspace(outputDir: String, evaluationType: String, existing: B
     private val reportsDir = Paths.get(baseDir, "reports")
 
     init {
-        Files.createDirectories(resourcesDir)
         Files.createDirectories(sessionsDir)
         Files.createDirectories(logsDir)
         Files.createDirectories(actionsDir)
@@ -27,13 +25,9 @@ class EvaluationWorkspace(outputDir: String, evaluationType: String, existing: B
         Files.createDirectories(reportsDir)
     }
 
-    fun baseDirectory() = baseDir
-
     fun logsDirectory() = logsDir.toString()
 
     fun reportsDirectory() = reportsDir.toString()
-
-    fun resourcesDirectory() = resourcesDir.toString()
 
     val sessionsStorage = SessionsStorage(sessionsDir.toString(), evaluationType)
 

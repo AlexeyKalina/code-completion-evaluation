@@ -9,7 +9,6 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
-import org.jb.cce.actions.GenerateReportAction
 import org.jb.cce.actions.OpenBrowserDialog
 import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.metrics.MetricsEvaluator
@@ -23,13 +22,13 @@ class ReportGeneration(private val reportGenerator: HtmlReportGenerator) {
     data class SessionsInfo(val path: String, val sessionsPath: String, val evaluationType: String)
     private val sessionFiles: MutableMap<String, MutableList<SessionsInfo>> = mutableMapOf()
 
-    fun generateReportUnderProgress(workspaces: List<EvaluationWorkspace>, project: Project, isHeadless: Boolean) {
+    fun generateReportUnderProgress(sessionStorages: List<SessionsStorage>, errorStorages: List<FileErrorsStorage>, project: Project, isHeadless: Boolean) {
         val task = object : Task.Backgroundable(project, "Report generation") {
             private var reportPath: String? = null
 
             override fun run(indicator: ProgressIndicator) {
                 try {
-                    reportPath = generateReport(workspaces)
+                    reportPath = generateReport(sessionStorages, errorStorages)
                 } catch (e: IllegalStateException) {
                     LOG.error("Report generation error", e)
                 }
@@ -40,10 +39,10 @@ class ReportGeneration(private val reportGenerator: HtmlReportGenerator) {
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    fun generateReport(workspaces: List<EvaluationWorkspace>): String {
+    fun generateReport(sessionStorages: List<SessionsStorage>, errorStorages: List<FileErrorsStorage>): String {
         val evaluationType2storage = mutableMapOf<String, SessionsStorage>()
         val evaluationType2evaluator = mutableMapOf<String, MetricsEvaluator>()
-        for (storage in workspaces.map { it.sessionsStorage }) {
+        for (storage in sessionStorages) {
             if (evaluationType2evaluator.containsKey(storage.evaluationType))
                 throw IllegalStateException("Workspaces have same evaluation types. Change evaluation type in config.json.")
             evaluationType2storage[storage.evaluationType] = storage
@@ -62,7 +61,7 @@ class ReportGeneration(private val reportGenerator: HtmlReportGenerator) {
             }
             reportGenerator.generateFileReport(fileEvaluations)
         }
-        for (errorsStorage in workspaces.map { it.errorsStorage })
+        for (errorsStorage in errorStorages)
             reportGenerator.generateErrorReports(errorsStorage.getErrors())
         return reportGenerator.generateGlobalReport(evaluationType2evaluator.values.map { it.result() }.flatten())
     }

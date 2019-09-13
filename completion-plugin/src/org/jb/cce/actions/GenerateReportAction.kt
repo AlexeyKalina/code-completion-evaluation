@@ -4,10 +4,12 @@ import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VirtualFile
-import org.jb.cce.*
+import org.jb.cce.EvaluationWorkspace
+import org.jb.cce.HtmlReportGenerator
+import org.jb.cce.ReportGeneration
+import org.jb.cce.SessionSerializer
 import java.nio.file.Paths
 
 class GenerateReportAction : AnAction() {
@@ -27,8 +29,8 @@ class GenerateReportAction : AnAction() {
             Paths.get(project.basePath ?: "", CompletionSettingsDialog.completionEvaluationDir).toString()
 
         val workspace = EvaluationWorkspace(workspaceDir, "COMPARE_MULTIPLE")
-        val reportGenerator = HtmlReportGenerator(workspace.baseDirectory(), workspace.reportsDirectory(), workspace.resourcesDirectory())
-        ReportGeneration(reportGenerator).generateReportUnderProgress(workspaces, project, false)
+        val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
+        ReportGeneration(reportGenerator).generateReportUnderProgress(workspaces.map { it.sessionsStorage }, workspaces.map { it.errorsStorage }, project, false)
     }
 
     override fun update(e: AnActionEvent) {
