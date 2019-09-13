@@ -132,7 +132,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
 
     private fun interpretActions(actionsStorage: ActionsStorage, sessionsStorage: SessionsStorage, completionType: CompletionType, strategy: CompletionStrategy,
                                  project: Project, logsWatcher: DirectoryWatcher?, indicator: Progress): List<Session> {
-        val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, completionType))
+        val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, completionType), project)
         var sessionsCount = 0
         val computingTime = measureTimeMillis {
             sessionsCount = actionsStorage.computeSessionsCount()

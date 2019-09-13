@@ -1,12 +1,15 @@
 package org.jb.cce.interpretator
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.DumbService
+import com.intellij.openapi.project.Project
 import org.jb.cce.CompletionInvoker
 import org.jb.cce.Lookup
 import org.jb.cce.util.ListSizeRestriction
 
-class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : CompletionInvoker {
+class DelegationCompletionInvoker(private val invoker: CompletionInvoker, project: Project) : CompletionInvoker {
     private val applicationListenersRestriction = ListSizeRestriction.applicationListeners()
+    private val dumbService = DumbService.getInstance(project)
 
     override fun moveCaret(offset: Int) = onEdt {
         invoker.moveCaret(offset)
@@ -46,7 +49,7 @@ class DelegationCompletionInvoker(private val invoker: CompletionInvoker) : Comp
     private fun <T> readAction(runnable: () -> T): T {
         var result: T? = null
         ApplicationManager.getApplication().invokeAndWait {
-            result = ApplicationManager.getApplication().runReadAction<T>(runnable)
+            result = dumbService.runReadActionInSmartMode<T>(runnable)
         }
 
         return result!!

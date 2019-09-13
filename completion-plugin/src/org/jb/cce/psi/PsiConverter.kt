@@ -1,6 +1,6 @@
 package org.jb.cce.psi
 
-import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
@@ -16,8 +16,10 @@ import org.jb.cce.util.text
 import org.jb.cce.visitors.EvaluationRootVisitor
 
 class PsiConverter(private val project: Project, val language: Language) : UastBuilder() {
+    private val dumbService = DumbService.getInstance(project)
+
     override fun build(file: VirtualFile, rootVisitor: EvaluationRootVisitor): TextFragmentNode {
-        val psi = ApplicationManager.getApplication().runReadAction<PsiFile> {
+        val psi = dumbService.runReadActionInSmartMode<PsiFile> {
             PsiManager.getInstance(project).findFile(file)
         } ?: throw PsiConverterException("Cannot get PSI of file ${file.path}")
 
@@ -32,7 +34,7 @@ class PsiConverter(private val project: Project, val language: Language) : UastB
     }
 
     private fun<T> getUast(visitor: T, psi: PsiElement): FileNode where T: PsiElementVisitor, T : PsiVisitor {
-        ApplicationManager.getApplication().runReadAction {
+        dumbService.runReadActionInSmartMode {
             psi.accept(visitor)
         }
         return visitor.getFile()
