@@ -96,7 +96,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 val uast = uastBuilder.build(file, rootVisitor)
                 val fileActions = actionsGenerator.generate(uast)
                 workspace.actionsStorage.saveActions(fileActions)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 workspace.errorsStorage.saveError(FileErrorInfo(file.path, e.message ?: "No Message", stackTraceToString(e)))
                 LOG.error("Generating actions error for file ${file.path}.", e)
             }
@@ -151,7 +151,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 val fileActions = actionsStorage.getActions(file)
                 lastFileSessions = interpreter.interpret(fileActions)
                 sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, File(fileActions.path).readText(), lastFileSessions))
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 LOG.error("Actions interpretation error for file ${file.path}.", e)
             }
             if (handler.isCancelled()) break
@@ -169,7 +169,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         return Paths.get(PathManager.getSystemPath(), "completion-stats-data").toString()
     }
 
-    private fun stackTraceToString(e: Exception): String {
+    private fun stackTraceToString(e: Throwable): String {
         val sw = StringWriter()
         e.printStackTrace(PrintWriter(sw))
         return sw.toString()
