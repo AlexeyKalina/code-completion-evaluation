@@ -79,9 +79,11 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln("<body><h1>$reportTitle</h1>")
         sb.append("<h3>${ reportReferences.size } file(s) successfully processed; ")
         if (errorReferences.isEmpty()) sb.appendln("no errors occurred</h3>") else sb.appendln("${errorReferences.size} with errors</h3>")
-        sb.appendln(createFilteringCheckboxes(globalMetrics))
+        sb.appendln(createToolbar(globalMetrics))
         sb.appendln(getMetricsTable(globalMetrics))
-        sb.appendln("<script>var table = new Tabulator(\"#metrics-table\", {layout:\"fitColumns\"})</script>")
+        sb.appendln("<script>let table = new Tabulator(\"#metrics-table\", {layout:\"fitColumns\",")
+        sb.appendln("pagination:\"local\", paginationSize:25, paginationSizeSelector:true})</script>")
+
         sb.appendln("</body></html>")
         val reportPath = Paths.get(baseDir.toString(), globalReportName).toString()
         FileWriter(reportPath).use { it.write(sb.toString()) }
@@ -172,7 +174,7 @@ class HtmlReportGenerator(outputDir: String) {
         val contentBuilder = StringBuilder()
         val sortedMetrics = globalMetrics.sortedWith(compareBy({ it.name }, { it.evaluationType }))
 
-        headerBuilder.appendln("<th tabulator-formatter=\"html\">File Report</th>")
+        headerBuilder.appendln("<th tabulator-field=\"fileName\" tabulator-formatter=\"html\">File Report</th>")
         for (metric in sortedMetrics.map { "${it.name} ${it.evaluationType}" })
             headerBuilder.appendln("<th tabulator-field=\"$metric\">$metric</th>")
 
@@ -215,8 +217,10 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln("</tr>")
     }
 
-    private fun createFilteringCheckboxes(globalMetrics: List<MetricInfo>): String {
+    private fun createToolbar(globalMetrics: List<MetricInfo>): String {
         val sb = StringBuilder()
+        sb.appendln("""<div class="options">
+            <input id="search" type="text" placeholder="Search" maxlength="100"/></div>""")
         sb.appendln("""
             <div class="options">
                 <button class="options-btn" id="dropdownBtn">Metrics visibility</button>
@@ -234,6 +238,8 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln("<script> function toggleColumn(name) {")
         for (type in globalMetrics.map { it.evaluationType }.toSet())
             sb.appendln("table.toggleColumn(name + ' $type');")
+        sb.appendln("let search = document.getElementById(\"search\");")
+        sb.appendln("search.oninput = function () {table.setFilter(\"fileName\", \"like\", search.value)}")
         sb.appendln("}</script>")
         return sb.toString()
     }
