@@ -46,7 +46,7 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
 
     override fun callCompletion(expectedText: String, prefix: String): org.jb.cce.Lookup {
         LOG.info("Call completion. Type: $completionType. ${positionToString(editor!!.caretModel.offset)}")
-        assert(!dumbService.isDumb)
+        assert(!dumbService.isDumb) { "Calling completion during indexing." }
         LookupManager.getInstance(project).hideActiveLookup()
 
         var latency = measureTimeMillis {
