@@ -1,0 +1,16 @@
+FileNode
+  ClassDeclarationNode (NestedLambdas)
+    MethodDeclarationNode (main)
+      MethodHeaderNode (main)
+      MethodBodyNode
+        MethodCallNode (method) - static
+          LambdaExpressionNode - argument
+            LambdaExpressionNode
+              MethodCallNode (toString)
+                VariableAccessNode (x) - prefix
+    MethodDeclarationNode (method)
+      MethodHeaderNode (method)
+      MethodBodyNode
+        MethodCallNode (consume)
+          VariableAccessNode (consumer) - prefix
+    ClassDeclarationNode (Consumer)

@@ -211,13 +211,7 @@ class PsiJavaVisitor(private val path: String, private val text: String) : PsiVi
     }
 
     private fun visitPotentialExpression(element: PsiElement?) {
-        when {
-            element is PsiReferenceExpression -> visitReferenceElement(element)
-            element is PsiMethodCallExpression -> visitMethodCallExpression(element)
-            element is PsiCallExpression -> visitCallExpression(element)
-            element is PsiExpression -> super.visitExpression(element)
-            element != null -> super.visitElement(element)
-        }
+        element?.accept(this)
     }
 
     private fun addToParent(node: UnifiedAstNode) {
