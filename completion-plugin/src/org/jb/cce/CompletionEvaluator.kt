@@ -107,7 +107,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
 
     private fun interpretUnderProgress(workspace: EvaluationWorkspace, completionType: CompletionType, strategy: CompletionStrategy,
                                        project: Project, languageName: String, generateReport: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
-        val task = object : Task.Backgroundable(project, "Interpretation of the generated actions") {
+        val task = object : Task.Backgroundable(project, "Actions interpreting") {
             private val sessionsStorage = workspace.sessionsStorage
             private lateinit var lastFileSessions: List<Session>
 
