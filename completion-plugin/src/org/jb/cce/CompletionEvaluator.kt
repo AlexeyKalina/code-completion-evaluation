@@ -96,9 +96,9 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 val uast = uastBuilder.build(file, rootVisitor)
                 val fileActions = actionsGenerator.generate(uast)
                 workspace.actionsStorage.saveActions(fileActions)
-            } catch (e: Exception) {
+            } catch (e: Throwable) {
                 workspace.errorsStorage.saveError(FileErrorInfo(file.path, e.message ?: "No Message", stackTraceToString(e)))
-                LOG.error("Error for file ${file.path}.", e)
+                LOG.error("Generating actions error for file ${file.path}.", e)
             }
             completed++
             LOG.info("Generating actions for file ${file.path} completed. Done: $completed/${files.size}. With error: ${errors.size}")
@@ -107,7 +107,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
 
     private fun interpretUnderProgress(workspace: EvaluationWorkspace, completionType: CompletionType, strategy: CompletionStrategy,
                                        project: Project, languageName: String, generateReport: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
-        val task = object : Task.Backgroundable(project, "Interpretation of the generated actions") {
+        val task = object : Task.Backgroundable(project, "Actions interpreting") {
             private val sessionsStorage = workspace.sessionsStorage
             private lateinit var lastFileSessions: List<Session>
 
@@ -132,7 +132,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
 
     private fun interpretActions(actionsStorage: ActionsStorage, sessionsStorage: SessionsStorage, completionType: CompletionType, strategy: CompletionStrategy,
                                  project: Project, logsWatcher: DirectoryWatcher?, indicator: Progress): List<Session> {
-        val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, completionType))
+        val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, completionType), project)
         var sessionsCount = 0
         val computingTime = measureTimeMillis {
             sessionsCount = actionsStorage.computeSessionsCount()
@@ -147,9 +147,13 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         val files = actionsStorage.getActionFiles()
         var lastFileSessions = listOf<Session>()
         for (file in files) {
-            val fileActions = actionsStorage.getActions(file)
-            lastFileSessions = interpreter.interpret(fileActions)
-            sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, File(fileActions.path).readText(), lastFileSessions))
+            try {
+                val fileActions = actionsStorage.getActions(file)
+                lastFileSessions = interpreter.interpret(fileActions)
+                sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, File(fileActions.path).readText(), lastFileSessions))
+            } catch (e: Throwable) {
+                LOG.error("Actions interpretation error for file ${file.path}.", e)
+            }
             if (handler.isCancelled()) break
         }
         sessionsStorage.saveEvaluationInfo(EvaluationInfo(completionType.name, strategy))
@@ -165,7 +169,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         return Paths.get(PathManager.getSystemPath(), "completion-stats-data").toString()
     }
 
-    private fun stackTraceToString(e: Exception): String {
+    private fun stackTraceToString(e: Throwable): String {
         val sw = StringWriter()
         e.printStackTrace(PrintWriter(sw))
         return sw.toString()
