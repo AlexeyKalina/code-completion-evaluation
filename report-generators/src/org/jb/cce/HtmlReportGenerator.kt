@@ -238,9 +238,9 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln("<script> function toggleColumn(name) {")
         for (type in globalMetrics.map { it.evaluationType }.toSet())
             sb.appendln("table.toggleColumn(name + ' $type');")
-        sb.appendln("let search = document.getElementById(\"search\");")
-        sb.appendln("search.oninput = function () {table.setFilter(\"fileName\", \"like\", search.value)}")
-        sb.appendln("}</script>")
+        sb.appendln("} let search = document.getElementById(\"search\");")
+        sb.appendln("search.oninput = function () {table.setFilter(\"fileName\", \"like\", search.value)};")
+        sb.appendln("</script>")
         return sb.toString()
     }
 }
