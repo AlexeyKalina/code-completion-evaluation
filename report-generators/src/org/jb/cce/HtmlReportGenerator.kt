@@ -82,8 +82,8 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln(createToolbar(globalMetrics))
         sb.appendln(getMetricsTable(globalMetrics))
         sb.appendln("<script>let table = new Tabulator(\"#metrics-table\", {layout:\"fitColumns\",")
-        sb.appendln("pagination:\"local\", paginationSize:25, paginationSizeSelector:true})</script>")
-
+        sb.appendln("pagination:\"local\", paginationSize:25, paginationSizeSelector:true,")
+        sb.appendln("dataLoaded:function(data){this.getRows()[0].freeze()}});</script>")
         sb.appendln("</body></html>")
         val reportPath = Paths.get(baseDir.toString(), globalReportName).toString()
         FileWriter(reportPath).use { it.write(sb.toString()) }
@@ -178,6 +178,8 @@ class HtmlReportGenerator(outputDir: String) {
         for (metric in sortedMetrics.map { "${it.name} ${it.evaluationType}" })
             headerBuilder.appendln("<th tabulator-field=\"$metric\">$metric</th>")
 
+        writeRow(contentBuilder, "Summary", sortedMetrics)
+
         for (fileError in errorReferences) {
             val path = baseDir.relativize(fileError.value)
             writeRow(contentBuilder, "<a href=\"$path\" style=\"color:red;\">${File(fileError.key).name}</a>",
@@ -190,9 +192,6 @@ class HtmlReportGenerator(outputDir: String) {
                     sortedMetrics.map { MetricInfo(it.name, file.value.metrics.find { m ->
                         it.name == m.name && it.evaluationType == m.evaluationType }?.value, it.evaluationType) })
         }
-
-        writeRow(contentBuilder, "Summary", sortedMetrics)
-        contentBuilder.appendln("</tr>")
 
         return """
             <table id="metrics-table">
@@ -238,9 +237,9 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln("<script> function toggleColumn(name) {")
         for (type in globalMetrics.map { it.evaluationType }.toSet())
             sb.appendln("table.toggleColumn(name + ' $type');")
-        sb.appendln("let search = document.getElementById(\"search\");")
-        sb.appendln("search.oninput = function () {table.setFilter(\"fileName\", \"like\", search.value)}")
-        sb.appendln("}</script>")
+        sb.appendln("} let search = document.getElementById(\"search\");")
+        sb.appendln("search.oninput = function () {table.setFilter(\"fileName\", \"like\", search.value)};")
+        sb.appendln("</script>")
         return sb.toString()
     }
 }

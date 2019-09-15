@@ -21,6 +21,7 @@
     margin: 0;
     border-radius: 0 0 5px 5px;
     width: 100%;
+    list-style: none;
     box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.3);
     z-index: 1;
 }
