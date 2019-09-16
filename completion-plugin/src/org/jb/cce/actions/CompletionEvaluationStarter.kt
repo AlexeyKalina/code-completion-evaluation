@@ -29,7 +29,7 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
         try {
             val files = config.listOfFiles.findFilesInProject(projectBasePath)
-            CompletionEvaluator(true).evaluateCompletion(project, files, config.language, config.strategy,
+            CompletionEvaluator(true, project).evaluateCompletion(files, config.language, config.strategy,
                 config.completionType, config.outputDir, config.interpretActions, config.saveLogs, config.logsTrainingPercentage)
         } catch (e: Exception) {
             e.printStackTrace(System.err)

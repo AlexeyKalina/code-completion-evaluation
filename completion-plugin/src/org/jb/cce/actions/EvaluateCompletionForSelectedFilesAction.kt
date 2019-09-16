@@ -13,7 +13,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val project = e.project ?: return
         val files = e.getData(CommonDataKeys.VIRTUAL_FILE_ARRAY)?.toList() ?: emptyList<VirtualFile>()
 
-        val evaluator = CompletionEvaluator(false)
+        val evaluator = CompletionEvaluator(false, project)
 
         val language2files = FilesHelper.getFiles(project, files)
         if (language2files.isEmpty()) {
@@ -27,7 +27,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
 
         val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionStatement, settingsDialog.completionContext)
         val completionType = settingsDialog.completionType
-        evaluator.evaluateCompletion(project, files, settingsDialog.language, strategy, completionType, settingsDialog.workspaceDir,
+        evaluator.evaluateCompletion(files, settingsDialog.language, strategy, completionType, settingsDialog.workspaceDir,
                 settingsDialog.interpretActionsAfterGeneration, settingsDialog.saveLogs, settingsDialog.trainingPercentage)
     }
 }

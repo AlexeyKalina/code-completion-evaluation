@@ -12,6 +12,7 @@ import org.jb.cce.psi.exceptions.PsiConverterException
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.Language
 import org.jb.cce.uast.TextFragmentNode
+import org.jb.cce.util.FilesHelper
 import org.jb.cce.util.text
 import org.jb.cce.visitors.EvaluationRootVisitor
 
@@ -23,10 +24,12 @@ class PsiConverter(private val project: Project, val language: Language) : UastB
             PsiManager.getInstance(project).findFile(file)
         } ?: throw PsiConverterException("Cannot get PSI of file ${file.path}")
 
+        val filePath = FilesHelper.getRelativeToProjectPath(project, file.path)
+
         val uast = when (language) {
-            Language.BASH -> getUast(PsiBashVisitor(file.path, file.text()), psi)
-            Language.JAVA -> getUast(PsiJavaVisitor(file.path, file.text()), psi)
-            Language.PYTHON -> getUast(PsiPythonVisitor(file.path, file.text()), psi)
+            Language.BASH -> getUast(PsiBashVisitor(filePath, file.text()), psi)
+            Language.JAVA -> getUast(PsiJavaVisitor(filePath, file.text()), psi)
+            Language.PYTHON -> getUast(PsiPythonVisitor(filePath, file.text()), psi)
             Language.ANOTHER -> throw PsiConverterException("Use All tokens statement type with this language.")
             Language.UNSUPPORTED -> throw PsiConverterException("Unsupported language.")
         }

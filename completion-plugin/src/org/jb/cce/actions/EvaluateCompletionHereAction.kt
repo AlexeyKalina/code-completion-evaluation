@@ -33,7 +33,7 @@ class EvaluateCompletionHereAction : AnAction() {
         if (!result) return
 
         val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionStatement, settingsDialog.completionContext)
-        CompletionEvaluator(false).evaluateCompletionHere(project, file, language.displayName, caret.offset,
+        CompletionEvaluator(false, project).evaluateCompletionHere(file, language.displayName, caret.offset,
                 if (strategy.statement == CompletionStatement.ALL_TOKENS) getParentOnSameLine(psi, caret.offset, editor) else null, strategy, settingsDialog.completionType)
     }
 

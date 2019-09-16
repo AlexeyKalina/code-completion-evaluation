@@ -10,6 +10,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
+import com.intellij.util.io.readText
 import org.jb.cce.actions.ActionsGenerator
 import org.jb.cce.actions.CompletionStatement
 import org.jb.cce.actions.CompletionStrategy
@@ -25,33 +26,32 @@ import org.jb.cce.util.*
 import org.jb.cce.visitors.DefaultEvaluationRootVisitor
 import org.jb.cce.visitors.EvaluationRootByOffsetVisitor
 import org.jb.cce.visitors.EvaluationRootByRangeVisitor
-import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.nio.file.Paths
 import java.util.*
 import kotlin.system.measureTimeMillis
 
-class CompletionEvaluator(private val isHeadless: Boolean) {
+class CompletionEvaluator(private val isHeadless: Boolean, private val project: Project) {
     private companion object {
         val LOG = Logger.getInstance(CompletionEvaluator::class.java)
     }
 
-    fun evaluateCompletion(project: Project, files: List<VirtualFile>, languageName: String, strategy: CompletionStrategy,
+    fun evaluateCompletion(files: List<VirtualFile>, languageName: String, strategy: CompletionStrategy,
                            completionType: CompletionType, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
         val language2files = FilesHelper.getFiles(project, files)
         if (language2files.isEmpty()) {
             println("Languages of selected files aren't supported.")
             return finishWork(null, project, isHeadless)
         }
-        evaluateUnderProgress(project, languageName, language2files.getValue(languageName), strategy, completionType, workspaceDir, interpretActions, saveLogs, logsTrainingPercentage, null, null)
+        evaluateUnderProgress(languageName, language2files.getValue(languageName), strategy, completionType, workspaceDir, interpretActions, saveLogs, logsTrainingPercentage, null, null)
     }
 
-    fun evaluateCompletionHere(project: Project, file: VirtualFile, languageName: String, offset: Int, psi: PsiElement?,
+    fun evaluateCompletionHere(file: VirtualFile, languageName: String, offset: Int, psi: PsiElement?,
                                strategy: CompletionStrategy, completionType: CompletionType) =
-            evaluateUnderProgress(project, languageName, listOf(file), strategy, completionType, "", true, false, 0, offset, psi)
+            evaluateUnderProgress(languageName, listOf(file), strategy, completionType, "", true, false, 0, offset, psi)
 
-    private fun evaluateUnderProgress(project: Project, languageName: String, files: Collection<VirtualFile>, strategy: CompletionStrategy,
+    private fun evaluateUnderProgress(languageName: String, files: Collection<VirtualFile>, strategy: CompletionStrategy,
                                       completionType: CompletionType, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean,
                                       logsTrainingPercentage: Int, offset: Int?, psi: PsiElement?) {
         val task = object : Task.Backgroundable(project, "Generating actions", true) {
@@ -59,19 +59,19 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
-                generateActions(workspace, project, languageName, files, strategy, offset, psi, getProcess(indicator))
+                generateActions(workspace, languageName, files, strategy, offset, psi, getProcess(indicator))
             }
 
             override fun onSuccess() {
                 if (interpretActions)
-                    interpretUnderProgress(workspace, completionType, strategy, project, languageName,
+                    interpretUnderProgress(workspace, completionType, strategy, languageName,
                             offset == null, saveLogs, logsTrainingPercentage)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    private fun generateActions(workspace: EvaluationWorkspace, project: Project, languageName: String, files: Collection<VirtualFile>,
+    private fun generateActions(workspace: EvaluationWorkspace, languageName: String, files: Collection<VirtualFile>,
                                 strategy: CompletionStrategy, offset: Int?, psi: PsiElement?, indicator: Progress) {
         val actionsGenerator = ActionsGenerator(strategy)
         val uastBuilder = UastBuilder.create(project, languageName, strategy.statement == CompletionStatement.ALL_TOKENS)
@@ -97,7 +97,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
                 val fileActions = actionsGenerator.generate(uast)
                 workspace.actionsStorage.saveActions(fileActions)
             } catch (e: Throwable) {
-                workspace.errorsStorage.saveError(FileErrorInfo(file.path, e.message ?: "No Message", stackTraceToString(e)))
+                workspace.errorsStorage.saveError(FileErrorInfo(FilesHelper.getRelativeToProjectPath(project, file.path), e.message ?: "No Message", stackTraceToString(e)))
                 LOG.error("Generating actions error for file ${file.path}.", e)
             }
             completed++
@@ -106,7 +106,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
     }
 
     private fun interpretUnderProgress(workspace: EvaluationWorkspace, completionType: CompletionType, strategy: CompletionStrategy,
-                                       project: Project, languageName: String, generateReport: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
+                                       languageName: String, generateReport: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
         val task = object : Task.Backgroundable(project, "Actions interpreting") {
             private val sessionsStorage = workspace.sessionsStorage
             private lateinit var lastFileSessions: List<Session>
@@ -139,7 +139,7 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
         }
         LOG.info("Computing of sessions count took $computingTime ms")
         val handler = InterpretationHandlerImpl(indicator, sessionsCount)
-        val interpreter = Interpreter(completionInvoker, handler)
+        val interpreter = Interpreter(completionInvoker, handler, project.basePath)
         logsWatcher?.start()
         val mlCompletionFlag = isMLCompletionEnabled()
         LOG.info("Start interpreting actions")
@@ -150,7 +150,8 @@ class CompletionEvaluator(private val isHeadless: Boolean) {
             try {
                 val fileActions = actionsStorage.getActions(file)
                 lastFileSessions = interpreter.interpret(fileActions)
-                sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, File(fileActions.path).readText(), lastFileSessions))
+                val fileText = FilesHelper.getProjectPath(project, fileActions.path).readText()
+                sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, fileText, lastFileSessions))
             } catch (e: Throwable) {
                 LOG.error("Actions interpretation error for file ${file.path}.", e)
             }
