@@ -4,7 +4,6 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import org.jb.cce.info.EvaluationInfo
 import org.jb.cce.info.FileSessionsInfo
-import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
 import java.nio.file.Files
@@ -24,9 +23,9 @@ class SessionsStorage(val storageDir: String, val evaluationType: String) {
     fun saveSessions(sessionsInfo: FileSessionsInfo) {
         if (!typeFolder.toFile().exists()) Files.createDirectories(typeFolder)
         val json = sessionSerializer.serialize(sessionsInfo)
-        val dataPath = Paths.get(typeFolder.toString(), "${File(sessionsInfo.filePath).name}($filesCounter).json").toFile()
-        FileWriter(dataPath).use { it.write(json) }
-        sessionFiles[sessionsInfo.filePath] = dataPath.path
+        val dataPath = Paths.get(typeFolder.toString(), "${Paths.get(sessionsInfo.filePath).fileName}($filesCounter).json")
+        FileWriter(dataPath.toString()).use { it.write(json) }
+        sessionFiles[sessionsInfo.filePath] = Paths.get(storageDir).relativize(dataPath).toString()
         filesCounter++
     }
 
@@ -41,6 +40,7 @@ class SessionsStorage(val storageDir: String, val evaluationType: String) {
         val json = Paths.get(storageDir, pathsListFile).toFile().readText()
         val type = object : TypeToken<MutableMap<String, String>>() {}.type
         sessionFiles = gson.fromJson(json, type)
+        for (path in sessionFiles.keys) sessionFiles[path] = Paths.get(storageDir).resolve(sessionFiles[path]!!).toString()
         return sessionFiles.entries.map { it.toPair() }
     }
 

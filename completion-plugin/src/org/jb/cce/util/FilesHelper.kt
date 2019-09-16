@@ -10,6 +10,8 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.GlobalSearchScope
 import org.apache.commons.io.input.UnixLineEndingInputStream
+import java.nio.file.Path
+import java.nio.file.Paths
 
 object FilesHelper {
     fun getFiles(project: Project, selectedFiles: List<VirtualFile>): Map<String, Set<VirtualFile>> {
@@ -44,6 +46,13 @@ object FilesHelper {
         val fileType = FileTypeManager.getInstance().getFileTypeByExtension(ext) as? LanguageFileType ?: return null
         return fileType.language
     }
+
+    fun getRelativeToProjectPath(project: Project, path: String): String {
+        val projectPath = project.basePath
+        return if (projectPath == null) path else Paths.get(projectPath).relativize(Paths.get(path)).toString()
+    }
+
+    fun getProjectPath(project: Project, path: String): Path = Paths.get(project.basePath ?: "").resolve(path)
 }
 
 fun VirtualFile.text(): String {

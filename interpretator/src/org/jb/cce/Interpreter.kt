@@ -3,9 +3,11 @@ package org.jb.cce
 import org.jb.cce.actions.*
 import org.jb.cce.exception.UnexpectedActionException
 import java.lang.IllegalStateException
+import java.nio.file.Paths
 
 class Interpreter(private val invoker: CompletionInvoker,
-                  private val handler: InterpretationHandler) {
+                  private val handler: InterpretationHandler,
+                  private val projectPath: String?) {
 
     fun interpret(fileActions: FileActions): List<Session> {
         val sessions = mutableListOf<Session>()
@@ -13,10 +15,11 @@ class Interpreter(private val invoker: CompletionInvoker,
         var session: Session? = null
         var position = 0
 
-        val needToClose = !invoker.isOpen(fileActions.path)
-        val text = invoker.openFile(fileActions.path)
+        val filePath = if (projectPath == null) fileActions.path else Paths.get(projectPath).resolve(fileActions.path).toString()
+        val needToClose = !invoker.isOpen(filePath)
+        val text = invoker.openFile(filePath)
         if (fileActions.checksum != computeChecksum(text)) {
-            handler.onErrorOccurred(IllegalStateException("File $fileActions.path has been modified."), fileActions.sessionsCount)
+            handler.onErrorOccurred(IllegalStateException("File $filePath has been modified."), fileActions.sessionsCount)
             return emptyList()
         }
 
@@ -39,7 +42,7 @@ class Interpreter(private val invoker: CompletionInvoker,
                     isFinished = invoker.finishCompletion(expectedText, session.lookups.last().text)
                     session.success = session.lookups.last().suggestions.any { it.text == expectedText }
                     sessions.add(session)
-                    val isCanceled = handler.onSessionFinished(fileActions.path)
+                    val isCanceled = handler.onSessionFinished(filePath)
                     if (isCanceled) return sessions
                     session = null
                 }
@@ -54,8 +57,8 @@ class Interpreter(private val invoker: CompletionInvoker,
             }
         }
 
-        if (needToClose) invoker.closeFile(fileActions.path)
-        handler.onFileProcessed(fileActions.path)
+        if (needToClose) invoker.closeFile(filePath)
+        handler.onFileProcessed(filePath)
         return sessions
     }
 }

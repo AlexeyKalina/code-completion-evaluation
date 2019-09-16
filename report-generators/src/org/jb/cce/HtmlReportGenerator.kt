@@ -55,17 +55,17 @@ class HtmlReportGenerator(outputDir: String) {
     fun generateErrorReports(errors: List<FileErrorInfo>) {
         for (fileError in errors) {
             val sb = StringBuilder()
-            val file = File(fileError.path)
-            reportTitle = "Error on actions generation for file <b>${file.name}</b>"
+            val filePath = Paths.get(fileError.path)
+            reportTitle = "Error on actions generation for file <b>${filePath.fileName}</b>"
             sb.appendln("<html><head><title>$reportTitle</title></head>")
             sb.appendln("<body><h1>$reportTitle</h1><h2>Message</h2>")
             sb.appendln("<pre><code>${fileError.message}</code></pre>")
             sb.appendln("<h2>StackTrace <button id=\"copyBtn\">&#128203</button></h2>")
             sb.appendln("<pre><code id=\"stackTrace\">${fileError.stackTrace}</code></pre>")
             sb.appendln("<script src=\"../res/error.js\"></script></body></html>")
-            val (_, reportPath) = getPaths(file.name)
+            val (_, reportPath) = getPaths(filePath.fileName.toString())
             FileWriter(reportPath.toString()).use { it.write(sb.toString()) }
-            errorReferences[file.path] = reportPath
+            errorReferences[filePath.toString()] = reportPath
         }
     }
 
@@ -182,7 +182,7 @@ class HtmlReportGenerator(outputDir: String) {
 
         for (fileError in errorReferences) {
             val path = baseDir.relativize(fileError.value)
-            writeRow(contentBuilder, "<a href=\"$path\" style=\"color:red;\">${File(fileError.key).name}</a>",
+            writeRow(contentBuilder, "<a href=\"$path\" style=\"color:red;\">${Paths.get(fileError.key).fileName}</a>",
                     sortedMetrics.map { MetricInfo(it.name, null, it.evaluationType) })
         }
 
