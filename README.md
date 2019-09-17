@@ -91,6 +91,44 @@ To start the evaluation in the headless mode you should describe where the proje
     }
 ```
 
+Example of `config.json` to evaluate code completion on several modules from intellij-community project
+```javascript
+{
+  "projectPath": "PATH_TO_COMMUNITY_PROJECT",
+  "listOfFiles": [
+    "java/java-indexing-impl",
+    "java/java-analysis-impl",
+    "platform/analysis-impl",
+    "platform/core-impl",
+    "platform/indexing-impl",
+    "platform/vcs-impl",
+    "platform/xdebugger-impl",
+    "plugins/git4idea",
+    "plugins/java-decompiler",
+    "plugins/gradle",
+    "plugins/markdown",
+    "plugins/sh",
+    "plugins/terminal",
+    "plugins/yaml"
+  ],
+  "language": "Java",
+  "strategy": {
+    "prefix": {
+      "emulateTyping": false,
+      "n": 1,
+      "name": "SimplePrefix"
+    },
+    "statement": "ALL_STATIC",
+    "context": "ALL"
+  },
+  "completionType": "BASIC",
+  "outputDir": "PATH_TO_COMMUNITY_PROJECT/completion-evaluation",
+  "interpretActions": true,
+  "saveLogs": false,
+  "logsTrainingPercentage": 70
+}
+```
+
 There are many options to start the evaluation in headless mode. Some of them are listed below.
 
 #### Run from command line:
