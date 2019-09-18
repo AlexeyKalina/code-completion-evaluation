@@ -14,7 +14,7 @@ object ConfigFactory {
     private val gson = GsonBuilder().setPrettyPrinting().create()
 
     private val defaultConfig = Config("", listOf(""), Language.JAVA.displayName,
-            CompletionStrategy(CompletionPrefix.NoPrefix, CompletionStatement.METHOD_CALLS, CompletionContext.ALL),
+            CompletionStrategy(CompletionPrefix.NoPrefix, CompletionContext.ALL, false, Filters(listOf(TypeFilter.METHOD_CALLS), ArgumentFilter.ALL, StaticFilter.ALL, "")),
             CompletionType.BASIC, "", interpretActions = false, saveLogs = true, logsTrainingPercentage = 70)
 
     fun load(path: String): Config {
@@ -26,9 +26,12 @@ object ConfigFactory {
 
         val map = gson.fromJson(FileReader(configFile), HashMap<String, Any>().javaClass)
         val strategy = map["strategy"] as Map<String, Any>
+        val filters = strategy["filters"] as Map<String, Any>
         return Config(map["projectPath"] as String, map["listOfFiles"] as List<String>, map["language"] as String,
-                CompletionStrategy(getPrefix(strategy), CompletionStatement.valueOf(strategy["statement"] as String),
-                        CompletionContext.valueOf(strategy["context"] as String)),
+                CompletionStrategy(getPrefix(strategy), CompletionContext.valueOf(strategy["context"] as String),
+                        map["completeAllTokens"] as Boolean, Filters((filters["typeFilters"] as List<String>).map { TypeFilter.valueOf(it) },
+                        ArgumentFilter.valueOf(filters["argumentFilter"] as String), StaticFilter.valueOf(filters["staticFilter"] as String),
+                        filters["packagePrefix"] as String)),
                 CompletionType.valueOf(map["completionType"] as String), map["outputDir"] as String, map["interpretActions"] as Boolean,
                 map["saveLogs"] as Boolean, (map["logsTrainingPercentage"] as Double).toInt())
     }

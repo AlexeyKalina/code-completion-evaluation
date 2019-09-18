@@ -79,7 +79,7 @@ class UastPrinter : UnifiedAstRecursiveVisitor() {
             isArgument -> "argument"
             else -> ""
         }
-        if (node is ClassMemberAccessNode && node.isStatic)
+        if (node is ClassMemberAccessNode && node.getProperties().isStatic)
             role += if (role.isBlank()) "static" else " static"
         return if (role.isNotBlank()) " - $role" else ""
     }

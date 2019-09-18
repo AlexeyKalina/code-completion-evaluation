@@ -12,7 +12,6 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.util.io.readText
 import org.jb.cce.actions.ActionsGenerator
-import org.jb.cce.actions.CompletionStatement
 import org.jb.cce.actions.CompletionStrategy
 import org.jb.cce.actions.CompletionType
 import org.jb.cce.highlighter.Highlighter
@@ -74,7 +73,7 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
     private fun generateActions(workspace: EvaluationWorkspace, languageName: String, files: Collection<VirtualFile>,
                                 strategy: CompletionStrategy, offset: Int?, psi: PsiElement?, indicator: Progress) {
         val actionsGenerator = ActionsGenerator(strategy)
-        val uastBuilder = UastBuilder.create(project, languageName, strategy.statement == CompletionStatement.ALL_TOKENS)
+        val uastBuilder = UastBuilder.create(project, languageName, strategy.completeAllTokens)
 
         val sortedFiles = files.sortedBy { f -> f.name }
         val errors = mutableListOf<FileErrorInfo>()

@@ -3,9 +3,7 @@ package org.jb.cce.psi
 import com.jetbrains.python.psi.*
 import com.jetbrains.python.psi.impl.PyReferenceExpressionImpl
 import org.jb.cce.psi.exceptions.PsiConverterException
-import org.jb.cce.uast.CompositeNode
-import org.jb.cce.uast.FileNode
-import org.jb.cce.uast.UnifiedAstNode
+import org.jb.cce.uast.*
 import org.jb.cce.uast.exceptions.UnifiedAstException
 import org.jb.cce.uast.statements.declarations.*
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
@@ -24,6 +22,7 @@ class PsiPythonVisitor(private val path: String, private val text: String): PyRe
     private val stackOfNodes: Deque<UnifiedAstNode> = ArrayDeque<UnifiedAstNode>()
     private val stackOfDeclarations: Deque<VariableDeclarationNode> = ArrayDeque<VariableDeclarationNode>()
     private val stackOfLevelDeclarationCounts: Deque<Int> = ArrayDeque<Int>()
+    private var isArgument = false
 
     override fun visitPyFile(node: PyFile) {
         _file = FileNode(node.textOffset, node.textLength, path, text)
@@ -43,9 +42,14 @@ class PsiPythonVisitor(private val path: String, private val text: String): PyRe
             super.visitPyCallExpression(node)
             return
         }
-        val methodCall = visitReferenceExpression(callee) { name, offset, length -> MethodCallNode(name, offset, length) }
+        val methodCall = visitReferenceExpression(callee) { name, offset, length ->
+            MethodCallNode(name, offset, length, NodeProperties(TypeProperty.METHOD_CALL, isArgument, false, ""))
+        }
         stackOfNodes.addLast(methodCall)
+        val prevValue = isArgument
+        isArgument = true
         super.visitPyArgumentList(node.argumentList)
+        isArgument = prevValue
         stackOfNodes.removeLast()
     }
 
@@ -53,7 +57,8 @@ class PsiPythonVisitor(private val path: String, private val text: String): PyRe
         if (stackOfDeclarations.any { it.getName() == node.nameElement?.text }) {
             val accessNode = VariableAccessNode(node.nameElement?.text ?: throw PsiConverterException("Empty name"),
                     node.nameElement?.startOffset ?: throw PsiConverterException("Empty offset"),
-                    node.nameElement?.textLength ?: throw PsiConverterException("Empty name length"))
+                    node.nameElement?.textLength ?: throw PsiConverterException("Empty name length"),
+                    NodeProperties(TypeProperty.VARIABLE, isArgument, false, ""))
             addToParent(accessNode)
         } else {
             val declarationNode = VariableDeclarationNode(node.nameElement?.text ?: throw PsiConverterException("Empty name"),
@@ -73,7 +78,9 @@ class PsiPythonVisitor(private val path: String, private val text: String): PyRe
 
     override fun visitPyElement(node: PyElement) {
         if (node is PyReferenceExpression) {
-            visitReferenceExpression(node) { name, offset, length -> VariableAccessNode(name, offset, length) }
+            visitReferenceExpression(node) {
+                name, offset, length -> VariableAccessNode(name, offset, length, NodeProperties(TypeProperty.VARIABLE, isArgument, false, ""))
+            }
         }
         super.visitPyElement(node)
     }

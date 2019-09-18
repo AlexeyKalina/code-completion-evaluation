@@ -1,5 +1,6 @@
 package org.jb.cce.uast.statements.expressions.references
 
+import org.jb.cce.uast.NodeProperties
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.exceptions.UnifiedAstException
@@ -9,7 +10,7 @@ import org.jb.cce.uast.statements.expressions.ExpressionNode
 class FieldAccessNode(name: String,
                       offset: Int,
                       length: Int,
-                      isStatic: Boolean = false) : ClassMemberAccessNode(name, offset, length, isStatic) {
+                      properties: NodeProperties) : ClassMemberAccessNode(name, offset, length, properties) {
     override fun getChildren(): List<UnifiedAstNode> = listOf()
 
     override fun getText() = name
