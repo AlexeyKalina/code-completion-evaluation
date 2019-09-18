@@ -49,16 +49,16 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
         assert(!dumbService.isDumb) { "Calling completion during indexing." }
         LookupManager.getInstance(project).hideActiveLookup()
 
-        var latency = measureTimeMillis {
-            CodeCompletionHandlerBase(completionType, false, false, true).invokeCompletion(project, editor)
+        val latency = measureTimeMillis {
+            val handler = object : CodeCompletionHandlerBase(CompletionType.BASIC, false, false, true) {
+                override fun isTestingMode() = true
+            }
+            handler.invokeCompletion(project, editor)
         }
         if (LookupManager.getActiveLookup(editor) == null) {
             return org.jb.cce.Lookup(prefix, emptyList(), latency)
         } else {
             val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
-            latency += measureTimeMillis {
-                lookup.waitForResult(1000)
-            }
             val suggestions = lookup.items.map { Suggestion(it.lookupString, lookupElementText(it)) }
             return org.jb.cce.Lookup(prefix, suggestions, latency)
         }
@@ -137,15 +137,5 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
             return false
         }
         return true
-    }
-
-    private fun LookupImpl.waitForResult(timeMs: Long): Boolean {
-        var totalWaitingTimeMs = 0L
-        while (isCalculating && totalWaitingTimeMs < timeMs) {
-            Thread.sleep(WAITING_TIME)
-            totalWaitingTimeMs += WAITING_TIME
-        }
-
-        return !isCalculating
     }
 }
