@@ -176,7 +176,7 @@ class HtmlReportGenerator(outputDir: String) {
 
         headerBuilder.appendln("<th tabulator-field=\"fileName\" tabulator-formatter=\"html\">File Report</th>")
         for (metric in sortedMetrics.map { "${it.name} ${it.evaluationType}" })
-            headerBuilder.appendln("<th tabulator-field=\"$metric\" tabulator-sorter=\"number\">$metric</th>")
+            headerBuilder.appendln("<th tabulator-field=\"$metric\" tabulator-sorter=\"number\" tabulator-align=\"right\">$metric</th>")
 
         writeRow(contentBuilder, "Summary", sortedMetrics)
 
