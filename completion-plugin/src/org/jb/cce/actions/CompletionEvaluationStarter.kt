@@ -67,7 +67,7 @@ class CompletionEvaluationStarter : ApplicationStarter {
         assert (project.isDirectory) { "$projectPath is not a directory" }
 
         val projectDir = File(project, Project.DIRECTORY_STORE_FOLDER)
-        assert(projectDir.exists()) { "$projectPath is not a project" }
+        assert(projectDir.exists()) { "$projectPath is not a project. .idea directory is missing" }
 
         val existing = ProjectManager.getInstance().openProjects.firstOrNull { proj ->
             !proj.isDefault && ProjectUtil.isSameProject(projectPath, proj)
