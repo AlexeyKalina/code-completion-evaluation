@@ -24,7 +24,7 @@ class AverageSelectedPositionMetric : Metric {
         return fileSample.mean()
     }
 
-    override val name: String = "Average Selected Position"
+    override val name: String = "Avg. Selected Position"
 
     override val format: (Double) -> String = { if (it.isNaN()) "—" else "%.3f".format(it) }
 }
