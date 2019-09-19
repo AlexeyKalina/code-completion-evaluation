@@ -7,4 +7,10 @@ interface Metric {
     val value: Double
     val name: String
     val format: (Double) -> String
+
+    companion object {
+        val DEFAULT_DOUBLE_VALUE_FORMAT = { value: Double ->
+            if (value.isNaN()) "—" else "%.3f".format(value)
+        }
+    }
 }

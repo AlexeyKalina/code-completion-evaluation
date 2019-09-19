@@ -1,6 +1,7 @@
 package org.jb.cce.metrics
 
 import org.jb.cce.Session
+import org.jb.cce.metrics.Metric.Companion.DEFAULT_DOUBLE_VALUE_FORMAT
 import org.jb.cce.metrics.util.Sample
 
 abstract class LatencyMetric(override val name: String) : Metric {
@@ -32,5 +33,5 @@ class MaxLatencyMetric : LatencyMetric("Max Latency") {
 class MeanLatencyMetric : LatencyMetric("Mean Latency") {
     override fun compute(sample: Sample): Double = sample.mean()
 
-    override val format: (Double) -> String = { if (it.isNaN()) "—" else "%.3f".format(it) }
+    override val format: (Double) -> String = DEFAULT_DOUBLE_VALUE_FORMAT
 }
