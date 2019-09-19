@@ -2,10 +2,13 @@ package org.jb.cce.actions
 
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.ApplicationStarter
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.CompletionEvaluator
 import org.jb.cce.util.ConfigFactory
+import java.io.File
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 
@@ -22,8 +25,13 @@ class CompletionEvaluationStarter : ApplicationStarter {
         } catch (e: Exception) {
             fatalError("Error for loading config: $configPath, $e")
         }
-        val project = ProjectUtil.openProject(config.projectPath, null, false)
-            ?: fatalError("Project ${config.projectPath} not found.")
+
+        val project = try {
+            openProjectHeadless(config.projectPath)
+        }
+        catch (e: Throwable) {
+            fatalError("Project could not be loaded: $e")
+        }
         val projectBasePath = project.basePath
             ?: fatalError("Evaluation for default project impossible. Path: ${config.projectPath}")
 
@@ -33,7 +41,7 @@ class CompletionEvaluationStarter : ApplicationStarter {
                 config.completionType, config.outputDir, config.interpretActions, config.saveLogs, config.logsTrainingPercentage)
         } catch (e: Exception) {
             e.printStackTrace(System.err)
-            fatalError("Could start evaluation: ${e.message}")
+            fatalError("Could not start evaluation: ${e.message}")
         }
     }
 
@@ -50,5 +58,22 @@ class CompletionEvaluationStarter : ApplicationStarter {
         require(unknownFiles.isEmpty()) { "Evaluation roots not found: ${unknownFiles.keys}" }
 
         return path2file.values.filterNotNull()
+    }
+
+    private fun openProjectHeadless(projectPath: String): Project {
+        val project = File(projectPath)
+
+        assert (project.exists()) { "File $projectPath does not exist" }
+        assert (project.isDirectory) { "$projectPath is not a directory" }
+
+        val projectDir = File(project, Project.DIRECTORY_STORE_FOLDER)
+        assert(projectDir.exists()) { "$projectPath is not a project. .idea directory is missing" }
+
+        val existing = ProjectManager.getInstance().openProjects.firstOrNull { proj ->
+            !proj.isDefault && ProjectUtil.isSameProject(projectPath, proj)
+        }
+        if (existing != null) return existing
+
+        return ProjectManager.getInstance().loadAndOpenProject(projectPath)!!
     }
 }
