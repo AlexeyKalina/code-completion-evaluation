@@ -16,8 +16,8 @@ class AverageSelectedPositionMetric : Metric {
         completions.forEach { (suggests, expectedText) ->
             val position = suggests.indexOfFirst { it.text == expectedText }
             if (position != -1) {
-                fileSample.add(position.toDouble() + 1)
-                sample.add(position.toDouble() + 1)
+                fileSample.add(position.toDouble())
+                sample.add(position.toDouble())
             }
         }
 
