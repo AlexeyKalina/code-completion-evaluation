@@ -183,14 +183,15 @@ class HtmlReportGenerator(outputDir: String) {
         for (fileError in errorReferences) {
             val path = baseDir.relativize(fileError.value)
             writeRow(contentBuilder, "<a href=\"$path\" style=\"color:red;\">${Paths.get(fileError.key).fileName}</a>",
-                    sortedMetrics.map { MetricInfo(it.name, null, it.evaluationType) })
+                    sortedMetrics.map { MetricInfo(it.name, "–", it.evaluationType) })
         }
 
         for (file in reportReferences) {
             val path = baseDir.relativize(file.value.pathToReport)
-            writeRow(contentBuilder,"<a href=\"$path\">${File(file.key).name}</a>",
+            writeRow(contentBuilder, "<a href=\"$path\">${File(file.key).name}</a>",
                     sortedMetrics.map { MetricInfo(it.name, file.value.metrics.find { m ->
-                        it.name == m.name && it.evaluationType == m.evaluationType }?.value, it.evaluationType) })
+                        it.name == m.name && it.evaluationType == m.evaluationType }?.value ?: "–", it.evaluationType) }
+            )
         }
 
         return """
@@ -209,10 +210,7 @@ class HtmlReportGenerator(outputDir: String) {
 
     private fun writeRow(sb: StringBuilder, name: String, metrics: List<MetricInfo>) {
         sb.appendln("<tr><td>$name</td>")
-        for (metric in metrics) {
-            if (metric.value == null) sb.appendln("<td>----</td>")
-            else sb.appendln("<td>%.3f</td>".format(metric.value))
-        }
+        for (metric in metrics) sb.appendln("<td>${metric.value}</td>")
         sb.appendln("</tr>")
     }
 

@@ -27,4 +27,6 @@ class ESavedMetric : Metric {
     }
 
     override val name: String = "eSaved"
+
+    override val format: (Double) -> String = { if (it.isNaN()) "—" else "%.3f".format(it) }
 }

@@ -25,4 +25,6 @@ class AverageSelectedPositionMetric : Metric {
     }
 
     override val name: String = "Average Selected Position"
+
+    override val format: (Double) -> String = { if (it.isNaN()) "—" else "%.3f".format(it) }
 }

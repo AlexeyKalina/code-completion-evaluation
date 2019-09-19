@@ -25,8 +25,12 @@ abstract class LatencyMetric(override val name: String) : Metric {
 
 class MaxLatencyMetric : LatencyMetric("Max Latency") {
     override fun compute(sample: Sample): Double = sample.max()
+
+    override val format: (Double) -> String = { "${it.toInt()}" }
 }
 
 class MeanLatencyMetric : LatencyMetric("Mean Latency") {
     override fun compute(sample: Sample): Double = sample.mean()
+
+    override val format: (Double) -> String = { if (it.isNaN()) "—" else "%.3f".format(it) }
 }

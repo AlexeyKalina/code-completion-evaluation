@@ -31,4 +31,6 @@ class PrecisionMetric(private val n: Int) : Metric {
     }
 
     override val name: String = "Precision@$n"
+
+    override val format: (Double) -> String = { if (it.isNaN()) "—" else "%.3f".format(it) }
 }

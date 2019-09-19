@@ -15,4 +15,6 @@ class SessionsCountMetric : Metric {
     }
 
     override val name: String = "Sessions"
+
+    override val format: (Double) -> String = { "${it.toInt()}" }
 }

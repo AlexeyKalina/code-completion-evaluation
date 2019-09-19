@@ -27,4 +27,6 @@ class RecallMetric : Metric {
     }
 
     override val name: String = "Recall"
+
+    override val format: (Double) -> String = { if (it.isNaN()) "—" else "%.3f".format(it) }
 }
