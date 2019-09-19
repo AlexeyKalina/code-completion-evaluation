@@ -26,8 +26,12 @@ class CompletionEvaluationStarter : ApplicationStarter {
             fatalError("Error for loading config: $configPath, $e")
         }
 
-        val project = openProjectHeadless(config.projectPath)
-            ?: fatalError("Project ${config.projectPath} not found.")
+        val project = try {
+            openProjectHeadless(config.projectPath)
+        }
+        catch (e: Throwable) {
+            fatalError("Project could not be loaded: $e")
+        }
         val projectBasePath = project.basePath
             ?: fatalError("Evaluation for default project impossible. Path: ${config.projectPath}")
 
@@ -56,25 +60,20 @@ class CompletionEvaluationStarter : ApplicationStarter {
         return path2file.values.filterNotNull()
     }
 
-    private fun openProjectHeadless(projectPath: String): Project? {
+    private fun openProjectHeadless(projectPath: String): Project {
         val project = File(projectPath)
 
-        if (!project.exists()) return null
-        if (project.isDirectory) {
-            val projectDir = File(project, Project.DIRECTORY_STORE_FOLDER)
-            if (!projectDir.exists()) return null
-        }
+        assert (project.exists()) { "File $projectPath does not exist" }
+        assert (project.isDirectory) { "$projectPath is not a directory" }
+
+        val projectDir = File(project, Project.DIRECTORY_STORE_FOLDER)
+        assert(projectDir.exists()) { "$projectPath is not a project" }
 
         val existing = ProjectManager.getInstance().openProjects.firstOrNull { proj ->
             !proj.isDefault && ProjectUtil.isSameProject(projectPath, proj)
         }
         if (existing != null) return existing
 
-        return try {
-            ProjectManager.getInstance().loadAndOpenProject(projectPath)
-        }
-        catch (ex: Exception) {
-            null
-        }
+        return ProjectManager.getInstance().loadAndOpenProject(projectPath)!!
     }
 }
