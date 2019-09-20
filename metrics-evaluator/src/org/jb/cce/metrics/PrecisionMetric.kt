@@ -1,6 +1,7 @@
 package org.jb.cce.metrics
 
 import org.jb.cce.Session
+import org.jb.cce.metrics.Metric.Companion.DEFAULT_DOUBLE_VALUE_FORMAT
 import org.jb.cce.metrics.util.Sample
 import java.util.stream.Collectors
 
@@ -31,4 +32,6 @@ class PrecisionMetric(private val n: Int) : Metric {
     }
 
     override val name: String = "Precision@$n"
+
+    override val format: (Double) -> String = DEFAULT_DOUBLE_VALUE_FORMAT
 }
