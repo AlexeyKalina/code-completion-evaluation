@@ -62,25 +62,19 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
         val fullLogsFile = Paths.get(outputDir, "full.log")
         if (!fullLogsFile.exists()) return
 
-        val lines = FileReader(fullLogsFile.toFile()).use { it.readLines() }
-        if (lines.isEmpty()) return
-        val userId = getUserId(lines.first())
+        val logsReader = fullLogsFile.toFile().bufferedReader()
+        val userId = getUserId(logsReader.readLine() ?: return)
         val trainingLogsWriter = getLogsWriter("train", userId)
         val validateLogsWriter = getLogsWriter("validate", userId)
 
-        val sessions = lines.groupBy { getSessionId(it) }
-        val threshold = (sessions.count() * (trainingPercentage.toDouble() / 100.0)).toInt()
-        val trainingSessions = mutableListOf<String>()
-        val validateSessions = mutableListOf<String>()
-        var counter = 0
-        for (session in sessions) {
-            if (counter < threshold) trainingSessions.addAll(session.value)
-            else validateSessions.addAll(session.value)
-            counter++
+        val split = mutableMapOf<String, Boolean>()
+        for (session in logsReader.lines()) {
+            val sessionId = getSessionId(session)
+            if (sessionId !in split) split[sessionId] = (0..99).random() < trainingPercentage
+            (if (split[sessionId]!!) trainingLogsWriter else validateLogsWriter).appendln(session)
         }
-        appendLogs(trainingSessions, trainingLogsWriter)
-        appendLogs(validateSessions, validateLogsWriter)
-        saveSessionsInfo(sessions.size, threshold)
+        logsReader.close()
+        saveSessionsInfo(split.size, split.count { it.value })
         fullLogsFile.delete()
     }
 
@@ -93,10 +87,6 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
     private fun saveSessionsInfo(all: Int, training: Int) {
         val infoFile = Paths.get(outputDir, "info")
         infoFile.toFile().writeText("All sessions: $all\nTraining sessions: $training\nValidate sessions: ${all - training}")
-    }
-
-    private fun appendLogs(lines: List<String>, writer: BufferedWriter) {
-        writer.use { for (line in lines) it.appendln(line) }
     }
 
     private fun getUserId(line: String) = line.split("\t")[3]
