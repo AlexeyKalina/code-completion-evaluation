@@ -74,14 +74,13 @@ abstract class CallCompletionsVisitor(protected open val text: String,
                 actions += PrintText(symbol.toString(), true)
                 currentPrefix += symbol
             }
-        } else if (prefix.isNotEmpty()) actions += PrintText(prefix, true)
+        } else if (prefix.isNotEmpty()) actions += PrintText(prefix, false)
         actions += CallCompletion(prefix, node.getText(), tokenType)
+        actions += FinishSession()
 
         if (prefix.isNotEmpty())
             actions += DeleteRange(node.getOffset(), node.getOffset() + prefix.length, true)
         actions += PrintText(node.getText(), true)
-
-        actions += FinishSession()
     }
 
     private fun prepareAllContext(node: Completable) {
