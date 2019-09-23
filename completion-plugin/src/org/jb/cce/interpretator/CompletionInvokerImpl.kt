@@ -14,7 +14,6 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
-import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -27,7 +26,6 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
     private companion object {
         val LOG = Logger.getInstance(CompletionInvokerImpl::class.java)
         const val LOG_MAX_LENGTH = 50
-        const val WAITING_TIME = 100L
     }
 
     private val completionType = when (completionType) {
@@ -36,7 +34,6 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
         org.jb.cce.actions.CompletionType.ML -> CompletionType.BASIC
     }
     private var editor: Editor? = null
-    private val dumbService = DumbService.getInstance(project)
 
     override fun moveCaret(offset: Int) {
         LOG.info("Move caret. ${positionToString(offset)}")
@@ -46,11 +43,11 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
 
     override fun callCompletion(expectedText: String, prefix: String): org.jb.cce.Lookup {
         LOG.info("Call completion. Type: $completionType. ${positionToString(editor!!.caretModel.offset)}")
-        assert(!dumbService.isDumb) { "Calling completion during indexing." }
         LookupManager.getInstance(project).hideActiveLookup()
 
         val latency = measureTimeMillis {
-            val handler = object : CodeCompletionHandlerBase(CompletionType.BASIC, false, false, true) {
+            val handler = object : CodeCompletionHandlerBase(completionType, false, false, true) {
+                // Guarantees synchronous execution
                 override fun isTestingMode() = true
             }
             handler.invokeCompletion(project, editor)
