@@ -14,6 +14,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
+import com.intellij.openapi.project.DumbService
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -34,6 +35,7 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
         org.jb.cce.actions.CompletionType.ML -> CompletionType.BASIC
     }
     private var editor: Editor? = null
+    private val dumbService = DumbService.getInstance(project)
 
     override fun moveCaret(offset: Int) {
         LOG.info("Move caret. ${positionToString(offset)}")
@@ -43,6 +45,7 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
 
     override fun callCompletion(expectedText: String, prefix: String): org.jb.cce.Lookup {
         LOG.info("Call completion. Type: $completionType. ${positionToString(editor!!.caretModel.offset)}")
+//        assert(!dumbService.isDumb) { "Calling completion during indexing." }
         LookupManager.getInstance(project).hideActiveLookup()
 
         val latency = measureTimeMillis {
@@ -62,6 +65,7 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
     }
 
     override fun finishCompletion(expectedText: String, prefix: String): Boolean {
+        LOG.info("Finish completion. Expected text: $expectedText")
         if (completionType == CompletionType.SMART) return false
         val lookup = LookupManager.getActiveLookup(editor) as? LookupImpl ?: return false
         val expectedItemIndex = lookup.items.indexOfFirst { it.lookupString == expectedText }
@@ -85,6 +89,7 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
         val project = editor!!.project
         val runnable = Runnable { document.deleteString(begin, end) }
         WriteCommandAction.runWriteCommandAction(project, runnable)
+        if (editor!!.caretModel.offset != begin) editor!!.caretModel.moveToOffset(begin)
     }
 
     override fun openFile(file: String): String {
@@ -130,6 +135,7 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
             return false
         }
         if (lengthBefore + completionLength != document.textLength) {
+            LOG.info("Undo operation after finishing completion.")
             UndoManagerImpl.getInstance(project).undo(FileEditorManager.getInstance(project).selectedEditor)
             return false
         }

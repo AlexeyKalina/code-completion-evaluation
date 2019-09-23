@@ -71,7 +71,7 @@ abstract class CallCompletionsVisitor(protected open val text: String,
         if (prefixCreator.completePrevious) {
             for (symbol in prefix) {
                 actions += CallCompletion(currentPrefix, node.getText(), tokenType)
-                actions += PrintText(symbol.toString(), true)
+                actions += PrintText(symbol.toString(), false)
                 currentPrefix += symbol
             }
         } else if (prefix.isNotEmpty()) actions += PrintText(prefix, false)
