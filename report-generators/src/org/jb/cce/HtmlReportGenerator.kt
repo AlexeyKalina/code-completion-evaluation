@@ -60,9 +60,9 @@ class HtmlReportGenerator(outputDir: String) {
             sb.appendln("<html><head><title>$reportTitle</title></head>")
             sb.appendln("<body><h1>$reportTitle</h1><h2>Message</h2>")
             sb.appendln("<pre><code>${fileError.message}</code></pre>")
-            sb.appendln("<h2>StackTrace <button id=\"copyBtn\">&#128203</button></h2>")
-            sb.appendln("<pre><code id=\"stackTrace\">${fileError.stackTrace}</code></pre>")
-            sb.appendln("<script src=\"../res/error.js\"></script></body></html>")
+            sb.appendln("<h2>StackTrace <button id='copyBtn'>&#128203</button></h2>")
+            sb.appendln("<pre><code id='stackTrace'>${fileError.stackTrace}</code></pre>")
+            sb.appendln("<script src='../res/error.js'></script></body></html>")
             val (_, reportPath) = getPaths(filePath.fileName.toString())
             FileWriter(reportPath.toString()).use { it.write(sb.toString()) }
             errorReferences[filePath.toString()] = reportPath
@@ -72,19 +72,19 @@ class HtmlReportGenerator(outputDir: String) {
     fun generateGlobalReport(globalMetrics: List<MetricInfo>): String {
         val sb = StringBuilder()
         reportTitle = "Code Completion Report"
-        sb.appendln("<html><head><title>$reportTitle</title>")
-        sb.appendln("<script src=\"res/tabulator.min.js\"></script>")
-        sb.appendln("<link href=\"res/tabulator.min.css\" rel=\"stylesheet\">")
-        sb.appendln("<link href=\"res/options.css\" rel=\"stylesheet\"></head>")
+        sb.appendln("<html><head><title>$reportTitle</title><meta charset='utf-8'/>")
+        sb.appendln("<script src='res/tabulator.min.js'></script>")
+        sb.appendln("<link href='res/tabulator.min.css' rel='stylesheet'>")
+        sb.appendln("<link href='res/options.css' rel='stylesheet'></head>")
         sb.appendln("<body><h1>$reportTitle</h1>")
         sb.append("<h3>${ reportReferences.size } file(s) successfully processed; ")
         if (errorReferences.isEmpty()) sb.appendln("no errors occurred</h3>") else sb.appendln("${errorReferences.size} with errors</h3>")
         sb.appendln(createToolbar(globalMetrics))
         sb.appendln(getMetricsTable(globalMetrics))
-        sb.appendln("<script>let table = new Tabulator(\"#metrics-table\", {layout:\"fitColumns\",")
-        sb.appendln("pagination:\"local\", paginationSize:25, paginationSizeSelector:true,")
-        sb.appendln("dataLoaded:function(data){this.getRows()[0].freeze()}});</script>")
-        sb.appendln("</body></html>")
+        sb.appendln("<script>let table = new Tabulator('#metrics-table', {layout:'fitColumns',")
+        sb.appendln("pagination:'local', paginationSize:25, paginationSizeSelector:true,")
+        sb.appendln("dataLoaded:function(data){this.getRows()[0].freeze();this.setFilter(myFilter)}});")
+        sb.appendln("</script></body></html>")
         val reportPath = Paths.get(baseDir.toString(), globalReportName).toString()
         FileWriter(reportPath).use { it.write(sb.toString()) }
         return reportPath
@@ -164,7 +164,7 @@ class HtmlReportGenerator(outputDir: String) {
     }
 
     private fun getDiv(session: Session?, text: String) : String {
-        val opened = "<div class=\"completion\" id=\"${session?.id}\" style=\"color: ${ReportColors.getColor(session, HtmlColors)}; font-weight: bold\">"
+        val opened = "<div class='completion' id='${session?.id}' style='color: ${ReportColors.getColor(session, HtmlColors)}; font-weight: bold'>"
         val closed = "</div>"
         return "$opened$text$closed"
     }
@@ -174,38 +174,27 @@ class HtmlReportGenerator(outputDir: String) {
         val contentBuilder = StringBuilder()
         val sortedMetrics = globalMetrics.sortedWith(compareBy({ it.name }, { it.evaluationType }))
 
-        headerBuilder.appendln("<th tabulator-field=\"fileName\" tabulator-formatter=\"html\">File Report</th>")
+        headerBuilder.appendln("<th tabulator-field='fileName' tabulator-formatter='html'>File Report</th>")
         for (metric in sortedMetrics.map { "${it.name} ${it.evaluationType}" })
-            headerBuilder.appendln("<th tabulator-field=\"$metric\" tabulator-sorter=\"number\" tabulator-align=\"right\">$metric</th>")
+            headerBuilder.appendln("<th tabulator-field='$metric' tabulator-sorter='number' tabulator-align='right'>$metric</th>")
 
         writeRow(contentBuilder, "Summary", sortedMetrics)
 
         for (fileError in errorReferences) {
             val path = baseDir.relativize(fileError.value)
-            writeRow(contentBuilder, "<a href=\"$path\" style=\"color:red;\">${Paths.get(fileError.key).fileName}</a>",
-                    sortedMetrics.map { MetricInfo(it.name, "–", it.evaluationType) })
+            writeRow(contentBuilder, "<a href='$path' style='color:red;'>${Paths.get(fileError.key).fileName}</a>",
+                    sortedMetrics.map { MetricInfo(it.name, "—", it.evaluationType) })
         }
 
         for (file in reportReferences) {
             val path = baseDir.relativize(file.value.pathToReport)
-            writeRow(contentBuilder, "<a href=\"$path\">${File(file.key).name}</a>",
+            writeRow(contentBuilder, "<a href='$path'>${File(file.key).name}</a>",
                     sortedMetrics.map { MetricInfo(it.name, file.value.metrics.find { m ->
-                        it.name == m.name && it.evaluationType == m.evaluationType }?.value ?: "–", it.evaluationType) }
+                        it.name == m.name && it.evaluationType == m.evaluationType }?.value ?: "—", it.evaluationType) }
             )
         }
 
-        return """
-            <table id="metrics-table">
-                <thead>
-                    <tr>
-                        $headerBuilder
-                    </tr>
-                </thead>
-                <tbody>
-                    $contentBuilder
-                </tbody>
-            </table>
-        """
+        return "<table id='metrics-table'><thead><tr>$headerBuilder</tr></thead><tbody>$contentBuilder</tbody></table>"
     }
 
     private fun writeRow(sb: StringBuilder, name: String, metrics: List<MetricInfo>) {
@@ -216,28 +205,36 @@ class HtmlReportGenerator(outputDir: String) {
 
     private fun createToolbar(globalMetrics: List<MetricInfo>): String {
         val sb = StringBuilder()
-        sb.appendln("""<div class="options">
-            <input id="search" type="text" placeholder="Search" maxlength="100"/></div>""")
-        sb.appendln("""
-            <div class="options">
-                <button class="options-btn" id="dropdownBtn">Metrics visibility</button>
-                <ul class="dropdown">
-                """)
-        for (metric in globalMetrics.map { it.name }.toSet().sorted())
-            sb.appendln("<li><input type=\"checkbox\" checked onclick=\"toggleColumn('$metric');\">$metric</li>")
-        sb.appendln("""
-                </ul>
-            </div>
-            <div class="options">
-                <button class="options-btn" id="redrawBtn" onclick="table.redraw()">Redraw table</button>
-            </div>
-            """)
-        sb.appendln("<script> function toggleColumn(name) {")
-        for (type in globalMetrics.map { it.evaluationType }.toSet())
-            sb.appendln("table.toggleColumn(name + ' $type');")
-        sb.appendln("} let search = document.getElementById(\"search\");")
-        sb.appendln("search.oninput = function () {table.setFilter(\"fileName\", \"like\", search.value)};")
+        val metricNames = globalMetrics.map { it.name }.toSet().sorted()
+        val evaluationTypes = globalMetrics.map { it.evaluationType }.toSet()
+        val sessionsMetricIsPresent = metricNames.contains("Sessions")
+        sb.appendln("<div class='options'><input id='search' type='text' placeholder='Search' maxlength='50'/></div>")
+        sb.appendln("<div class='options'><button class='options-btn' id='dropdownBtn'>Metrics visibility</button>")
+        sb.appendln("<ul class='dropdown'>")
+        for (metric in metricNames)
+            sb.appendln("<li><input type='checkbox' checked onclick=\"toggleColumn('$metric')\">$metric</li>")
+        sb.appendln("</ul></div>")
+        sb.appendln("<div class='options'><button class='options-btn' id='redrawBtn'>Redraw table</button></div>")
+        if (sessionsMetricIsPresent)
+            sb.appendln("<div class='options'><button class='options-btn' id='emptyRowsBtn'>Show empty rows</button></div>")
+        sb.appendln("<script>function toggleColumn(name){")
+        evaluationTypes.map { "table.toggleColumn(name+' $it');" }.map { sb.appendln(it) }
+        sb.appendln("}let search=document.getElementById('search');search.oninput=()=>table.setFilter(myFilter);")
+        sb.appendln("let redrawBtn=document.getElementById('redrawBtn');redrawBtn.onclick=()=>table.redraw();")
+        if (sessionsMetricIsPresent) {
+            sb.appendln("let emptyRowsBtn=document.getElementById('emptyRowsBtn');emptyRowsBtn.onclick=()=>toggleEmptyRows();")
+            sb.appendln("let emptyHidden=()=>!emptyRowsBtn.classList.contains('active');")
+            sb.appendln("function toggleEmptyRows(){if(emptyHidden())")
+            sb.appendln("{emptyRowsBtn.classList.add('active');emptyRowsBtn.textContent='Hide empty rows'}")
+            sb.appendln("else{emptyRowsBtn.classList.remove('active');emptyRowsBtn.textContent='Show empty rows'}")
+            sb.appendln("table.setFilter(myFilter)}")
+            sb.appendln("let toNum=(str)=>isNaN(+str)?0:+str;")
+        }
+        sb.appendln("let myFilter=(data)=>(new RegExp(`.*\${search.value}.*`,'i')).test(data.fileName)")
+        if (sessionsMetricIsPresent)
+            sb.append("&&Math.max(${evaluationTypes.joinToString { "toNum(data['Sessions $it'])" }})>-!emptyHidden()")
         sb.appendln("</script>")
         return sb.toString()
     }
 }
+

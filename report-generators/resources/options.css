@@ -47,7 +47,20 @@
 #redrawBtn:active {
     color: white;
     background-color: gray;
-    border-color: gray;
+    border-color: gray
+}
+
+#emptyRowsBtn {
+    width: 140px;
+}
+
+#emptyRowsBtn:hover {
+    border-color: lightgray;
+}
+
+.active#emptyRowsBtn {
+    color: white;
+    background-color: gray;
 }
 
 .tabulator {
