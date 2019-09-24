@@ -62,7 +62,7 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
         val fullLogsFile = Paths.get(outputDir, "full.log")
         if (!fullLogsFile.exists()) return
 
-        val logsReader = fullLogsFile.toFile().bufferedReader()
+        val logsReader = fullLogsFile.toFile().bufferedReader(bufferSize = 64 * 1024 * 1024)
         val userId = getUserId(logsReader.readLine() ?: return)
         val trainingLogsWriter = getLogsWriter("train", userId)
         val validateLogsWriter = getLogsWriter("validate", userId)
