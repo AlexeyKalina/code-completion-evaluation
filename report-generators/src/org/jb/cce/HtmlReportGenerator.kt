@@ -82,7 +82,7 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln(createToolbar(globalMetrics))
         sb.appendln(getMetricsTable(globalMetrics))
         sb.appendln("<script>let table = new Tabulator('#metrics-table', {layout:'fitColumns',")
-        sb.appendln("pagination:'local', paginationSize:25, paginationSizeSelector:true,")
+        sb.appendln("pagination:'local', paginationSize:25, paginationSizeSelector:true, movableColumns: true,")
         sb.appendln("dataLoaded:function(data){this.getRows()[0].freeze();this.setFilter(myFilter)}});")
         sb.appendln("</script></body></html>")
         val reportPath = Paths.get(baseDir.toString(), globalReportName).toString()
