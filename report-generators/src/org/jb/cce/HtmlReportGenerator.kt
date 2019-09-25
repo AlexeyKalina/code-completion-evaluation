@@ -124,9 +124,11 @@ class HtmlReportGenerator(outputDir: String) {
     private fun setBody(sb: StringBuilder, text: String, sessions: List<List<Session>>) {
         sb.appendln("<body>")
         sb.appendln("<h1>$reportTitle</h1>")
-        sb.appendln("<pre>")
-        sb.appendln(prepareCode(text, sessions))
-        sb.appendln("</pre>")
+        val code = prepareCode(text, sessions)
+        sb.appendln("<div class=\"code-container\"")
+        sb.appendln("<span><pre class=\"code\">${lineNumbers(code.lines().size)}</pre></span>")
+        sb.appendln("<span><pre class=\"code\">$code</pre></span>")
+        sb.appendln("</div>")
         sb.appendln("<script>${script}</script>")
         sb.appendln("</body>")
     }
@@ -162,7 +164,7 @@ class HtmlReportGenerator(outputDir: String) {
             offset = session.offset + session.expectedText.length
         }
         sb.append(StringEscapeUtils.escapeHtml4(text.substring(offset)))
-        return addLineNumbers(sb.toString())
+        return sb.toString()
     }
 
     private fun getDiv(session: Session?, text: String) : String {
@@ -245,17 +247,13 @@ class HtmlReportGenerator(outputDir: String) {
         return sb.toString()
     }
 
-    private fun addLineNumbers(text: String): String {
+    private fun lineNumbers(linesCount: Int): String {
         val sb = StringBuilder()
-        val lines = text.lines()
-        var counter = 0
-        val fullCounterLength = log10((lines.size - 1).toDouble()).toInt()
-        lines.forEach {
-            counter++
+        val fullCounterLength = log10((linesCount - 1).toDouble()).toInt()
+        for (counter in 1..linesCount) {
             sb.append(java.lang.String.join("", Collections.nCopies(fullCounterLength - log10(counter.toDouble()).toInt(), " ")))
             sb.append(counter)
-            sb.append(": ")
-            sb.appendln(it)
+            sb.appendln(": ")
         }
         return sb.toString()
     }
