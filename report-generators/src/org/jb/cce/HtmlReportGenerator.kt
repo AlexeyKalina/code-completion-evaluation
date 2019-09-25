@@ -8,6 +8,8 @@ import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.*
+import kotlin.math.log10
 
 class HtmlReportGenerator(outputDir: String) {
     companion object {
@@ -160,7 +162,7 @@ class HtmlReportGenerator(outputDir: String) {
             offset = session.offset + session.expectedText.length
         }
         sb.append(StringEscapeUtils.escapeHtml4(text.substring(offset)))
-        return sb.toString()
+        return addLineNumbers(sb.toString())
     }
 
     private fun getDiv(session: Session?, text: String) : String {
@@ -240,6 +242,21 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln("} let search = document.getElementById(\"search\");")
         sb.appendln("search.oninput = function () {table.setFilter(\"fileName\", \"like\", search.value)};")
         sb.appendln("</script>")
+        return sb.toString()
+    }
+
+    private fun addLineNumbers(text: String): String {
+        val sb = StringBuilder()
+        val lines = text.lines()
+        var counter = 0
+        val fullCounterLength = log10((lines.size - 1).toDouble()).toInt()
+        lines.forEach {
+            counter++
+            sb.append(java.lang.String.join("", Collections.nCopies(fullCounterLength - log10(counter.toDouble()).toInt(), " ")))
+            sb.append(counter)
+            sb.append(": ")
+            sb.appendln(it)
+        }
         return sb.toString()
     }
 }
