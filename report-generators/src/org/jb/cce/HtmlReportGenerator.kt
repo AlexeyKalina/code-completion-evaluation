@@ -125,8 +125,8 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln("<body>")
         sb.appendln("<h1>$reportTitle</h1>")
         val code = prepareCode(text, sessions)
-        sb.appendln("<div class=\"code-container\"")
-        sb.appendln("<span><pre class=\"code\">${lineNumbers(code.lines().size)}</pre></span>")
+        sb.appendln("<div class=\"code-container\">")
+        sb.appendln("<span><pre class=\"line-numbers\">${lineNumbers(code.lines().size)}</pre></span>")
         sb.appendln("<span><pre class=\"code\">$code</pre></span>")
         sb.appendln("</div>")
         sb.appendln("<script>${script}</script>")
@@ -252,8 +252,7 @@ class HtmlReportGenerator(outputDir: String) {
         val fullCounterLength = log10((linesCount - 1).toDouble()).toInt()
         for (counter in 1..linesCount) {
             sb.append(java.lang.String.join("", Collections.nCopies(fullCounterLength - log10(counter.toDouble()).toInt(), " ")))
-            sb.append(counter)
-            sb.appendln(": ")
+            sb.appendln(counter)
         }
         return sb.toString()
     }
