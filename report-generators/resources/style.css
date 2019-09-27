@@ -23,11 +23,11 @@ body {
 }
 
 .code {
-    display: inline-table;
+    margin-left: 10px;
 }
 
 .code-container {
-    white-space: nowrap;
+    display: flex;
 }
 
 .completion {
