@@ -3,9 +3,9 @@ FileNode
     MethodDeclarationNode (main)
       MethodHeaderNode (main)
       MethodBodyNode
-        MethodCallNode (random)
-        MethodCallNode (test)
-        MethodCallNode (test)
+        MethodCallNode (random) - properties: {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
+        MethodCallNode (test) - properties: {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
+        MethodCallNode (test) - properties: {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
     MethodDeclarationNode (test)
       MethodHeaderNode (test)
       MethodBodyNode

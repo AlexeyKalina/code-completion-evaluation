@@ -4,16 +4,16 @@ FileNode
       MethodHeaderNode (__init__)
       MethodBodyNode
         VariableDeclarationNode (name)
-          VariableAccessNode (self)
-        VariableAccessNode (name)
+          VariableAccessNode (self) - properties: {tokenType=VARIABLE, isArgument=false}
+        VariableAccessNode (name) - properties: {tokenType=VARIABLE, isArgument=false}
         VariableDeclarationNode (age)
-          VariableAccessNode (self)
-        VariableAccessNode (age)
+          VariableAccessNode (self) - properties: {tokenType=VARIABLE, isArgument=false}
+        VariableAccessNode (age) - properties: {tokenType=VARIABLE, isArgument=false}
   VariableDeclarationNode (p1)
-  MethodCallNode (Person)
-  MethodCallNode (repr)
-    VariableAccessNode (p1) - argument
-    VariableAccessNode (name) - argument
-  MethodCallNode (repr)
-    VariableAccessNode (p1) - argument
-    VariableAccessNode (age) - argument
+  MethodCallNode (Person) - properties: {tokenType=METHOD_CALL, isArgument=false}
+  MethodCallNode (repr) - properties: {tokenType=METHOD_CALL, isArgument=false}
+    VariableAccessNode (p1) - argument; properties: {tokenType=VARIABLE, isArgument=true}
+    VariableAccessNode (name) - argument; properties: {tokenType=VARIABLE, isArgument=true}
+  MethodCallNode (repr) - properties: {tokenType=METHOD_CALL, isArgument=false}
+    VariableAccessNode (p1) - argument; properties: {tokenType=VARIABLE, isArgument=true}
+    VariableAccessNode (age) - argument; properties: {tokenType=VARIABLE, isArgument=true}

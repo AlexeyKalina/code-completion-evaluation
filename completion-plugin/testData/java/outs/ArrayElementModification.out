@@ -5,6 +5,6 @@ FileNode
       MethodHeaderNode (main)
       MethodBodyNode
         ArrayAccessNode
-          VariableAccessNode (args) - prefix
-          FieldAccessNode (i) - argument
-        FieldAccessNode (i)
+          VariableAccessNode (args) - prefix; properties: {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}
+          FieldAccessNode (i) - argument; properties: {tokenType=FIELD, isArgument=false, isStatic=false, packageName=}
+        FieldAccessNode (i) - properties: {tokenType=FIELD, isArgument=false, isStatic=false, packageName=}

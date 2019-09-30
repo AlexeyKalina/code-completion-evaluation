@@ -6,7 +6,7 @@ FileNode
       MethodBodyNode
         VariableDeclarationNode (i)
         ArrayAccessNode
-          FieldAccessNode (array) - prefix static
+          FieldAccessNode (array) - prefix; properties: {tokenType=FIELD, isArgument=false, isStatic=true, packageName=}
             TypeReferenceNode (ArrayElementWithFieldPrefix) - prefix
-          VariableAccessNode (i) - argument
-        VariableAccessNode (i)
+          VariableAccessNode (i) - argument; properties: {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}
+        VariableAccessNode (i) - properties: {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}

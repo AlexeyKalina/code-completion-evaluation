@@ -2,8 +2,8 @@ FileNode
   MethodDeclarationNode (greet)
     MethodHeaderNode (greet)
     MethodBodyNode
-      MethodCallNode (write)
-        VariableAccessNode (name) - argument
-  MethodCallNode (greet)
-  MethodCallNode (greet)
-  MethodCallNode (greet)
+      MethodCallNode (write) - properties: {tokenType=METHOD_CALL, isArgument=false}
+        VariableAccessNode (name) - argument; properties: {tokenType=VARIABLE, isArgument=true}
+  MethodCallNode (greet) - properties: {tokenType=METHOD_CALL, isArgument=false}
+  MethodCallNode (greet) - properties: {tokenType=METHOD_CALL, isArgument=false}
+  MethodCallNode (greet) - properties: {tokenType=METHOD_CALL, isArgument=false}

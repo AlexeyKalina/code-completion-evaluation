@@ -1,7 +1,7 @@
 FileNode
-  VariableAccessNode (valid)
-  MethodCallNode (echo)
-  VariableAccessNode (count)
-  VariableAccessNode (count)
-  MethodCallNode (break)
-  MethodCallNode (((count++)))
+  VariableAccessNode (valid) - properties: {tokenType=VARIABLE}
+  MethodCallNode (echo) - properties: {tokenType=METHOD_CALL}
+  VariableAccessNode (count) - properties: {tokenType=VARIABLE}
+  VariableAccessNode (count) - properties: {tokenType=VARIABLE}
+  MethodCallNode (break) - properties: {tokenType=METHOD_CALL}
+  MethodCallNode (((count++))) - properties: {tokenType=METHOD_CALL}

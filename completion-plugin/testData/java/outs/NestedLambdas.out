@@ -3,14 +3,14 @@ FileNode
     MethodDeclarationNode (main)
       MethodHeaderNode (main)
       MethodBodyNode
-        MethodCallNode (method) - static
+        MethodCallNode (method) - properties: {tokenType=METHOD_CALL, isArgument=false, isStatic=true, packageName=}
           LambdaExpressionNode - argument
             LambdaExpressionNode
-              MethodCallNode (toString)
-                VariableAccessNode (x) - prefix
+              MethodCallNode (toString) - properties: {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=<unknown package>}
+                VariableAccessNode (x) - prefix; properties: {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}
     MethodDeclarationNode (method)
       MethodHeaderNode (method)
       MethodBodyNode
-        MethodCallNode (consume)
-          VariableAccessNode (consumer) - prefix
+        MethodCallNode (consume) - properties: {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
+          VariableAccessNode (consumer) - prefix; properties: {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}
     ClassDeclarationNode (Consumer)

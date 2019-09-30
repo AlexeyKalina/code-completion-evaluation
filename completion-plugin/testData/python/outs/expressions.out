@@ -2,11 +2,11 @@ FileNode
   VariableDeclarationNode (prices)
   VariableDeclarationNode (my_purchase)
   VariableDeclarationNode (grocery_bill)
-  MethodCallNode (sum)
-    VariableAccessNode (prices) - argument
-    VariableAccessNode (fruit) - argument
-    VariableAccessNode (my_purchase) - argument
-    VariableAccessNode (fruit) - argument
-    VariableAccessNode (my_purchase) - argument
-  MethodCallNode (repr)
-    VariableAccessNode (grocery_bill) - argument
+  MethodCallNode (sum) - properties: {tokenType=METHOD_CALL, isArgument=false}
+    VariableAccessNode (prices) - argument; properties: {tokenType=VARIABLE, isArgument=true}
+    VariableAccessNode (fruit) - argument; properties: {tokenType=VARIABLE, isArgument=true}
+    VariableAccessNode (my_purchase) - argument; properties: {tokenType=VARIABLE, isArgument=true}
+    VariableAccessNode (fruit) - argument; properties: {tokenType=VARIABLE, isArgument=true}
+    VariableAccessNode (my_purchase) - argument; properties: {tokenType=VARIABLE, isArgument=true}
+  MethodCallNode (repr) - properties: {tokenType=METHOD_CALL, isArgument=false}
+    VariableAccessNode (grocery_bill) - argument; properties: {tokenType=VARIABLE, isArgument=true}
