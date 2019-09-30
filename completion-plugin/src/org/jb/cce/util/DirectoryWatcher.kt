@@ -67,7 +67,7 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
         val trainSize = (sessionIds.size * trainingPercentage.toDouble() / 100.0).toInt()
         val trainSessionIds = sessionIds.take(trainSize).toSet()
 
-        fullLogsFile.toFile().bufferedReader(bufferSize = 4 * 1024 * 1024).use {
+        fullLogsFile.toFile().bufferedReader(bufferSize = 1024 * 1024).use {
             val firstLine = it.readLine() ?: return
             val userId = getUserId(firstLine)
             val trainingLogsWriter = getLogsWriter("train", userId)
