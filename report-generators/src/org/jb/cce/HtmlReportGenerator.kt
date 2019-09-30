@@ -249,11 +249,8 @@ class HtmlReportGenerator(outputDir: String) {
 
     private fun lineNumbers(linesCount: Int): String {
         val sb = StringBuilder()
-        val fullCounterLength = log10((linesCount - 1).toDouble()).toInt()
-        for (counter in 1..linesCount) {
-            sb.append(java.lang.String.join("", Collections.nCopies(fullCounterLength - log10(counter.toDouble()).toInt(), " ")))
-            sb.appendln(counter)
-        }
+        val fullCounterLength = linesCount.toString().length
+        for (counter in 1..linesCount) sb.appendln(counter.toString().padStart(fullCounterLength))
         return sb.toString()
     }
 }
