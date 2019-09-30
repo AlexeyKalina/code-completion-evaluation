@@ -10,16 +10,14 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 
 class TypeFilterConfiguration : EvaluationFilterConfiguration {
-    override val id: String = "type"
+    override val id: String = "statementTypes"
     override val description: String = "Filter out tokens by statement type"
 
     override fun getConfigurable(): EvaluationFilterConfiguration.Configurable = TypeConfigurable
 
     override fun supportedLanguages(): Set<Language> = Language.values().toSet()
 
-    override fun buildFromJson(json: Any): EvaluationFilter {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun buildFromJson(json: Any): EvaluationFilter = TypeFilter((json as List<String>).map { TypeFilter.FilterValue.valueOf(it) })
 
     private object TypeConfigurable : EvaluationFilterConfiguration.Configurable {
         private val types = mutableListOf(TypeFilter.FilterValue.METHOD_CALLS)

@@ -18,9 +18,7 @@ class StaticFilterConfiguration: EvaluationFilterConfiguration {
 
     override fun supportedLanguages(): Set<Language> = setOf(Language.JAVA)
 
-    override fun buildFromJson(json: Any): EvaluationFilter {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun buildFromJson(json: Any): EvaluationFilter = StaticFilter(json as Boolean)
 
     private object StaticConfigurable : EvaluationFilterConfiguration.Configurable {
         private enum class StaticFilter {

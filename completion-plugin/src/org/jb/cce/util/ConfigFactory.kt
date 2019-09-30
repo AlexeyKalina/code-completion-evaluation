@@ -31,18 +31,20 @@ object ConfigFactory {
 
         val map = gson.fromJson(FileReader(configFile), HashMap<String, Any>().javaClass)
         val strategy = map["strategy"] as Map<String, Any>
-        val filters = strategy["filters"] as Map<String, Any>
         val evaluationFilters = mutableListOf<EvaluationFilter>()
-        for ((id, description) in filters) {
-            val configuration = EvaluationFilterManager.getConfigurationById(id)
-                ?: throw IllegalStateException("Unexpected filter: $id")
-//            assert(configuration.supportedLanguages().contains("language from config.json")) { "filter $id is not supported for this lagnuages" }
-            // TODO: fix it
-            evaluationFilters.add(configuration.buildFromJson(description))
+        val languageName = map["language"] as String
+        val completeAllTokens = strategy["completeAllTokens"] as Boolean
+        if (!completeAllTokens) {
+            val filters = strategy["filters"] as Map<String, Any>
+            for ((id, description) in filters) {
+                val configuration = EvaluationFilterManager.getConfigurationById(id)
+                        ?: throw IllegalStateException("Unexpected filter: $id")
+                assert(configuration.supportedLanguages().any { it.displayName == languageName }) { "filter $id is not supported for this language" }
+                evaluationFilters.add(configuration.buildFromJson(description))
+            }
         }
-        return Config(map["projectPath"] as String, map["listOfFiles"] as List<String>, map["language"] as String,
-                CompletionStrategy(getPrefix(strategy), CompletionContext.valueOf(strategy["context"] as String),
-                        map["completeAllTokens"] as Boolean, evaluationFilters),
+        return Config(map["projectPath"] as String, map["listOfFiles"] as List<String>, languageName,
+                CompletionStrategy(getPrefix(strategy), CompletionContext.valueOf(strategy["context"] as String), completeAllTokens, evaluationFilters),
                 CompletionType.valueOf(map["completionType"] as String), map["outputDir"] as String, map["interpretActions"] as Boolean,
                 map["saveLogs"] as Boolean, (map["logsTrainingPercentage"] as Double).toInt())
     }

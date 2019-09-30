@@ -15,9 +15,7 @@ class ArgumentFilterConfiguration: EvaluationFilterConfiguration {
 
     override fun supportedLanguages(): Set<Language> = setOf(Language.JAVA, Language.PYTHON)
 
-    override fun buildFromJson(json: Any): EvaluationFilter {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun buildFromJson(json: Any): EvaluationFilter = ArgumentFilter(json as Boolean)
 
     private object ArgumentConfigurable : EvaluationFilterConfiguration.Configurable {
         private enum class ArgumentFilter {

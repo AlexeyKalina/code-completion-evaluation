@@ -16,9 +16,7 @@ class PackagePrefixFilterConfiguration: EvaluationFilterConfiguration {
 
     override fun supportedLanguages(): Set<Language> = setOf(Language.JAVA)
 
-    override fun buildFromJson(json: Any): EvaluationFilter {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
+    override fun buildFromJson(json: Any): EvaluationFilter = PackagePrefixFilter(json as String)
 
     private object PackagePrefixConfigurable : EvaluationFilterConfiguration.Configurable {
         private var packagePrefix = ""
