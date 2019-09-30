@@ -8,6 +8,8 @@ import java.io.*
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.*
+import kotlin.math.log10
 
 class HtmlReportGenerator(outputDir: String) {
     companion object {
@@ -122,9 +124,11 @@ class HtmlReportGenerator(outputDir: String) {
     private fun setBody(sb: StringBuilder, text: String, sessions: List<List<Session>>) {
         sb.appendln("<body>")
         sb.appendln("<h1>$reportTitle</h1>")
-        sb.appendln("<pre>")
-        sb.appendln(prepareCode(text, sessions))
-        sb.appendln("</pre>")
+        val code = prepareCode(text, sessions)
+        sb.appendln("<div class=\"code-container\">")
+        sb.appendln("<div><pre class=\"line-numbers\">${lineNumbers(code.lines().size)}</pre></div>")
+        sb.appendln("<div><pre class=\"code\">$code</pre></div>")
+        sb.appendln("</div>")
         sb.appendln("<script>${script}</script>")
         sb.appendln("</body>")
     }
@@ -238,6 +242,13 @@ class HtmlReportGenerator(outputDir: String) {
         sb.appendln("} let search = document.getElementById(\"search\");")
         sb.appendln("search.oninput = function () {table.setFilter(\"fileName\", \"like\", search.value)};")
         sb.appendln("</script>")
+        return sb.toString()
+    }
+
+    private fun lineNumbers(linesCount: Int): String {
+        val sb = StringBuilder()
+        val fullCounterLength = linesCount.toString().length
+        for (counter in 1..linesCount) sb.appendln(counter.toString().padStart(fullCounterLength))
         return sb.toString()
     }
 }
