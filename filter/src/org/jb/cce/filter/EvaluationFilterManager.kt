@@ -19,6 +19,9 @@ object EvaluationFilterManager {
 
   fun getAllFilters(): List<EvaluationFilterConfiguration> = id2Configuration.values.toList()
 
+  fun getFiltersByLanguage(languageName: String): List<EvaluationFilterConfiguration> =
+          id2Configuration.values.filter { it.supportedLanguages().any { it.displayName == languageName } }
+
   private fun register(configuration: EvaluationFilterConfiguration) {
     val old = id2Configuration[configuration.id]
     if (old != null) {

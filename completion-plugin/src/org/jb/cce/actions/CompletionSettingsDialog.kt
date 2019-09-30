@@ -80,6 +80,7 @@ class CompletionSettingsDialog(private val project: Project, private val languag
         completeAllTokensCheckBox.addItemListener {
             completeAllTokens = it.stateChange == ItemEvent.SELECTED
             setPanelEnabled(filtersPanel, it.stateChange != ItemEvent.SELECTED)
+            setFiltersByLanguage()
             if (!fullSettings) for (contextButton in contextButtons) {
                 if (contextButton.text == previousContextText) contextButton.isEnabled = it.stateChange == ItemEvent.SELECTED
                 else if (it.stateChange != ItemEvent.SELECTED) {
@@ -118,6 +119,7 @@ class CompletionSettingsDialog(private val project: Project, private val languag
                 .sortedByDescending { it.count }.toTypedArray()
         language = languages[0].languageName
         setAllTokens()
+        setFiltersByLanguage()
         if (language2files.size == 1) {
             languagePanel.add(JLabel(languages.single().toString()))
         } else {
@@ -125,14 +127,22 @@ class CompletionSettingsDialog(private val project: Project, private val languag
             languageComboBox.selectedItem = languages.first()
             languageComboBox.addItemListener { event ->
                 if (event.stateChange == ItemEvent.SELECTED) {
-                    // TODO: disable unsupported filters for selected language
                     language = (event.item as LanguageItem).languageName
                     setAllTokens()
+                    setFiltersByLanguage()
                 }
             }
             languagePanel.add(languageComboBox)
         }
         return languagePanel
+    }
+
+    private fun setFiltersByLanguage() {
+        EvaluationFilterManager.getAllFilters().forEach {
+            if (it.supportedLanguages().all { it.displayName != language })
+                setPanelEnabled(it.getConfigurable().panel, false)
+            else if (!completeAllTokens) setPanelEnabled(it.getConfigurable().panel, true)
+        }
     }
 
     private fun setAllTokens() {
