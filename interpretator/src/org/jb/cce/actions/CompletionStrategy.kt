@@ -1,9 +1,11 @@
 package org.jb.cce.actions
 
+import org.jb.cce.filter.EvaluationFilter
+
 data class CompletionStrategy(val prefix: CompletionPrefix,
                               val context: CompletionContext,
                               val completeAllTokens: Boolean,
-                              val filters: Filters)
+                              val filters: List<EvaluationFilter>)
 
 sealed class CompletionPrefix(val emulateTyping: Boolean) {
     object NoPrefix : CompletionPrefix(false)

@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.vfs.VirtualFile
-import org.jb.cce.filters.FiltersFactory
+import org.jb.cce.filter.EvaluationFilterManager
 import org.jb.cce.uast.Language
 import java.awt.FlowLayout
 import java.awt.event.ItemEvent
@@ -38,15 +38,13 @@ class CompletionSettingsDialog(private val project: Project, private val languag
     var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix
     var completeAllTokens = false
 
-    fun getFilters() = filtersFactory.getFilters()
-
     var interpretActionsAfterGeneration = true
 
     init {
         init()
         title = "Completion evaluation settings"
     }
-    private lateinit var filtersFactory: FiltersFactory
+    private lateinit var filtersPanel: JPanel
     private lateinit var completeAllTokensCheckBox: JCheckBox
     private lateinit var contextButtons: List<JRadioButton>
 
@@ -54,16 +52,16 @@ class CompletionSettingsDialog(private val project: Project, private val languag
         val dialogPanel = JPanel()
         dialogPanel.layout = BoxLayout(dialogPanel, BoxLayout.Y_AXIS)
 
-        filtersFactory = FiltersFactory(project)
         createContextButtons()
         createCompleteAllTokensCheckBox()
+        createFiltersPanel()
 
         if (fullSettings) dialogPanel.add(createLanguageChooser())
         dialogPanel.add(createTypePanel())
         dialogPanel.add(createContextPanel())
         dialogPanel.add(createPrefixPanel())
         dialogPanel.add(createAllTokensPanel())
-        dialogPanel.add(filtersFactory.panel)
+        dialogPanel.add(filtersPanel)
         if (fullSettings) dialogPanel.add(createInterpretActionsPanel())
         if (fullSettings) dialogPanel.add(createOutputDirChooser())
         if (fullSettings) dialogPanel.add(createLogsPanel())
@@ -71,11 +69,17 @@ class CompletionSettingsDialog(private val project: Project, private val languag
         return dialogPanel
     }
 
+    private fun createFiltersPanel() {
+        filtersPanel = JPanel()
+        filtersPanel.layout = BoxLayout(filtersPanel, BoxLayout.Y_AXIS)
+        EvaluationFilterManager.getAllFilters().forEach { filtersPanel.add(it.getConfigurable().panel) }
+    }
+
     private fun createCompleteAllTokensCheckBox() {
         completeAllTokensCheckBox = JCheckBox()
         completeAllTokensCheckBox.addItemListener {
             completeAllTokens = it.stateChange == ItemEvent.SELECTED
-            setPanelEnabled(filtersFactory.panel, it.stateChange != ItemEvent.SELECTED)
+            setPanelEnabled(filtersPanel, it.stateChange != ItemEvent.SELECTED)
             if (!fullSettings) for (contextButton in contextButtons) {
                 if (contextButton.text == previousContextText) contextButton.isEnabled = it.stateChange == ItemEvent.SELECTED
                 else if (it.stateChange != ItemEvent.SELECTED) {
@@ -121,6 +125,7 @@ class CompletionSettingsDialog(private val project: Project, private val languag
             languageComboBox.selectedItem = languages.first()
             languageComboBox.addItemListener { event ->
                 if (event.stateChange == ItemEvent.SELECTED) {
+                    // TODO: disable unsupported filters for selected language
                     language = (event.item as LanguageItem).languageName
                     setAllTokens()
                 }
@@ -135,7 +140,7 @@ class CompletionSettingsDialog(private val project: Project, private val languag
             completeAllTokens = true
             completeAllTokensCheckBox.isSelected = true
             completeAllTokensCheckBox.isEnabled = false
-            setPanelEnabled(filtersFactory.panel, false)
+            setPanelEnabled(filtersPanel, false)
         } else {
             completeAllTokensCheckBox.isEnabled = true
         }

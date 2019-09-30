@@ -2,7 +2,12 @@ package org.jb.cce.util
 
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonPrimitive
-import org.jb.cce.actions.*
+import org.jb.cce.actions.CompletionContext
+import org.jb.cce.actions.CompletionPrefix
+import org.jb.cce.actions.CompletionStrategy
+import org.jb.cce.actions.CompletionType
+import org.jb.cce.filter.EvaluationFilter
+import org.jb.cce.filter.EvaluationFilterManager
 import org.jb.cce.uast.Language
 import java.io.File
 import java.io.FileReader
@@ -14,7 +19,7 @@ object ConfigFactory {
     private val gson = GsonBuilder().setPrettyPrinting().create()
 
     private val defaultConfig = Config("", listOf(""), Language.JAVA.displayName,
-            CompletionStrategy(CompletionPrefix.NoPrefix, CompletionContext.ALL, false, Filters(listOf(TypeFilter.METHOD_CALLS), ArgumentFilter.ALL, StaticFilter.ALL, "")),
+            CompletionStrategy(CompletionPrefix.NoPrefix, CompletionContext.ALL, false, emptyList()),
             CompletionType.BASIC, "", interpretActions = false, saveLogs = true, logsTrainingPercentage = 70)
 
     fun load(path: String): Config {
@@ -27,11 +32,17 @@ object ConfigFactory {
         val map = gson.fromJson(FileReader(configFile), HashMap<String, Any>().javaClass)
         val strategy = map["strategy"] as Map<String, Any>
         val filters = strategy["filters"] as Map<String, Any>
+        val evaluationFilters = mutableListOf<EvaluationFilter>()
+        for ((id, description) in filters) {
+            val configuration = EvaluationFilterManager.getConfigurationById(id)
+                ?: throw IllegalStateException("Unexpected filter: $id")
+//            assert(configuration.supportedLanguages().contains("language from config.json")) { "filter $id is not supported for this lagnuages" }
+            // TODO: fix it
+            evaluationFilters.add(configuration.buildFromJson(description))
+        }
         return Config(map["projectPath"] as String, map["listOfFiles"] as List<String>, map["language"] as String,
                 CompletionStrategy(getPrefix(strategy), CompletionContext.valueOf(strategy["context"] as String),
-                        map["completeAllTokens"] as Boolean, Filters((filters["typeFilters"] as List<String>).map { TypeFilter.valueOf(it) },
-                        ArgumentFilter.valueOf(filters["argumentFilter"] as String), StaticFilter.valueOf(filters["staticFilter"] as String),
-                        filters["packagePrefix"] as String)),
+                        map["completeAllTokens"] as Boolean, evaluationFilters),
                 CompletionType.valueOf(map["completionType"] as String), map["outputDir"] as String, map["interpretActions"] as Boolean,
                 map["saveLogs"] as Boolean, (map["logsTrainingPercentage"] as Double).toInt())
     }

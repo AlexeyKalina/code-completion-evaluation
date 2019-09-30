@@ -2,8 +2,8 @@ package org.jb.cce.uast.statements.expressions.references
 
 import org.jb.cce.uast.Completable
 import org.jb.cce.uast.CompositeNode
-import org.jb.cce.uast.NodeProperties
 import org.jb.cce.uast.UnifiedAstVisitor
+import org.jb.cce.uast.NodeProperties
 
 abstract class ClassMemberAccessNode(name: String,
                              offset: Int,

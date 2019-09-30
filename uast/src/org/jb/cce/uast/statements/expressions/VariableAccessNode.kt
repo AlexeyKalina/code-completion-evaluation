@@ -1,9 +1,9 @@
 package org.jb.cce.uast.statements.expressions
 
 import org.jb.cce.uast.Completable
-import org.jb.cce.uast.NodeProperties
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.UnifiedAstVisitor
+import org.jb.cce.uast.NodeProperties
 
 class VariableAccessNode(name: String,
                          offset: Int,

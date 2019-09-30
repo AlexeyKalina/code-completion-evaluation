@@ -5,6 +5,7 @@ import com.jetbrains.python.psi.impl.PyReferenceExpressionImpl
 import org.jb.cce.psi.exceptions.PsiConverterException
 import org.jb.cce.uast.*
 import org.jb.cce.uast.exceptions.UnifiedAstException
+import org.jb.cce.uast.NodeProperties
 import org.jb.cce.uast.statements.declarations.*
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 import org.jb.cce.uast.statements.expressions.NamedNode
@@ -43,7 +44,7 @@ class PsiPythonVisitor(private val path: String, private val text: String): PyRe
             return
         }
         val methodCall = visitReferenceExpression(callee) { name, offset, length ->
-            MethodCallNode(name, offset, length, NodeProperties(TypeProperty.METHOD_CALL, isArgument, false, ""))
+            MethodCallNode(name, offset, length, getNodeProperties(TypeProperty.METHOD_CALL))
         }
         stackOfNodes.addLast(methodCall)
         val prevValue = isArgument
@@ -58,7 +59,7 @@ class PsiPythonVisitor(private val path: String, private val text: String): PyRe
             val accessNode = VariableAccessNode(node.nameElement?.text ?: throw PsiConverterException("Empty name"),
                     node.nameElement?.startOffset ?: throw PsiConverterException("Empty offset"),
                     node.nameElement?.textLength ?: throw PsiConverterException("Empty name length"),
-                    NodeProperties(TypeProperty.VARIABLE, isArgument, false, ""))
+                    getNodeProperties(TypeProperty.VARIABLE))
             addToParent(accessNode)
         } else {
             val declarationNode = VariableDeclarationNode(node.nameElement?.text ?: throw PsiConverterException("Empty name"),
@@ -79,7 +80,7 @@ class PsiPythonVisitor(private val path: String, private val text: String): PyRe
     override fun visitPyElement(node: PyElement) {
         if (node is PyReferenceExpression) {
             visitReferenceExpression(node) {
-                name, offset, length -> VariableAccessNode(name, offset, length, NodeProperties(TypeProperty.VARIABLE, isArgument, false, ""))
+                name, offset, length -> VariableAccessNode(name, offset, length, getNodeProperties(TypeProperty.VARIABLE))
             }
         }
         super.visitPyElement(node)
@@ -134,5 +135,12 @@ class PsiPythonVisitor(private val path: String, private val text: String): PyRe
         val count = stackOfLevelDeclarationCounts.removeLast()
         for (i in 1..count) stackOfDeclarations.removeLast()
         stackOfNodes.removeLast()
+    }
+
+    private fun getNodeProperties(tokenType: TypeProperty): NodeProperties {
+        val properties = NodeProperties()
+        properties.tokenType = tokenType
+        properties.isArgument = isArgument
+        return properties
     }
 }

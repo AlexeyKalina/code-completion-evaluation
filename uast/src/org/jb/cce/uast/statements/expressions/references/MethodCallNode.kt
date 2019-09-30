@@ -1,9 +1,9 @@
 package org.jb.cce.uast.statements.expressions.references
 
-import org.jb.cce.uast.NodeProperties
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.UnifiedAstVisitor
 import org.jb.cce.uast.exceptions.UnifiedAstException
+import org.jb.cce.uast.NodeProperties
 import org.jb.cce.uast.statements.declarations.VariableDeclarationNode
 import org.jb.cce.uast.statements.expressions.ExpressionNode
 

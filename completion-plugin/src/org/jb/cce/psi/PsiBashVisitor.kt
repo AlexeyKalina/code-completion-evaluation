@@ -8,6 +8,7 @@ import com.intellij.sh.psi.impl.ShLazyBlockImpl
 import org.jb.cce.psi.exceptions.PsiConverterException
 import org.jb.cce.uast.*
 import org.jb.cce.uast.exceptions.UnifiedAstException
+import org.jb.cce.uast.NodeProperties
 import org.jb.cce.uast.statements.declarations.MethodDeclarationNode
 import org.jb.cce.uast.statements.declarations.MethodHeaderNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
@@ -36,7 +37,7 @@ class PsiBashVisitor(private val path: String, private val text: String): ShVisi
     override fun visitGenericCommandDirective(node: ShGenericCommandDirective) {
         if (node.text.contains('$')) return super.visitGenericCommandDirective(node)
 
-        val methodCall = MethodCallNode(node.text, node.textOffset, node.textLength, NodeProperties(TypeProperty.METHOD_CALL, false, false, ""))
+        val methodCall = MethodCallNode(node.text, node.textOffset, node.textLength, getNodeProperties(TypeProperty.METHOD_CALL))
         addToParent(methodCall)
 
         stackOfNodes.addLast(methodCall)
@@ -46,7 +47,7 @@ class PsiBashVisitor(private val path: String, private val text: String): ShVisi
 
     override fun visitVariable(o: ShVariable) {
         val text = o.text
-        val properties = NodeProperties(TypeProperty.VARIABLE, false, false, "")
+        val properties = getNodeProperties(TypeProperty.VARIABLE)
         val variableAccess = if (text.startsWith('$'))
             VariableAccessNode(o.text.substring(1), o.textOffset + 1, o.textLength - 1, properties)
             else VariableAccessNode(o.text, o.textOffset, o.textLength, properties)
@@ -79,5 +80,11 @@ class PsiBashVisitor(private val path: String, private val text: String): ShVisi
         val parentNode = stackOfNodes.last
         if (parentNode is CompositeNode) parentNode.addChild(node)
         else throw UnifiedAstException("Unexpected parent $parentNode for node $node")
+    }
+
+    private fun getNodeProperties(tokenType: TypeProperty): NodeProperties {
+        val properties = NodeProperties()
+        properties.tokenType = tokenType
+        return properties
     }
 }

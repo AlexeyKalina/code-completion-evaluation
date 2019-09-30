@@ -59,6 +59,7 @@ class ReportGeneration(private val reportGenerator: HtmlReportGenerator) {
                 val metricsEvaluation = evaluationType2evaluator[file.evaluationType]!!.evaluate(sessionsEvaluation.sessions)
                 fileEvaluations.add(FileEvaluationInfo(sessionsEvaluation, metricsEvaluation, file.evaluationType))
             }
+            // TODO: filter out some sessions
             reportGenerator.generateFileReport(fileEvaluations)
         }
         for (errorsStorage in errorStorages)
