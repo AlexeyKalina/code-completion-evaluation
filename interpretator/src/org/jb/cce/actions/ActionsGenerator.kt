@@ -1,8 +1,8 @@
 package org.jb.cce.actions
 
+import org.jb.cce.FileTextUtil.computeChecksum
 import org.jb.cce.uast.TextFragmentNode
 import org.jb.cce.visitors.*
-import java.security.MessageDigest
 
 class ActionsGenerator(val strategy: CompletionStrategy) {
 
@@ -28,10 +28,4 @@ class ActionsGenerator(val strategy: CompletionStrategy) {
         }
         return FileActions(file.path, computeChecksum(file.text), actions.count { it is FinishSession }, actions)
     }
-}
-
-fun computeChecksum(text: String): String {
-    val sha = MessageDigest.getInstance("SHA-256")
-    val digest = sha.digest(text.toByteArray())
-    return digest.fold("", { str, it -> str + "%02x".format(it) })
 }

@@ -1,7 +1,12 @@
 package org.jb.cce
 
+import org.jb.cce.FileTextUtil.computeChecksum
+import org.jb.cce.FileTextUtil.getDiff
 import org.jb.cce.actions.*
 import org.jb.cce.exception.UnexpectedActionException
+import java.io.File
+import java.io.FileReader
+import java.io.FileWriter
 import java.lang.IllegalStateException
 import java.nio.file.Paths
 
@@ -57,6 +62,13 @@ class Interpreter(private val invoker: CompletionInvoker,
             }
         }
 
+        val resultText = invoker.getText()
+        if (text != resultText) {
+            invoker.deleteRange(0, resultText.length)
+            invoker.printText(text)
+            if (needToClose) invoker.closeFile(filePath)
+            throw IllegalStateException("Text before and after interpretation doesn't match. Diff:\n${getDiff(text, resultText)}")
+        }
         if (needToClose) invoker.closeFile(filePath)
         handler.onFileProcessed(filePath)
         return sessions

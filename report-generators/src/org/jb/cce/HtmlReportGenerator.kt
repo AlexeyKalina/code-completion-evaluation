@@ -1,15 +1,14 @@
 package org.jb.cce
 
-import org.apache.commons.text.StringEscapeUtils
+import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.metrics.MetricInfo
-import java.io.*
+import java.io.File
+import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.*
-import kotlin.math.log10
 
 class HtmlReportGenerator(outputDir: String) {
     companion object {
@@ -61,7 +60,7 @@ class HtmlReportGenerator(outputDir: String) {
             reportTitle = "Error on actions generation for file <b>${filePath.fileName}</b>"
             sb.appendln("<html><head><title>$reportTitle</title></head>")
             sb.appendln("<body><h1>$reportTitle</h1><h2>Message</h2>")
-            sb.appendln("<pre><code>${fileError.message}</code></pre>")
+            sb.appendln("<pre><code>${escapeHtml4(fileError.message)}</code></pre>")
             sb.appendln("<h2>StackTrace <button id=\"copyBtn\">&#128203</button></h2>")
             sb.appendln("<pre><code id=\"stackTrace\">${fileError.stackTrace}</code></pre>")
             sb.appendln("<script src=\"../res/error.js\"></script></body></html>")
@@ -136,7 +135,7 @@ class HtmlReportGenerator(outputDir: String) {
     private fun getHead(resourcePath: String) =
             """<head><title>$reportTitle</title>
                 <script type="text/javascript" src="$resourcePath"></script>
-                <style>${style}</style></head>"""
+                <style>$style</style></head>"""
 
     private fun prepareCode(text: String, _sessions: List<List<Session>>) : String {
         if (_sessions.isEmpty() || _sessions.all { it.isEmpty() }) return text
@@ -150,7 +149,7 @@ class HtmlReportGenerator(outputDir: String) {
 
         for (sessionGroup in sessionGroups) {
             val session = sessionGroup.filterNotNull().first()
-            val commonText = StringEscapeUtils.escapeHtml4(text.substring(offset, session.offset))
+            val commonText = escapeHtml4(text.substring(offset, session.offset))
             sb.append(commonText)
 
             val center = session.expectedText.length / sessions.size
@@ -163,7 +162,7 @@ class HtmlReportGenerator(outputDir: String) {
             sb.append(getDiv(sessionGroup.last(), session.expectedText.substring(shift)))
             offset = session.offset + session.expectedText.length
         }
-        sb.append(StringEscapeUtils.escapeHtml4(text.substring(offset)))
+        sb.append(escapeHtml4(text.substring(offset)))
         return sb.toString()
     }
 
