@@ -62,12 +62,14 @@ class Interpreter(private val invoker: CompletionInvoker,
             }
         }
 
-        if (needToClose) invoker.closeFile(filePath)
-        val resultText = FileReader(filePath).use { it.readText() }
+        val resultText = invoker.getText()
         if (text != resultText) {
-            FileWriter(filePath).use { it.write(text) }
+            invoker.deleteRange(0, resultText.length)
+            invoker.printText(text)
+            if (needToClose) invoker.closeFile(filePath)
             throw IllegalStateException("Text before and after interpretation doesn't match. Diff:\n${getDiff(text, resultText)}")
         }
+        if (needToClose) invoker.closeFile(filePath)
         handler.onFileProcessed(filePath)
         return sessions
     }

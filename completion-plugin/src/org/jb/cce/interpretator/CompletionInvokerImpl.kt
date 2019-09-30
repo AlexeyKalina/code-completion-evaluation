@@ -113,6 +113,8 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
         return FileEditorManager.getInstance(project).openFiles.any { it.path == file }
     }
 
+    override fun getText(): String = editor?.document?.text ?: throw IllegalStateException("No open editor")
+
     private fun positionToString(offset: Int): String {
         val logicalPosition = editor!!.offsetToLogicalPosition(offset)
         return "Offset: $offset, Line: ${logicalPosition.line}, Column: ${logicalPosition.column}."

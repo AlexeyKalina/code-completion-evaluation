@@ -46,6 +46,10 @@ class DelegationCompletionInvoker(private val invoker: CompletionInvoker, projec
         invoker.isOpen(file)
     }
 
+    override fun getText(): String = readAction {
+        invoker.getText()
+    }
+
     private fun <T> readAction(runnable: () -> T): T {
         var result: T? = null
         ApplicationManager.getApplication().invokeAndWait {

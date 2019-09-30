@@ -9,4 +9,5 @@ interface CompletionInvoker {
     fun openFile(file: String): String
     fun closeFile(file: String)
     fun isOpen(file: String): Boolean
+    fun getText(): String
 }
