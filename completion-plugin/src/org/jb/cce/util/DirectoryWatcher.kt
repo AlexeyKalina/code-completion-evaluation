@@ -2,7 +2,6 @@ package org.jb.cce.util
 
 import com.intellij.util.io.*
 import java.io.BufferedWriter
-import java.io.FileReader
 import java.io.FileWriter
 import java.nio.file.*
 import java.nio.file.StandardWatchEventKinds.ENTRY_CREATE
@@ -16,6 +15,7 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
     private val watcher: WatchService = FileSystems.getDefault().newWatchService()
     private val formatter = SimpleDateFormat("dd_MM_yyyy")
     private val watchKey: WatchKey
+    private val sessionIds = linkedSetOf<String>()
 
     init {
         this.watchKey = Paths.get(logsDir).register(watcher, ENTRY_CREATE)
@@ -26,16 +26,19 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
         executor.submit(object : Runnable {
             override fun run() {
                 try {
-                    FileWriter(Paths.get(outputDir, "full.log").toString()).use {
+                    FileWriter(Paths.get(outputDir, "full.log").toString()).use { writer ->
                         while (true) {
                             val key = watcher.take()
 
                             for (event in key.pollEvents()) {
-                                val name = event.context()
-                                val log = Paths.get(logsDir, name.toString())
-                                if (log.exists()) {
-                                    it.append(log.readText())
-                                    log.delete()
+                                Paths.get(logsDir, event.context().toString()).run {
+                                    if (exists()) {
+                                        with(readText()) {
+                                            sessionIds.addAll(split("\n").filter { it.isNotBlank() }.map { getSessionId(it) })
+                                            writer.append(this)
+                                        }
+                                        delete()
+                                    }
                                 }
                             }
 
@@ -61,20 +64,21 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
     private fun saveLogs() {
         val fullLogsFile = Paths.get(outputDir, "full.log")
         if (!fullLogsFile.exists()) return
+        val trainSize = (sessionIds.size * trainingPercentage.toDouble() / 100.0).toInt()
+        val trainSessionIds = sessionIds.take(trainSize).toSet()
 
-        val logsReader = fullLogsFile.toFile().bufferedReader(bufferSize = 64 * 1024 * 1024)
-        val userId = getUserId(logsReader.readLine() ?: return)
-        val trainingLogsWriter = getLogsWriter("train", userId)
-        val validateLogsWriter = getLogsWriter("validate", userId)
+        fullLogsFile.toFile().bufferedReader(bufferSize = 4 * 1024 * 1024).use {
+            val firstLine = it.readLine() ?: return
+            val userId = getUserId(firstLine)
+            val trainingLogsWriter = getLogsWriter("train", userId)
+            val validateLogsWriter = getLogsWriter("validate", userId)
+            trainingLogsWriter.appendln(firstLine)
 
-        val split = mutableMapOf<String, Boolean>()
-        for (session in logsReader.lines()) {
-            val sessionId = getSessionId(session)
-            if (sessionId !in split) split[sessionId] = (0..99).random() < trainingPercentage
-            (if (split[sessionId]!!) trainingLogsWriter else validateLogsWriter).appendln(session)
+            for (line in it.lines())
+                (if (trainSessionIds.contains(getSessionId(line)))
+                    trainingLogsWriter else validateLogsWriter).appendln(line)
         }
-        logsReader.close()
-        saveSessionsInfo(split.size, split.count { it.value })
+        saveSessionsInfo(sessionIds.size, trainSize)
         fullLogsFile.delete()
     }
 
