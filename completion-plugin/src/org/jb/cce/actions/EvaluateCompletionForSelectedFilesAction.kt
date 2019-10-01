@@ -26,8 +26,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val result = settingsDialog.showAndGet()
         if (!result) return
 
-        val filters = EvaluationFilterManager.getFiltersByLanguage(settingsDialog.language).map { it.getConfigurable().build() }
-        val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionContext, settingsDialog.completeAllTokens, filters)
+        val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionContext, settingsDialog.completeAllTokens, settingsDialog.getFilters())
         val completionType = settingsDialog.completionType
         evaluator.evaluateCompletion(files, settingsDialog.language, strategy, completionType, settingsDialog.workspaceDir,
                 settingsDialog.interpretActionsAfterGeneration, settingsDialog.saveLogs, settingsDialog.trainingPercentage)

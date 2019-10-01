@@ -3,27 +3,34 @@ package org.jb.cce.filter.impl
 import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterConfiguration
 import org.jb.cce.uast.Language
+import org.jb.cce.uast.NodeProperties
 import java.awt.FlowLayout
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
+class PackagePrefixFilter(private val prefix: String) : EvaluationFilter {
+    override fun shouldEvaluate(properties: NodeProperties): Boolean = properties.packageName?.startsWith(prefix) ?: true
+}
+
 class PackagePrefixFilterConfiguration: EvaluationFilterConfiguration {
     override val id: String = "packagePrefix"
     override val description: String = "Filter out tokens by package prefix"
 
-    override fun getConfigurable(): EvaluationFilterConfiguration.Configurable = PackagePrefixConfigurable
+    override fun createConfigurable(): EvaluationFilterConfiguration.Configurable = PackagePrefixConfigurable()
 
-    override fun supportedLanguages(): Set<Language> = setOf(Language.JAVA)
+    override fun isLanguageSupported(languageName: String): Boolean = Language.JAVA.displayName == languageName
 
     override fun buildFromJson(json: Any): EvaluationFilter = PackagePrefixFilter(json as String)
 
-    private object PackagePrefixConfigurable : EvaluationFilterConfiguration.Configurable {
+    private inner class PackagePrefixConfigurable : EvaluationFilterConfiguration.Configurable {
         private var packagePrefix = ""
 
         override val panel = createPackagePrefixPanel()
 
         override fun build(): EvaluationFilter = if (packagePrefix.isEmpty()) EvaluationFilter.ACCEPT_ALL else PackagePrefixFilter(packagePrefix)
+
+        override fun isLanguageSupported(languageName: String): Boolean = this@PackagePrefixFilterConfiguration.isLanguageSupported(languageName)
 
         private fun createPackagePrefixPanel(): JPanel {
             val packageLabel = JLabel("Package Prefix:")

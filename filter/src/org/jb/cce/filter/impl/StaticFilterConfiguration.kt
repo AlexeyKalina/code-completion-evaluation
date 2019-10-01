@@ -3,6 +3,7 @@ package org.jb.cce.filter.impl
 import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterConfiguration
 import org.jb.cce.uast.Language
+import org.jb.cce.uast.NodeProperties
 import java.awt.FlowLayout
 import java.awt.event.ItemEvent
 import javax.swing.ButtonGroup
@@ -10,23 +11,27 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JRadioButton
 
+class StaticFilter(private val expectedValue: Boolean) : EvaluationFilter {
+    override fun shouldEvaluate(properties: NodeProperties): Boolean = properties.isStatic?.equals(expectedValue) ?: true
+}
+
 class StaticFilterConfiguration: EvaluationFilterConfiguration {
     override val id: String = "isStatic"
     override val description: String = "Filter out token if it's static member access"
 
-    override fun getConfigurable(): EvaluationFilterConfiguration.Configurable = StaticConfigurable
+    override fun createConfigurable(): EvaluationFilterConfiguration.Configurable = StaticConfigurable()
 
-    override fun supportedLanguages(): Set<Language> = setOf(Language.JAVA)
+    override fun isLanguageSupported(languageName: String): Boolean = Language.JAVA.displayName == languageName
 
     override fun buildFromJson(json: Any): EvaluationFilter = StaticFilter(json as Boolean)
 
-    private object StaticConfigurable : EvaluationFilterConfiguration.Configurable {
-        private enum class StaticFilter {
-            STATIC,
-            NOT_STATIC,
-            ALL
-        }
+    private enum class StaticFilter {
+        STATIC,
+        NOT_STATIC,
+        ALL
+    }
 
+    private inner class StaticConfigurable : EvaluationFilterConfiguration.Configurable {
         private var staticType = StaticFilter.ALL
 
         override val panel: JPanel = createStaticPanel()
@@ -38,6 +43,8 @@ class StaticFilterConfiguration: EvaluationFilterConfiguration {
                 StaticFilter.STATIC -> StaticFilter(true)
             }
         }
+
+        override fun isLanguageSupported(languageName: String): Boolean = this@StaticFilterConfiguration.isLanguageSupported(languageName)
 
         private fun createStaticPanel(): JPanel {
             val staticLabel = JLabel("Static:")

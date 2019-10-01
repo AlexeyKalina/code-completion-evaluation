@@ -33,8 +33,7 @@ class EvaluateCompletionHereAction : AnAction() {
         val result = settingsDialog.showAndGet()
         if (!result) return
 
-        val filters = EvaluationFilterManager.getFiltersByLanguage(settingsDialog.language).map { it.getConfigurable().build() }
-        val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionContext, settingsDialog.completeAllTokens, filters)
+        val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionContext, settingsDialog.completeAllTokens, settingsDialog.getFilters())
         CompletionEvaluator(false, project).evaluateCompletionHere(file, language.displayName, caret.offset,
                 if (strategy.completeAllTokens) getParentOnSameLine(psi, caret.offset, editor) else null, strategy, settingsDialog.completionType)
     }

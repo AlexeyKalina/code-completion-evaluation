@@ -7,6 +7,8 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.vfs.VirtualFile
+import org.jb.cce.filter.EvaluationFilter
+import org.jb.cce.filter.EvaluationFilterConfiguration
 import org.jb.cce.filter.EvaluationFilterManager
 import org.jb.cce.uast.Language
 import java.awt.FlowLayout
@@ -38,6 +40,8 @@ class CompletionSettingsDialog(private val project: Project, private val languag
     var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix
     var completeAllTokens = false
 
+    fun getFilters(): List<EvaluationFilter> = configurableList.map { it.build() }
+
     var interpretActionsAfterGeneration = true
 
     init {
@@ -45,6 +49,7 @@ class CompletionSettingsDialog(private val project: Project, private val languag
         title = "Completion evaluation settings"
     }
     private lateinit var filtersPanel: JPanel
+    private lateinit var configurableList: List<EvaluationFilterConfiguration.Configurable>
     private lateinit var completeAllTokensCheckBox: JCheckBox
     private lateinit var contextButtons: List<JRadioButton>
 
@@ -72,7 +77,13 @@ class CompletionSettingsDialog(private val project: Project, private val languag
     private fun createFiltersPanel() {
         filtersPanel = JPanel()
         filtersPanel.layout = BoxLayout(filtersPanel, BoxLayout.Y_AXIS)
-        EvaluationFilterManager.getAllFilters().forEach { filtersPanel.add(it.getConfigurable().panel) }
+        val list = mutableListOf<EvaluationFilterConfiguration.Configurable>()
+        EvaluationFilterManager.getAllFilters().forEach {
+            val configurable = it.createConfigurable()
+            list.add(configurable)
+            filtersPanel.add(configurable.panel)
+        }
+        configurableList = list
     }
 
     private fun createCompleteAllTokensCheckBox() {
@@ -138,10 +149,9 @@ class CompletionSettingsDialog(private val project: Project, private val languag
     }
 
     private fun setFiltersByLanguage() {
-        EvaluationFilterManager.getAllFilters().forEach {
-            if (it.supportedLanguages().all { it.displayName != language })
-                setPanelEnabled(it.getConfigurable().panel, false)
-            else if (!completeAllTokens) setPanelEnabled(it.getConfigurable().panel, true)
+        configurableList.forEach {
+            if (!it.isLanguageSupported(language)) setPanelEnabled(it.panel, false)
+            else if (!completeAllTokens) setPanelEnabled(it.panel, true)
         }
     }
 

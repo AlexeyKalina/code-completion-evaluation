@@ -39,7 +39,7 @@ object ConfigFactory {
             for ((id, description) in filters) {
                 val configuration = EvaluationFilterManager.getConfigurationById(id)
                         ?: throw IllegalStateException("Unexpected filter: $id")
-                assert(configuration.supportedLanguages().any { it.displayName == languageName }) { "filter $id is not supported for this language" }
+                assert(configuration.isLanguageSupported(languageName)) { "filter $id is not supported for this language" }
                 evaluationFilters.add(configuration.buildFromJson(description))
             }
         }

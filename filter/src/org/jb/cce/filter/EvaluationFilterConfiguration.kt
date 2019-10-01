@@ -1,22 +1,21 @@
 package org.jb.cce.filter
 
-import org.jb.cce.uast.Language
 import javax.swing.JPanel
 
 interface EvaluationFilterConfiguration {
   interface Configurable {
     val panel: JPanel
     fun build(): EvaluationFilter
+    fun isLanguageSupported(languageName: String): Boolean
   }
 
   val id: String
 
   val description: String
 
-  fun getConfigurable(): Configurable
+  fun createConfigurable(): Configurable
 
-  // says what languages support the filter
-  fun supportedLanguages(): Set<Language>
+  fun isLanguageSupported(languageName: String): Boolean
 
   fun buildFromJson(json: Any): EvaluationFilter
 }
