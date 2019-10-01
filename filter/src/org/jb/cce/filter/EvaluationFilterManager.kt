@@ -1,7 +1,7 @@
 package org.jb.cce.filter
 
 import org.jb.cce.filter.impl.ArgumentFilterConfiguration
-import org.jb.cce.filter.impl.PackagePrefixFilterConfiguration
+import org.jb.cce.filter.impl.PackageRegexFilterConfiguration
 import org.jb.cce.filter.impl.StaticFilterConfiguration
 import org.jb.cce.filter.impl.TypeFilterConfiguration
 
@@ -12,7 +12,7 @@ object EvaluationFilterManager {
     register(TypeFilterConfiguration())
     register(ArgumentFilterConfiguration())
     register(StaticFilterConfiguration())
-    register(PackagePrefixFilterConfiguration())
+    register(PackageRegexFilterConfiguration())
   }
 
   fun getConfigurationById(id: String): EvaluationFilterConfiguration? = id2Configuration[id]
