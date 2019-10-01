@@ -30,8 +30,10 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
                         while (true) {
                             val key = watcher.take()
 
-                            for (event in key.pollEvents()) {
-                                Paths.get(logsDir, event.context().toString()).run {
+                            for (logChunk in key.pollEvents()
+                                    .map { it.context().toString() }
+                                    .sortedBy { it.substringAfterLast('_').toInt() }) {
+                                Paths.get(logsDir, logChunk).run {
                                     if (exists()) {
                                         with(readText()) {
                                             sessionIds.addAll(split("\n").filter { it.isNotBlank() }.map { getSessionId(it) })
