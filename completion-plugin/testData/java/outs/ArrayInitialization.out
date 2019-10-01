@@ -4,9 +4,9 @@ FileNode
       MethodHeaderNode (main)
       MethodBodyNode
         VariableDeclarationNode (a)
-          FieldAccessNode (length) - properties: {tokenType=FIELD, isArgument=false, isStatic=false, packageName=}
-            VariableAccessNode (args) - prefix; properties: {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}
-          MethodCallNode (value) - properties: {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=<unknown package>}
+          FieldAccessNode (length) -  {tokenType=FIELD, isArgument=false, isStatic=false, packageName=}
+            VariableAccessNode (args) - prefix;  {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}
+          MethodCallNode (value) -  {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=<unknown package>}
     MethodDeclarationNode (value)
       MethodHeaderNode (value)
       MethodBodyNode

@@ -81,7 +81,7 @@ class UastPrinter : UnifiedAstRecursiveVisitor() {
         }
         if (node is Completable) {
             if (info.isNotBlank()) info += "; "
-            info += "properties: ${node.getProperties().properties}"
+            info += " ${node.getProperties().properties}"
         }
         return if (info.isNotBlank()) " - $info" else ""
     }

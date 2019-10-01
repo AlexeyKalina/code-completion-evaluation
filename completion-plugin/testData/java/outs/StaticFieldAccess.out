@@ -3,5 +3,5 @@ FileNode
     MethodDeclarationNode (main)
       MethodHeaderNode (main)
       MethodBodyNode
-        FieldAccessNode (a) - properties: {tokenType=FIELD, isArgument=false, isStatic=true, packageName=}
+        FieldAccessNode (a) -  {tokenType=FIELD, isArgument=false, isStatic=true, packageName=}
     VariableDeclarationNode (a)

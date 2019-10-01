@@ -1,4 +1,4 @@
 FileNode
-  MethodCallNode (echo) - properties: {tokenType=METHOD_CALL}
-  VariableAccessNode (counter) - properties: {tokenType=VARIABLE}
-  MethodCallNode (printf) - properties: {tokenType=METHOD_CALL}
+  MethodCallNode (echo) -  {tokenType=METHOD_CALL}
+  VariableAccessNode (counter) -  {tokenType=VARIABLE}
+  MethodCallNode (printf) -  {tokenType=METHOD_CALL}

@@ -5,6 +5,6 @@ FileNode
       MethodHeaderNode (main)
       MethodBodyNode
         VariableDeclarationNode (fieldAssignment)
-          MethodCallNode (FieldAssignment) - properties: {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=<unknown package>}
-        FieldAccessNode (field) - properties: {tokenType=FIELD, isArgument=false, isStatic=false, packageName=}
-          VariableAccessNode (fieldAssignment) - prefix; properties: {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}
+          MethodCallNode (FieldAssignment) -  {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=<unknown package>}
+        FieldAccessNode (field) -  {tokenType=FIELD, isArgument=false, isStatic=false, packageName=}
+          VariableAccessNode (fieldAssignment) - prefix;  {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}

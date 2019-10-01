@@ -1,2 +1,2 @@
 FileNode
-  MethodCallNode (echo) - properties: {tokenType=METHOD_CALL}
+  MethodCallNode (echo) -  {tokenType=METHOD_CALL}

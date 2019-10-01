@@ -1,8 +1,8 @@
 FileNode
-  MethodCallNode (echo) - properties: {tokenType=METHOD_CALL}
-  MethodCallNode (read) - properties: {tokenType=METHOD_CALL}
-  VariableAccessNode (n) - properties: {tokenType=VARIABLE}
-  MethodCallNode (echo) - properties: {tokenType=METHOD_CALL}
-  MethodCallNode (echo) - properties: {tokenType=METHOD_CALL}
-  MethodCallNode (echo) - properties: {tokenType=METHOD_CALL}
-  MethodCallNode (echo) - properties: {tokenType=METHOD_CALL}
+  MethodCallNode (echo) -  {tokenType=METHOD_CALL}
+  MethodCallNode (read) -  {tokenType=METHOD_CALL}
+  VariableAccessNode (n) -  {tokenType=VARIABLE}
+  MethodCallNode (echo) -  {tokenType=METHOD_CALL}
+  MethodCallNode (echo) -  {tokenType=METHOD_CALL}
+  MethodCallNode (echo) -  {tokenType=METHOD_CALL}
+  MethodCallNode (echo) -  {tokenType=METHOD_CALL}

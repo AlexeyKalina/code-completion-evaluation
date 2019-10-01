@@ -3,9 +3,9 @@ FileNode
     MethodDeclarationNode (main)
       MethodHeaderNode (main)
       MethodBodyNode
-        MethodCallNode (invoke) - properties: {tokenType=METHOD_CALL, isArgument=false, isStatic=true, packageName=}
+        MethodCallNode (invoke) -  {tokenType=METHOD_CALL, isArgument=false, isStatic=true, packageName=}
           AnonymousClassNode - argument
-            MethodCallNode (Runnable) - properties: {tokenType=METHOD_CALL, isArgument=true, isStatic=false, packageName=<unknown package>}
+            MethodCallNode (Runnable) -  {tokenType=METHOD_CALL, isArgument=true, isStatic=false, packageName=<unknown package>}
             ClassDeclarationNode (<no_name>)
               MethodDeclarationNode (run)
                 MethodHeaderNode (run)
@@ -13,6 +13,6 @@ FileNode
     MethodDeclarationNode (invoke)
       MethodHeaderNode (invoke)
       MethodBodyNode
-        MethodCallNode (run) - properties: {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
-          VariableAccessNode (runnable) - prefix; properties: {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}
+        MethodCallNode (run) -  {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
+          VariableAccessNode (runnable) - prefix;  {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}
     ClassDeclarationNode (Runnable)
