@@ -39,15 +39,15 @@ class CompletionSettingsDialog(private val project: Project, private val languag
     var completionContext = CompletionContext.ALL
     var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix
     var completeAllTokens = false
+    var interpretActionsAfterGeneration = true
 
     fun getFilters(): List<EvaluationFilter> = configurableList.map { it.build() }
-
-    var interpretActionsAfterGeneration = true
 
     init {
         init()
         title = "Completion evaluation settings"
     }
+    private var completeAllTokensPrev = false
     private lateinit var filtersPanel: JPanel
     private lateinit var configurableList: List<EvaluationFilterConfiguration.Configurable>
     private lateinit var completeAllTokensCheckBox: JCheckBox
@@ -138,6 +138,7 @@ class CompletionSettingsDialog(private val project: Project, private val languag
             languageComboBox.selectedItem = languages.first()
             languageComboBox.addItemListener { event ->
                 if (event.stateChange == ItemEvent.SELECTED) {
+                    if (Language.resolve(language) != Language.ANOTHER) completeAllTokensPrev = completeAllTokens
                     language = (event.item as LanguageItem).languageName
                     setAllTokens()
                     setFiltersByLanguage()
@@ -163,6 +164,11 @@ class CompletionSettingsDialog(private val project: Project, private val languag
             setPanelEnabled(filtersPanel, false)
         } else {
             completeAllTokensCheckBox.isEnabled = true
+            if (!completeAllTokensPrev) {
+                completeAllTokens = false
+                completeAllTokensCheckBox.isSelected = false
+                setPanelEnabled(filtersPanel, true)
+            }
         }
     }
 
