@@ -21,7 +21,7 @@ class PackagePrefixFilterConfiguration: EvaluationFilterConfiguration {
 
     override fun isLanguageSupported(languageName: String): Boolean = Language.JAVA.displayName == languageName
 
-    override fun buildFromJson(json: Any): EvaluationFilter = PackagePrefixFilter(json as String)
+    override fun buildFromJson(json: Any?): EvaluationFilter = if (json == null) EvaluationFilter.ACCEPT_ALL else PackagePrefixFilter(json as String)
 
     private inner class PackagePrefixConfigurable : EvaluationFilterConfiguration.Configurable {
         private var packagePrefix = ""

@@ -23,7 +23,9 @@ class TypeFilterConfiguration : EvaluationFilterConfiguration {
 
     override fun isLanguageSupported(languageName: String): Boolean = Language.values().any { it.displayName == languageName }
 
-    override fun buildFromJson(json: Any): EvaluationFilter = TypeFilter((json as List<String>).map { TypeProperty.valueOf(it) })
+    override fun buildFromJson(json: Any?): EvaluationFilter =
+            if (json == null) EvaluationFilter.ACCEPT_ALL
+            else TypeFilter((json as List<String>).map { TypeProperty.valueOf(it) })
 
     private inner class TypeConfigurable : EvaluationFilterConfiguration.Configurable {
         private val types = mutableListOf(TypeProperty.METHOD_CALL)

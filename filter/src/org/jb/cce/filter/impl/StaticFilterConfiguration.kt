@@ -23,7 +23,7 @@ class StaticFilterConfiguration: EvaluationFilterConfiguration {
 
     override fun isLanguageSupported(languageName: String): Boolean = Language.JAVA.displayName == languageName
 
-    override fun buildFromJson(json: Any): EvaluationFilter = StaticFilter(json as Boolean)
+    override fun buildFromJson(json: Any?): EvaluationFilter = if (json == null) EvaluationFilter.ACCEPT_ALL else StaticFilter(json as Boolean)
 
     private enum class StaticFilter {
         STATIC,

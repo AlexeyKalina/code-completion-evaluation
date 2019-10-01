@@ -20,7 +20,7 @@ class ArgumentFilterConfiguration: EvaluationFilterConfiguration {
 
     override fun isLanguageSupported(languageName: String): Boolean = listOf(Language.JAVA, Language.PYTHON).any { it.displayName == languageName }
 
-    override fun buildFromJson(json: Any): EvaluationFilter = ArgumentFilter(json as Boolean)
+    override fun buildFromJson(json: Any?): EvaluationFilter = if (json == null) EvaluationFilter.ACCEPT_ALL else ArgumentFilter(json as Boolean)
 
     private enum class ArgumentFilter {
         ARGUMENT,

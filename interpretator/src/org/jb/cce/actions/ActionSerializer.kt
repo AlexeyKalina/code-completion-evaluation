@@ -9,6 +9,7 @@ class ActionSerializer {
 
     private val gson = GsonBuilder()
             .addSerializationExclusionStrategy(object : ExclusionStrategy {
+                // don't serialize field properties twice
                 override fun shouldSkipField(f: FieldAttributes) = f.name == "_properties"
                 override fun shouldSkipClass(aClass: Class<*>) = false
             })
