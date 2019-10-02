@@ -25,7 +25,7 @@ class ArgumentFilterConfiguration: EvaluationFilterConfiguration {
 
     override fun buildFromJson(json: Any?): EvaluationFilter = if (json == null) EvaluationFilter.ACCEPT_ALL else ArgumentFilter(json as Boolean)
 
-    override fun defaultFilter(): EvaluationFilter = ArgumentFilter(false)
+    override fun defaultFilter(): EvaluationFilter = EvaluationFilter.ACCEPT_ALL
 
     private enum class ArgumentFilter {
         ARGUMENT,
