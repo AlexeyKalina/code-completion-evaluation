@@ -23,7 +23,7 @@ class CompletionEvaluationStarter : ApplicationStarter {
         val config = try {
             ConfigFactory.load(configPath)
         } catch (e: Exception) {
-            fatalError("Error for loading config: $configPath, $e")
+            fatalError("Error for loading config: $configPath, $e. StackTrace: ${e.stackTrace}")
         }
 
         val project = try {

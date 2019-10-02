@@ -1,9 +1,6 @@
 package org.jb.cce.util
 
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonNull
-import com.google.gson.JsonObject
-import com.google.gson.JsonPrimitive
+import com.google.gson.*
 import org.jb.cce.actions.CompletionContext
 import org.jb.cce.actions.CompletionPrefix
 import org.jb.cce.actions.CompletionStrategy
@@ -13,15 +10,23 @@ import org.jb.cce.filter.EvaluationFilterManager
 import org.jb.cce.uast.Language
 import java.io.File
 import java.io.FileReader
+import java.lang.reflect.Type
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 
 object ConfigFactory {
-    private val gson = GsonBuilder().serializeNulls().setPrettyPrinting().create()
+    private val gson = GsonBuilder()
+            .serializeNulls()
+            .setPrettyPrinting()
+            .registerTypeAdapter(EvaluationFilter::class.java, object : JsonSerializer<EvaluationFilter> {
+                override fun serialize(src: EvaluationFilter, typeOfSrc: Type, context: JsonSerializationContext) = src.toJson()
+            })
+            .create()
 
     private val defaultConfig = Config("", listOf(""), Language.JAVA.displayName,
-            CompletionStrategy(CompletionPrefix.NoPrefix, CompletionContext.ALL, false, emptyList()),
+            CompletionStrategy(CompletionPrefix.NoPrefix, CompletionContext.ALL, false,
+                    EvaluationFilterManager.getAllFilters().associateBy({ it.id }, { it.defaultFilter() })),
             CompletionType.BASIC, "", interpretActions = true, saveLogs = false, logsTrainingPercentage = 70)
 
     fun load(path: String): Config {
@@ -31,24 +36,29 @@ object ConfigFactory {
             throw IllegalArgumentException("Config file missing. Config created by path: ${configFile.absolutePath}. Fill settings in config.")
         }
 
-        val map = gson.fromJson(FileReader(configFile), HashMap<String, Any>().javaClass)
+        val map = gson.fromJson<HashMap<String, Any>>(FileReader(configFile), HashMap<String, Any>().javaClass)
         val strategy = map.getAs<Map<String, Any>>("strategy")
-        val evaluationFilters = mutableListOf<EvaluationFilter>()
+        val evaluationFilters = mutableMapOf<String, EvaluationFilter>()
         val languageName = map.getAs<String>("language")
         val completeAllTokens = strategy.getAs<Boolean>("completeAllTokens")
         if (!completeAllTokens) {
             val filters = strategy.getAs<Map<String, Any>>("filters")
             for ((id, description) in filters) {
                 val configuration = EvaluationFilterManager.getConfigurationById(id)
-                        ?: throw IllegalStateException("Unexpected filter: $id")
+                        ?: throw IllegalStateException("Unknown filter: $id")
                 assert(configuration.isLanguageSupported(languageName)) { "filter $id is not supported for this language" }
-                evaluationFilters.add(configuration.buildFromJson(description))
+                evaluationFilters[id] = configuration.buildFromJson(description)
             }
         }
         return Config(map.getAs("projectPath"), map.getAs("listOfFiles"), languageName,
                 CompletionStrategy(getPrefix(strategy), CompletionContext.valueOf(strategy.getAs("context")), completeAllTokens, evaluationFilters),
                 CompletionType.valueOf(map.getAs("completionType")), map.getAs("outputDir"), map.getAs("interpretActions"),
                 map.getAs("saveLogs"), map.getAs<Double>("logsTrainingPercentage").toInt())
+    }
+
+    fun save(path: String): Config {
+        save(defaultConfig, path)
+        return defaultConfig
     }
 
     fun save(config: Config, path: String) {
@@ -60,12 +70,6 @@ object ConfigFactory {
         val strategyPrefix = config.strategy.prefix
         if (strategyPrefix !is CompletionPrefix.NoPrefix) prefix.add("emulateTyping", JsonPrimitive(strategyPrefix.emulateTyping))
         if (strategyPrefix is CompletionPrefix.SimplePrefix) prefix.add("n", JsonPrimitive(strategyPrefix.n))
-        strategy.remove("filters")
-        strategy.add("filters", JsonObject())
-        val filters = strategy["filters"].asJsonObject
-        for (filter in EvaluationFilterManager.getAllFilters()) {
-            filters.add(filter.id, JsonNull.INSTANCE)
-        }
         Files.write(Paths.get(path), gson.toJson(json).toByteArray(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
     }
 

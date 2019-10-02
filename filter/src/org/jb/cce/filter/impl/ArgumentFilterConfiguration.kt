@@ -1,5 +1,7 @@
 package org.jb.cce.filter.impl
 
+import com.google.gson.JsonElement
+import com.google.gson.JsonPrimitive
 import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterConfiguration
 import org.jb.cce.uast.Language
@@ -10,6 +12,7 @@ import javax.swing.*
 
 class ArgumentFilter(private val expectedValue: Boolean) : EvaluationFilter {
     override fun shouldEvaluate(properties: NodeProperties): Boolean = properties.isArgument?.equals(expectedValue) ?: true
+    override fun toJson(): JsonElement = JsonPrimitive(expectedValue)
 }
 
 class ArgumentFilterConfiguration: EvaluationFilterConfiguration {
@@ -21,6 +24,8 @@ class ArgumentFilterConfiguration: EvaluationFilterConfiguration {
     override fun isLanguageSupported(languageName: String): Boolean = listOf(Language.JAVA, Language.PYTHON).any { it.displayName == languageName }
 
     override fun buildFromJson(json: Any?): EvaluationFilter = if (json == null) EvaluationFilter.ACCEPT_ALL else ArgumentFilter(json as Boolean)
+
+    override fun defaultFilter(): EvaluationFilter = ArgumentFilter(false)
 
     private enum class ArgumentFilter {
         ARGUMENT,

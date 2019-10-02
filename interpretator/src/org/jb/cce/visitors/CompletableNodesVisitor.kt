@@ -25,5 +25,5 @@ class CompletableNodesVisitor(override val text: String, strategy: CompletionStr
         visitChildren(node)
     }
 
-    private fun checkFilters(node: Completable): Boolean = strategy.filters.all { it.shouldEvaluate(node.getProperties()) }
+    private fun checkFilters(node: Completable): Boolean = strategy.filters.all { it.value.shouldEvaluate(node.getProperties()) }
 }

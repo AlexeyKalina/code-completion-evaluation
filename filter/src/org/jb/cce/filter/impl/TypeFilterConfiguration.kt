@@ -1,5 +1,8 @@
 package org.jb.cce.filter.impl
 
+import com.google.gson.JsonArray
+import com.google.gson.JsonElement
+import com.google.gson.JsonPrimitive
 import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterConfiguration
 import org.jb.cce.uast.Language
@@ -13,6 +16,12 @@ import javax.swing.JPanel
 
 class TypeFilter(private val values: List<TypeProperty>) : EvaluationFilter {
     override fun shouldEvaluate(properties: NodeProperties): Boolean = properties.tokenType == null || values.contains(properties.tokenType!!)
+    override fun toJson(): JsonElement {
+        val json = JsonArray()
+        for (value in values)
+            json.add(JsonPrimitive(value.name))
+        return json
+    }
 }
 
 class TypeFilterConfiguration : EvaluationFilterConfiguration {
@@ -25,7 +34,9 @@ class TypeFilterConfiguration : EvaluationFilterConfiguration {
 
     override fun buildFromJson(json: Any?): EvaluationFilter =
             if (json == null) EvaluationFilter.ACCEPT_ALL
-            else TypeFilter((json as List<String>).map { TypeProperty.valueOf(it) })
+            else TypeFilter(json as List<TypeProperty>)
+
+    override fun defaultFilter(): EvaluationFilter = TypeFilter(listOf(TypeProperty.METHOD_CALL))
 
     private inner class TypeConfigurable : EvaluationFilterConfiguration.Configurable {
         private val types = mutableListOf(TypeProperty.METHOD_CALL)

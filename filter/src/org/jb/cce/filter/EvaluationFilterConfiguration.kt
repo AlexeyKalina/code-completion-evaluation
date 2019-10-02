@@ -18,4 +18,6 @@ interface EvaluationFilterConfiguration {
   fun isLanguageSupported(languageName: String): Boolean
 
   fun buildFromJson(json: Any?): EvaluationFilter
+
+  fun defaultFilter(): EvaluationFilter
 }

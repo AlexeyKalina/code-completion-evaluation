@@ -41,7 +41,7 @@ class CompletionSettingsDialog(private val project: Project, private val languag
     var completeAllTokens = false
     var interpretActionsAfterGeneration = true
 
-    fun getFilters(): List<EvaluationFilter> = configurableList.map { it.build() }
+    fun getFilters(): Map<String, EvaluationFilter> = configurableMap.mapValues { it.value.build() }
 
     init {
         init()
@@ -49,7 +49,7 @@ class CompletionSettingsDialog(private val project: Project, private val languag
     }
     private var completeAllTokensPrev = false
     private lateinit var filtersPanel: JPanel
-    private lateinit var configurableList: List<EvaluationFilterConfiguration.Configurable>
+    private lateinit var configurableMap: MutableMap<String, EvaluationFilterConfiguration.Configurable>
     private lateinit var completeAllTokensCheckBox: JCheckBox
     private lateinit var contextButtons: List<JRadioButton>
 
@@ -77,13 +77,11 @@ class CompletionSettingsDialog(private val project: Project, private val languag
     private fun createFiltersPanel() {
         filtersPanel = JPanel()
         filtersPanel.layout = BoxLayout(filtersPanel, BoxLayout.Y_AXIS)
-        val list = mutableListOf<EvaluationFilterConfiguration.Configurable>()
         EvaluationFilterManager.getAllFilters().forEach {
             val configurable = it.createConfigurable()
-            list.add(configurable)
+            configurableMap[it.id] = configurable
             filtersPanel.add(configurable.panel)
         }
-        configurableList = list
     }
 
     private fun createCompleteAllTokensCheckBox() {
@@ -150,9 +148,9 @@ class CompletionSettingsDialog(private val project: Project, private val languag
     }
 
     private fun setFiltersByLanguage() {
-        configurableList.forEach {
-            if (!it.isLanguageSupported(language)) setPanelEnabled(it.panel, false)
-            else if (!completeAllTokens) setPanelEnabled(it.panel, true)
+        configurableMap.forEach {
+            if (!it.value.isLanguageSupported(language)) setPanelEnabled(it.value.panel, false)
+            else if (!completeAllTokens) setPanelEnabled(it.value.panel, true)
         }
     }
 
