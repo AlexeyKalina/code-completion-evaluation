@@ -9,8 +9,9 @@ import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
-class PackageRegexFilter(private val regex: String) : EvaluationFilter {
-    override fun shouldEvaluate(properties: NodeProperties): Boolean = properties.packageName?.matches(Regex(regex)) ?: true
+class PackageRegexFilter(pattern: String) : EvaluationFilter {
+    private val regex = Regex(pattern)
+    override fun shouldEvaluate(properties: NodeProperties): Boolean = properties.packageName?.matches(regex) ?: true
 }
 
 class PackageRegexFilterConfiguration: EvaluationFilterConfiguration {
