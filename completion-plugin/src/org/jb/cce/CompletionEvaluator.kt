@@ -14,6 +14,7 @@ import com.intellij.util.io.readText
 import org.jb.cce.actions.ActionsGenerator
 import org.jb.cce.actions.CompletionStrategy
 import org.jb.cce.actions.CompletionType
+import org.jb.cce.exceptions.ExceptionsUtil.stackTraceToString
 import org.jb.cce.highlighter.Highlighter
 import org.jb.cce.info.EvaluationInfo
 import org.jb.cce.info.FileErrorInfo
@@ -167,12 +168,6 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
 
     private fun statsCollectorLogsDirectory(): String {
         return Paths.get(PathManager.getSystemPath(), "completion-stats-data").toString()
-    }
-
-    private fun stackTraceToString(e: Throwable): String {
-        val sw = StringWriter()
-        e.printStackTrace(PrintWriter(sw))
-        return sw.toString()
     }
 
     private fun isMLCompletionEnabled(): Boolean {

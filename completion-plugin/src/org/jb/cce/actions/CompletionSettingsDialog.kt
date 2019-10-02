@@ -41,8 +41,6 @@ class CompletionSettingsDialog(private val project: Project, private val languag
     var completeAllTokens = false
     var interpretActionsAfterGeneration = true
 
-    fun getFilters(): Map<String, EvaluationFilter> = configurableMap.mapValues { it.value.build() }
-
     init {
         init()
         title = "Completion evaluation settings"
@@ -52,6 +50,8 @@ class CompletionSettingsDialog(private val project: Project, private val languag
     private lateinit var configurableMap: MutableMap<String, EvaluationFilterConfiguration.Configurable>
     private lateinit var completeAllTokensCheckBox: JCheckBox
     private lateinit var contextButtons: List<JRadioButton>
+
+    fun getFilters(): Map<String, EvaluationFilter> = configurableMap.mapValues { it.value.build() }
 
     override fun createCenterPanel(): JComponent? {
         val dialogPanel = JPanel()
