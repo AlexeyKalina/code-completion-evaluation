@@ -4,4 +4,4 @@ FileNode
       MethodHeaderNode (main)
       MethodBodyNode
         VariableDeclarationNode (a)
-          MethodCallNode (ConstructorInvocation) -  {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=<unknown package>}
+          MethodCallNode (ConstructorInvocation) - {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=<unknown package>}

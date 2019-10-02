@@ -4,13 +4,13 @@ FileNode
       MethodHeaderNode (main)
       MethodBodyNode
         AnonymousClassNode
-          MethodCallNode (Producer) -  {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=<unknown package>}
+          MethodCallNode (Producer) - {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=<unknown package>}
           ClassDeclarationNode (<no_name>)
             VariableDeclarationNode (a)
             MethodDeclarationNode (produce)
               MethodHeaderNode (produce)
               MethodBodyNode
-                MethodCallNode (NestedClass) -  {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=<unknown package>}
+                MethodCallNode (NestedClass) - {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=<unknown package>}
     ClassDeclarationNode (NestedClass)
       MethodDeclarationNode (method)
         MethodHeaderNode (method)

@@ -3,7 +3,7 @@ FileNode
     MethodDeclarationNode (main)
       MethodHeaderNode (main)
       MethodBodyNode
-        MethodCallNode (method) -  {tokenType=METHOD_CALL, isArgument=false, isStatic=true, packageName=}
+        MethodCallNode (method) - {tokenType=METHOD_CALL, isArgument=false, isStatic=true, packageName=}
     MethodDeclarationNode (method)
       MethodHeaderNode (method)
       MethodBodyNode

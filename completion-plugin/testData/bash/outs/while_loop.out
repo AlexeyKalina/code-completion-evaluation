@@ -1,7 +1,7 @@
 FileNode
-  VariableAccessNode (valid) -  {tokenType=VARIABLE}
-  MethodCallNode (echo) -  {tokenType=METHOD_CALL}
-  VariableAccessNode (count) -  {tokenType=VARIABLE}
-  VariableAccessNode (count) -  {tokenType=VARIABLE}
-  MethodCallNode (break) -  {tokenType=METHOD_CALL}
-  MethodCallNode (((count++))) -  {tokenType=METHOD_CALL}
+  VariableAccessNode (valid) - {tokenType=VARIABLE}
+  MethodCallNode (echo) - {tokenType=METHOD_CALL}
+  VariableAccessNode (count) - {tokenType=VARIABLE}
+  VariableAccessNode (count) - {tokenType=VARIABLE}
+  MethodCallNode (break) - {tokenType=METHOD_CALL}
+  MethodCallNode (((count++))) - {tokenType=METHOD_CALL}

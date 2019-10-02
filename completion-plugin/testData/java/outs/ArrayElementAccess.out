@@ -5,5 +5,5 @@ FileNode
       MethodBodyNode
         VariableDeclarationNode (i)
         ArrayAccessNode
-          VariableAccessNode (args) - prefix;  {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}
-          VariableAccessNode (i) - argument;  {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}
+          VariableAccessNode (args) - prefix; {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}
+          VariableAccessNode (i) - argument; {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}

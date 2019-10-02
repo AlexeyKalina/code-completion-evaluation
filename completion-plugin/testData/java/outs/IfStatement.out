@@ -3,9 +3,9 @@ FileNode
     MethodDeclarationNode (main)
       MethodHeaderNode (main)
       MethodBodyNode
-        MethodCallNode (random) -  {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
-        MethodCallNode (test) -  {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
-        MethodCallNode (test) -  {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
+        MethodCallNode (random) - {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
+        MethodCallNode (test) - {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
+        MethodCallNode (test) - {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
     MethodDeclarationNode (test)
       MethodHeaderNode (test)
       MethodBodyNode
