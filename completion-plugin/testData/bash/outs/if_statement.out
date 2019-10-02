@@ -1,4 +1,4 @@
 FileNode
-  VariableAccessNode (n)
-  MethodCallNode (echo)
-  MethodCallNode (echo)
+  VariableAccessNode (n) - {tokenType=VARIABLE}
+  MethodCallNode (echo) - {tokenType=METHOD_CALL}
+  MethodCallNode (echo) - {tokenType=METHOD_CALL}

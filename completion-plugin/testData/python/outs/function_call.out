@@ -1,2 +1,2 @@
 FileNode
-  MethodCallNode (repr)
+  MethodCallNode (repr) - {tokenType=METHOD_CALL, isArgument=false}

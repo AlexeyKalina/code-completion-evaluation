@@ -7,23 +7,25 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.vfs.VirtualFile
+import org.jb.cce.filter.EvaluationFilter
+import org.jb.cce.filter.EvaluationFilterConfiguration
+import org.jb.cce.filter.EvaluationFilterManager
 import org.jb.cce.uast.Language
 import java.awt.FlowLayout
-import java.awt.GridLayout
 import java.awt.event.ItemEvent
 import java.nio.file.Paths
 import javax.swing.*
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
+import javax.swing.JPanel
 
-class CompletionSettingsDialog(project: Project, private val language2files: Map<String, Set<VirtualFile>>,
+class CompletionSettingsDialog(private val project: Project, private val language2files: Map<String, Set<VirtualFile>>,
                                private val fullSettings: Boolean = true) : DialogWrapper(true) {
     constructor(project: Project) : this(project, emptyMap(), false)
 
     companion object {
         const val completionEvaluationDir = "completion-evaluation"
         const val workspaceDirProperty = "org.jb.cce.workspace_dir"
-        private const val allTokensText = "All tokens"
         private const val previousContextText = "Previous context"
     }
     lateinit var language: String
@@ -36,28 +38,35 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
     var trainingPercentage = 70
     var completionContext = CompletionContext.ALL
     var completionPrefix: CompletionPrefix = CompletionPrefix.NoPrefix
-    var completionStatement = CompletionStatement.METHOD_CALLS
-
+    var completeAllTokens = false
     var interpretActionsAfterGeneration = true
 
     init {
         init()
         title = "Completion evaluation settings"
     }
-    lateinit var statementButtons: List<JRadioButton>
-    lateinit var contextButtons: List<JRadioButton>
+    private var completeAllTokensPrev = false
+    private lateinit var filtersPanel: JPanel
+    private lateinit var configurableMap: MutableMap<String, EvaluationFilterConfiguration.Configurable>
+    private lateinit var completeAllTokensCheckBox: JCheckBox
+    private lateinit var contextButtons: List<JRadioButton>
+
+    fun getFilters(): Map<String, EvaluationFilter> = configurableMap.mapValues { it.value.build() }
 
     override fun createCenterPanel(): JComponent? {
-        val dialogPanel = JPanel(GridLayout(if (fullSettings) 8 else 4,1))
+        val dialogPanel = JPanel()
+        dialogPanel.layout = BoxLayout(dialogPanel, BoxLayout.Y_AXIS)
 
         createContextButtons()
-        createStatementButtons(!fullSettings)
+        createCompleteAllTokensCheckBox()
+        createFiltersPanel()
 
         if (fullSettings) dialogPanel.add(createLanguageChooser())
         dialogPanel.add(createTypePanel())
         dialogPanel.add(createContextPanel())
         dialogPanel.add(createPrefixPanel())
-        dialogPanel.add(createStatementPanel())
+        dialogPanel.add(createAllTokensPanel())
+        dialogPanel.add(filtersPanel)
         if (fullSettings) dialogPanel.add(createInterpretActionsPanel())
         if (fullSettings) dialogPanel.add(createOutputDirChooser())
         if (fullSettings) dialogPanel.add(createLogsPanel())
@@ -65,34 +74,30 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         return dialogPanel
     }
 
-    private fun createStatementButtons(blockPreviousContext: Boolean) {
-        val methodsButton = getStatementButton(CompletionStatement.METHOD_CALLS, "Method calls", blockPreviousContext)
-        val argumentsButton = getStatementButton(CompletionStatement.ARGUMENTS, "Method arguments", blockPreviousContext)
-        val variablesButton = getStatementButton(CompletionStatement.VARIABLES, "Variables", blockPreviousContext)
-        val staticStatementsButton = getStatementButton(CompletionStatement.ALL_STATIC, "All static members", blockPreviousContext)
-        val allStatementsButton = getStatementButton(CompletionStatement.ALL, "All members", blockPreviousContext)
-        val allTokensButton = getStatementButton(CompletionStatement.ALL_TOKENS, allTokensText, false)
-
-        methodsButton.isSelected = true
-        statementButtons = listOf(methodsButton, argumentsButton, variablesButton, staticStatementsButton, allStatementsButton, allTokensButton)
+    private fun createFiltersPanel() {
+        filtersPanel = JPanel()
+        filtersPanel.layout = BoxLayout(filtersPanel, BoxLayout.Y_AXIS)
+        EvaluationFilterManager.getAllFilters().forEach {
+            val configurable = it.createConfigurable()
+            configurableMap[it.id] = configurable
+            filtersPanel.add(configurable.panel)
+        }
     }
 
-    private fun getStatementButton(statement: CompletionStatement, title: String, blockPreviousContext: Boolean): JRadioButton {
-        val statementButton =  JRadioButton(title)
-        statementButton.addItemListener { event ->
-            if (event.stateChange == ItemEvent.SELECTED) {
-                completionStatement = statement
-                for (context in contextButtons)
-                    if (context.text == previousContextText && blockPreviousContext) {
-                        context.isSelected = false
-                        context.isEnabled = false
-                    } else if (blockPreviousContext) {
-                        context.isSelected = true
-                        completionContext = CompletionContext.ALL
-                    } else context.isEnabled = true
+    private fun createCompleteAllTokensCheckBox() {
+        completeAllTokensCheckBox = JCheckBox()
+        completeAllTokensCheckBox.addItemListener {
+            completeAllTokens = it.stateChange == ItemEvent.SELECTED
+            setPanelEnabled(filtersPanel, it.stateChange != ItemEvent.SELECTED)
+            setFiltersByLanguage()
+            if (!fullSettings) for (contextButton in contextButtons) {
+                if (contextButton.text == previousContextText) contextButton.isEnabled = it.stateChange == ItemEvent.SELECTED
+                else if (it.stateChange != ItemEvent.SELECTED) {
+                    contextButton.isSelected = true
+                    completionContext = CompletionContext.ALL
+                }
             }
         }
-        return statementButton
     }
 
     private fun createContextButtons() {
@@ -106,11 +111,12 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         }
 
         allContextButton.isSelected = true
+        if (!fullSettings) previousContextButton.isEnabled = false
         contextButtons = listOf(allContextButton, previousContextButton)
     }
 
     private class LanguageItem(val languageName: String, val count: Int) {
-        override fun toString(): String = "${languageName} ($count)"
+        override fun toString(): String = "$languageName ($count)"
     }
 
     private fun createLanguageChooser(): JPanel {
@@ -121,7 +127,8 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         val languages = language2files.map { LanguageItem(it.key, it.value.size) }
                 .sortedByDescending { it.count }.toTypedArray()
         language = languages[0].languageName
-        setStatements()
+        setAllTokens()
+        setFiltersByLanguage()
         if (language2files.size == 1) {
             languagePanel.add(JLabel(languages.single().toString()))
         } else {
@@ -129,8 +136,10 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
             languageComboBox.selectedItem = languages.first()
             languageComboBox.addItemListener { event ->
                 if (event.stateChange == ItemEvent.SELECTED) {
+                    if (Language.resolve(language) != Language.ANOTHER) completeAllTokensPrev = completeAllTokens
                     language = (event.item as LanguageItem).languageName
-                    setStatements()
+                    setAllTokens()
+                    setFiltersByLanguage()
                 }
             }
             languagePanel.add(languageComboBox)
@@ -138,18 +147,36 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         return languagePanel
     }
 
-    private fun setStatements() {
+    private fun setFiltersByLanguage() {
+        configurableMap.forEach {
+            if (!it.value.isLanguageSupported(language)) setPanelEnabled(it.value.panel, false)
+            else if (!completeAllTokens) setPanelEnabled(it.value.panel, true)
+        }
+    }
+
+    private fun setAllTokens() {
         if (Language.resolve(language) == Language.ANOTHER) {
-            completionStatement = CompletionStatement.ALL_TOKENS
-            for (statement in statementButtons)
-                if (statement.text != allTokensText) {
-                    statement.isSelected = false
-                    statement.isEnabled = false
-                }
-                else statement.isSelected = true
+            completeAllTokens = true
+            completeAllTokensCheckBox.isSelected = true
+            completeAllTokensCheckBox.isEnabled = false
+            setPanelEnabled(filtersPanel, false)
         } else {
-            for (statement in statementButtons)
-                if (statement.text != allTokensText) statement.isEnabled = true
+            completeAllTokensCheckBox.isEnabled = true
+            if (!completeAllTokensPrev) {
+                completeAllTokens = false
+                completeAllTokensCheckBox.isSelected = false
+                setPanelEnabled(filtersPanel, true)
+            }
+        }
+    }
+
+    private fun setPanelEnabled(panel: JPanel, isEnabled: Boolean) {
+        panel.isEnabled = isEnabled
+        for (component in panel.components) {
+            if (component is JPanel) {
+                setPanelEnabled(component, isEnabled)
+            }
+            component.isEnabled = isEnabled
         }
     }
 
@@ -255,17 +282,12 @@ class CompletionSettingsDialog(project: Project, private val language2files: Map
         return prefixPanel
     }
 
-    private fun createStatementPanel(): JPanel {
-        val statementLabel = JLabel("What complete:")
-        val statementPanel = JPanel(FlowLayout(FlowLayout.LEFT))
-
-        val statementsGroup =  ButtonGroup()
-        statementPanel.add(statementLabel)
-        for (statement in statementButtons) {
-            statementsGroup.add(statement)
-            statementPanel.add(statement)
-        }
-        return statementPanel
+    private fun createAllTokensPanel(): JPanel {
+        val allTokensLabel = JLabel("Complete all tokens:")
+        val allTokensPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+        allTokensPanel.add(allTokensLabel)
+        allTokensPanel.add(completeAllTokensCheckBox)
+        return allTokensPanel
     }
 
     private fun createOutputDirChooser(): JPanel {

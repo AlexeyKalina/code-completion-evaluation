@@ -36,7 +36,7 @@ class Interpreter(private val invoker: CompletionInvoker,
                     position = action.offset
                 }
                 is CallCompletion -> {
-                    if (session == null) session = Session(position, action.expectedText, action.tokenType)
+                    if (session == null) session = Session(position, action.expectedText, action.nodeProperties)
                     val lookup = invoker.callCompletion(action.expectedText, action.prefix)
                     session.addLookup(lookup)
                     isFinished = false

@@ -1,12 +1,12 @@
 package org.jb.cce.uast.util
 
+import org.jb.cce.uast.Completable
 import org.jb.cce.uast.UnifiedAstNode
 import org.jb.cce.uast.UnifiedAstRecursiveVisitor
 import org.jb.cce.uast.statements.declarations.DeclarationNode
 import org.jb.cce.uast.statements.expressions.ArrayAccessNode
 import org.jb.cce.uast.statements.expressions.ExpressionNode
 import org.jb.cce.uast.statements.expressions.NamedNode
-import org.jb.cce.uast.statements.expressions.references.ClassMemberAccessNode
 import org.jb.cce.uast.statements.expressions.references.ReferenceNode
 
 class UastPrinter : UnifiedAstRecursiveVisitor() {
@@ -23,17 +23,17 @@ class UastPrinter : UnifiedAstRecursiveVisitor() {
     }
 
     override fun visitExpressionNode(node: ExpressionNode) {
-        val role = getRole(node)
+        val info = getInfo(node)
         isPrefix = false
         isArgument = false
-        printNode(node, "${node::class.java.simpleName}$role")
+        printNode(node, "${node::class.java.simpleName}$info")
     }
 
     override fun visitNamedNode(node: NamedNode) {
-        val role = getRole(node)
+        val info = getInfo(node)
         val prevValueArg = isArgument
         isArgument = true
-        printNode(node, "${node::class.java.simpleName} (${node.name})$role")
+        printNode(node, "${node::class.java.simpleName} (${node.name})$info")
         isArgument = prevValueArg
     }
 
@@ -73,15 +73,17 @@ class UastPrinter : UnifiedAstRecursiveVisitor() {
         level -= 1
     }
 
-    private fun getRole(node: UnifiedAstNode): String {
-        var role = when {
+    private fun getInfo(node: UnifiedAstNode): String {
+        var info = when {
             isPrefix -> "prefix"
             isArgument -> "argument"
             else -> ""
         }
-        if (node is ClassMemberAccessNode && node.isStatic)
-            role += if (role.isBlank()) "static" else " static"
-        return if (role.isNotBlank()) " - $role" else ""
+        if (node is Completable) {
+            if (info.isNotBlank()) info += "; "
+            info += "${node.getProperties().properties}"
+        }
+        return if (info.isNotBlank()) " - $info" else ""
     }
 
     fun getText(): String {

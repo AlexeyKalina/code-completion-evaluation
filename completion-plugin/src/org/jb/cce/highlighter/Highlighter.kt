@@ -26,7 +26,6 @@ class Highlighter(private val project: Project) {
         listener = editor.getUserData(listenerKey) ?: HighlightersClickListener(editor, project)
         editor.addEditorMouseListener(listener)
 
-        val offsets = sessions.map { it.offset }.distinct().sorted()
         ApplicationManager.getApplication().invokeLater {
             editor.markupModel.removeAllHighlighters()
             listener.clear()

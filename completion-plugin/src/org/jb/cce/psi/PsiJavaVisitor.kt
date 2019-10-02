@@ -5,10 +5,9 @@ import com.intellij.psi.impl.source.tree.ChildRole
 import com.intellij.psi.impl.source.tree.java.PsiArrayAccessExpressionImpl
 import com.intellij.psi.impl.source.tree.java.PsiNewExpressionImpl
 import org.jb.cce.psi.exceptions.PsiConverterException
-import org.jb.cce.uast.CompositeNode
-import org.jb.cce.uast.FileNode
-import org.jb.cce.uast.UnifiedAstNode
+import org.jb.cce.uast.*
 import org.jb.cce.uast.exceptions.UnifiedAstException
+import org.jb.cce.uast.NodeProperties
 import org.jb.cce.uast.statements.declarations.*
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
 import org.jb.cce.uast.statements.expressions.AnonymousClassNode
@@ -26,6 +25,8 @@ class PsiJavaVisitor(private val path: String, private val text: String) : PsiVi
     override fun getFile(): FileNode = _file ?: throw PsiConverterException("Invoke 'accept' with visitor on Bash PSI first")
 
     private val stackOfNodes: Deque<UnifiedAstNode> = ArrayDeque<UnifiedAstNode>()
+
+    private var isArgument = false
 
     override fun visitJavaFile(file: PsiJavaFile) {
         _file = FileNode(file.textOffset, file.textLength, path, text)
@@ -74,15 +75,14 @@ class PsiJavaVisitor(private val path: String, private val text: String) : PsiVi
     }
 
     override fun visitMethodCallExpression(expression: PsiMethodCallExpression) {
-        val isStatic = expression.resolveMethod()?.modifierList?.text?.contains("static") ?: false
         val name = expression.methodExpression.referenceName
         val methodCall = MethodCallNode(name ?: throw PsiConverterException("Empty method name"),
-                expression.methodExpression.textOffset, name.length, isStatic)
+                expression.methodExpression.textOffset, name.length, getMethodCallProperties(expression))
         addToParent(methodCall)
         stackOfNodes.addLast(methodCall)
         val qualifier = expression.methodExpression.qualifier
         visitPotentialExpression(qualifier)
-        super.visitElement(expression.argumentList)
+        visitArgumentList(expression.argumentList)
         stackOfNodes.removeLast()
     }
 
@@ -102,24 +102,44 @@ class PsiJavaVisitor(private val path: String, private val text: String) : PsiVi
         addToParent(anonymousClass)
         stackOfNodes.addLast(anonymousClass)
         visitConstructorInvocation(callExpression)
+        val prevValue = isArgument
+        isArgument = false
         visitClass(classNode)
+        isArgument = prevValue
         stackOfNodes.removeLast()
     }
 
     private fun visitConstructorInvocation(callExpression: PsiNewExpressionImpl) {
         val typeName = callExpression.classOrAnonymousClassReference ?: return
         val name = typeName.referenceName ?: typeName.text
-        val methodCall = MethodCallNode(name, typeName.textOffset, name.length)
+        val methodCall = MethodCallNode(name, typeName.textOffset, name.length, getMethodCallProperties(callExpression))
         addToParent(methodCall)
         stackOfNodes.addLast(methodCall)
-        if (callExpression.argumentList != null) super.visitElement(callExpression.argumentList)
+        visitArgumentList(callExpression.argumentList)
         stackOfNodes.removeLast()
+    }
+
+    private fun getMethodCallProperties(expression: PsiCallExpression): NodeProperties {
+        val resolvedMethod = expression.resolveMethod()
+        val isStatic = resolvedMethod?.modifierList?.text?.contains("static") ?: false
+        return getNodeProperties(TypeProperty.METHOD_CALL, isStatic, getPackageName(resolvedMethod))
+    }
+
+    private fun getPackageName(resolvedReference: PsiElement?) = (resolvedReference?.containingFile as? PsiJavaFile)?.packageName ?: "<unknown package>"
+
+    private fun visitArgumentList(argumentList: PsiExpressionList?) {
+        val prevValue = isArgument
+        isArgument = true
+        if (argumentList != null) super.visitElement(argumentList)
+        isArgument = prevValue
     }
 
     override fun visitLambdaExpression(expression: PsiLambdaExpression) {
         val lambda = LambdaExpressionNode(expression.textOffset, expression.textLength)
         addToParent(lambda)
         val body = expression.body
+        val prevValue = isArgument
+        isArgument = false
         if (body is PsiExpression) {
             stackOfNodes.addLast(lambda)
             visitPotentialExpression(body)
@@ -131,6 +151,7 @@ class PsiJavaVisitor(private val path: String, private val text: String) : PsiVi
             visitCodeBlock(body)
             stackOfNodes.removeLast()
         }
+        isArgument = prevValue
     }
 
     override fun visitArrayAccessExpression(expression: PsiArrayAccessExpression) {
@@ -149,21 +170,24 @@ class PsiJavaVisitor(private val path: String, private val text: String) : PsiVi
 
     override fun visitReferenceElement(reference: PsiJavaCodeReferenceElement) {
         val name = reference.referenceName ?: reference.text
-        when (val resolvedRef = reference.resolve()) {
+        val resolvedRef = reference.resolve()
+        val packageName = getPackageName(resolvedRef)
+        when (resolvedRef) {
             is PsiField -> {
                 val isStatic = resolvedRef.modifierList?.text?.contains("static") ?: false
-                val field = FieldAccessNode(name, reference.textOffset, name.length, isStatic)
+                val field = FieldAccessNode(name, reference.textOffset, name.length, getNodeProperties(TypeProperty.FIELD, isStatic, packageName))
                 addToParent(field)
                 stackOfNodes.addLast(field)
                 super.visitReferenceElement(reference)
                 stackOfNodes.removeLast()
             }
             is PsiLocalVariable -> {
-                val node = VariableAccessNode(name, reference.textOffset, name.length)
+                resolvedRef.containingFile
+                val node = VariableAccessNode(name, reference.textOffset, name.length, getNodeProperties(TypeProperty.VARIABLE, false, packageName))
                 addToParent(node)
             }
             is PsiParameter -> {
-                val node = VariableAccessNode(name, reference.textOffset, name.length)
+                val node = VariableAccessNode(name, reference.textOffset, name.length, getNodeProperties(TypeProperty.VARIABLE, false, packageName))
                 addToParent(node)
             }
             is PsiClass -> {
@@ -212,6 +236,15 @@ class PsiJavaVisitor(private val path: String, private val text: String) : PsiVi
 
     private fun visitPotentialExpression(element: PsiElement?) {
         element?.accept(this)
+    }
+
+    private fun getNodeProperties(tokenType: TypeProperty, isStatic: Boolean, packageName: String): NodeProperties {
+        val properties = NodeProperties()
+        properties.tokenType = tokenType
+        properties.isArgument = isArgument
+        properties.isStatic = isStatic
+        properties.packageName = packageName
+        return properties
     }
 
     private fun addToParent(node: UnifiedAstNode) {

@@ -1,6 +1,5 @@
 package org.jb.cce.visitors
 
-import org.jb.cce.TokenType
 import org.jb.cce.actions.*
 import org.jb.cce.uast.Completable
 import org.jb.cce.uast.UnifiedAstRecursiveVisitor
@@ -8,9 +7,6 @@ import org.jb.cce.uast.statements.declarations.blocks.BlockNode
 import org.jb.cce.uast.statements.declarations.blocks.ClassInitializerNode
 import org.jb.cce.uast.statements.declarations.blocks.GlobalNode
 import org.jb.cce.uast.statements.declarations.blocks.MethodBodyNode
-import org.jb.cce.uast.statements.expressions.VariableAccessNode
-import org.jb.cce.uast.statements.expressions.references.FieldAccessNode
-import org.jb.cce.uast.statements.expressions.references.MethodCallNode
 
 abstract class CallCompletionsVisitor(protected open val text: String,
                                       protected val strategy: CompletionStrategy,
@@ -59,23 +55,16 @@ abstract class CallCompletionsVisitor(protected open val text: String,
             CompletionContext.PREVIOUS -> preparePreviousContext(node)
         }
 
-        val tokenType = when (node) {
-            is MethodCallNode -> TokenType.METHOD_CALL
-            is VariableAccessNode -> TokenType.VARIABLE
-            is FieldAccessNode -> TokenType.FIELD
-            else -> TokenType.UNKNOWN
-        }
-
         val prefix = prefixCreator.getPrefix(node.getText())
         var currentPrefix = ""
         if (prefixCreator.completePrevious) {
             for (symbol in prefix) {
-                actions += CallCompletion(currentPrefix, node.getText(), tokenType)
+                actions += CallCompletion(currentPrefix, node.getText(), node.getProperties())
                 actions += PrintText(symbol.toString(), false)
                 currentPrefix += symbol
             }
         } else if (prefix.isNotEmpty()) actions += PrintText(prefix, false)
-        actions += CallCompletion(prefix, node.getText(), tokenType)
+        actions += CallCompletion(prefix, node.getText(), node.getProperties())
         actions += FinishSession()
 
         if (prefix.isNotEmpty())

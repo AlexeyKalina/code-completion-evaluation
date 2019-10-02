@@ -4,4 +4,5 @@ class TokenNode(private val text: String, offset: Int, length: Int) : UnifiedAst
     override fun getChildren(): List<UnifiedAstNode> = emptyList()
     override fun getText() = text
     override fun accept(visitor: UnifiedAstVisitor) = visitor.visitTokenNode(this)
+    override fun getProperties() = NodeProperties()
 }
