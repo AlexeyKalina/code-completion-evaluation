@@ -34,7 +34,7 @@ class TypeFilterConfiguration : EvaluationFilterConfiguration {
 
     override fun buildFromJson(json: Any?): EvaluationFilter =
             if (json == null) EvaluationFilter.ACCEPT_ALL
-            else TypeFilter(json as List<TypeProperty>)
+            else TypeFilter((json as List<String>).map { TypeProperty.valueOf(it) })
 
     override fun defaultFilter(): EvaluationFilter = TypeFilter(listOf(TypeProperty.METHOD_CALL))
 
