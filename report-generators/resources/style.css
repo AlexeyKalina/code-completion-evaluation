@@ -14,6 +14,23 @@ body {
 .completion {
   position: relative;
   display: inline-block;
+  font-weight: bold;
+}
+
+.completion.good {
+  color: #008800
+}
+
+.completion.middle {
+  color: #999900
+}
+
+.completion.bad {
+  color: #BB0066
+}
+
+.completion.absent {
+  color: #70AAFF
 }
 
 .autocomplete-items {

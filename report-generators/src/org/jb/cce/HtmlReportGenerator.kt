@@ -158,10 +158,8 @@ class HtmlReportGenerator(outputDir: String) {
         }
     }
 
-    private fun getDiv(session: Session?, text: String): String {
-        val divStyle = "color: ${ReportColors.getColor(session, HtmlColors)}; font-weight: bold"
-        return "<div class='completion' id='${session?.id}' style='$divStyle'>$text</div>"
-    }
+    private fun getDiv(session: Session?, text: String): String =
+            "<div class='completion ${ReportColors.getColor(session, HtmlColorClasses)}' id='${session?.id}'>$text</div>"
 
     private fun getMetricsTable(globalMetrics: List<MetricInfo>): String {
         val sortedMetrics = globalMetrics.sortedBy { it.title }
