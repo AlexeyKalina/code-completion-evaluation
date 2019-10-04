@@ -5,9 +5,9 @@ FileNode
       MethodBodyNode
         VariableDeclarationNode (r)
           LambdaExpressionNode
-            MethodCallNode (test)
-        MethodCallNode (run)
-          VariableAccessNode (r) - prefix
+            MethodCallNode (test) - {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
+        MethodCallNode (run) - {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=<unknown package>}
+          VariableAccessNode (r) - prefix; {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}
     MethodDeclarationNode (test)
       MethodHeaderNode (test)
       MethodBodyNode

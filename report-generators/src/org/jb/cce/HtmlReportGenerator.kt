@@ -1,10 +1,11 @@
 package org.jb.cce
 
-import org.apache.commons.text.StringEscapeUtils
+import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.metrics.MetricInfo
-import java.io.*
+import java.io.File
+import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -118,12 +119,15 @@ class HtmlReportGenerator(outputDir: String) {
 
     private fun getHtml(sessions: List<List<Session>>, fileName: String, resourcePath: String, text: String): String {
         reportTitle = "Code Completion Report for file <b>$fileName</b>"
+        val code = prepareCode(text, sessions)
         return """
             |<html><head><title>$reportTitle</title>
             |<script src="$resourcePath"></script>
             |<style>${style}</style></head>
             |<body><h1>$reportTitle</h1>
-            |<pre>${prepareCode(text, sessions)}</pre>
+            |<div class="code-container">
+            |<div><pre class="line-numbers">${getLineNumbers(code.lines().size)}</pre></div>
+            |<div><pre class="code">$code</pre></div></div>
             |<script>${script}</script></body>
             """.trimMargin()
     }
@@ -140,7 +144,7 @@ class HtmlReportGenerator(outputDir: String) {
 
             for (sessionGroup in sessionGroups) {
                 val session = sessionGroup.filterNotNull().first()
-                val commonText = StringEscapeUtils.escapeHtml4(text.substring(offset, session.offset))
+                val commonText = escapeHtml4(text.substring(offset, session.offset))
                 append(commonText)
 
                 val center = session.expectedText.length / sessions.size
@@ -153,7 +157,7 @@ class HtmlReportGenerator(outputDir: String) {
                 append(getDiv(sessionGroup.last(), session.expectedText.substring(shift)))
                 offset = session.offset + session.expectedText.length
             }
-            append(StringEscapeUtils.escapeHtml4(text.substring(offset)))
+            append(escapeHtml4(text.substring(offset)))
             toString()
         }
     }
@@ -221,4 +225,8 @@ class HtmlReportGenerator(outputDir: String) {
         |</script>
         """.trimMargin()
     }
+
+    private fun getLineNumbers(linesCount: Int): String =
+      (1..linesCount).joinToString("\n") { it.toString().padStart(linesCount.toString().length) }
+  
 }

@@ -1,4 +1,3 @@
 rootProject.name = 'completion-evaluation'
 
-include 'uast', 'completion-plugin', 'interpretator', 'metrics-evaluator', 'report-generators'
-
+include 'uast', 'completion-plugin', 'interpretator', 'metrics-evaluator', 'report-generators', 'filter'

@@ -1,21 +1,33 @@
 package org.jb.cce.util
 
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonPrimitive
-import org.jb.cce.actions.*
+import com.google.gson.*
+import org.jb.cce.actions.CompletionContext
+import org.jb.cce.actions.CompletionPrefix
+import org.jb.cce.actions.CompletionStrategy
+import org.jb.cce.actions.CompletionType
+import org.jb.cce.filter.EvaluationFilter
+import org.jb.cce.filter.EvaluationFilterManager
 import org.jb.cce.uast.Language
 import java.io.File
 import java.io.FileReader
+import java.lang.reflect.Type
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 
 object ConfigFactory {
-    private val gson = GsonBuilder().setPrettyPrinting().create()
+    private val gson = GsonBuilder()
+            .serializeNulls()
+            .setPrettyPrinting()
+            .registerTypeAdapter(EvaluationFilter::class.java, object : JsonSerializer<EvaluationFilter> {
+                override fun serialize(src: EvaluationFilter, typeOfSrc: Type, context: JsonSerializationContext) = src.toJson()
+            })
+            .create()
 
     private val defaultConfig = Config("", listOf(""), Language.JAVA.displayName,
-            CompletionStrategy(CompletionPrefix.NoPrefix, CompletionStatement.METHOD_CALLS, CompletionContext.ALL),
-            CompletionType.BASIC, "", interpretActions = false, saveLogs = true, logsTrainingPercentage = 70)
+            CompletionStrategy(CompletionPrefix.NoPrefix, CompletionContext.ALL, false,
+                    EvaluationFilterManager.getAllFilters().associateBy({ it.id }, { it.defaultFilter() })),
+            CompletionType.BASIC, "", interpretActions = true, saveLogs = false, logsTrainingPercentage = 70)
 
     fun load(path: String): Config {
         val configFile = File(path)
@@ -24,18 +36,35 @@ object ConfigFactory {
             throw IllegalArgumentException("Config file missing. Config created by path: ${configFile.absolutePath}. Fill settings in config.")
         }
 
-        val map = gson.fromJson(FileReader(configFile), HashMap<String, Any>().javaClass)
-        val strategy = map["strategy"] as Map<String, Any>
-        return Config(map["projectPath"] as String, map["listOfFiles"] as List<String>, map["language"] as String,
-                CompletionStrategy(getPrefix(strategy), CompletionStatement.valueOf(strategy["statement"] as String),
-                        CompletionContext.valueOf(strategy["context"] as String)),
-                CompletionType.valueOf(map["completionType"] as String), map["outputDir"] as String, map["interpretActions"] as Boolean,
-                map["saveLogs"] as Boolean, (map["logsTrainingPercentage"] as Double).toInt())
+        val map = gson.fromJson<HashMap<String, Any>>(FileReader(configFile), HashMap<String, Any>().javaClass)
+        val strategy = map.getAs<Map<String, Any>>("strategy")
+        val evaluationFilters = mutableMapOf<String, EvaluationFilter>()
+        val languageName = map.getAs<String>("language")
+        val completeAllTokens = strategy.getAs<Boolean>("completeAllTokens")
+        if (!completeAllTokens) {
+            val filters = strategy.getAs<Map<String, Any>>("filters")
+            for ((id, description) in filters) {
+                val configuration = EvaluationFilterManager.getConfigurationById(id)
+                        ?: throw IllegalStateException("Unknown filter: $id")
+                assert(configuration.isLanguageSupported(languageName)) { "filter $id is not supported for this language" }
+                evaluationFilters[id] = configuration.buildFromJson(description)
+            }
+        }
+        return Config(map.getAs("projectPath"), map.getAs("listOfFiles"), languageName,
+                CompletionStrategy(getPrefix(strategy), CompletionContext.valueOf(strategy.getAs("context")), completeAllTokens, evaluationFilters),
+                CompletionType.valueOf(map.getAs("completionType")), map.getAs("outputDir"), map.getAs("interpretActions"),
+                map.getAs("saveLogs"), map.getAs<Double>("logsTrainingPercentage").toInt())
+    }
+
+    fun save(path: String): Config {
+        save(defaultConfig, path)
+        return defaultConfig
     }
 
     fun save(config: Config, path: String) {
         val json = gson.toJsonTree(config)
-        val prefix = json.asJsonObject["strategy"].asJsonObject["prefix"].asJsonObject
+        val strategy = json.asJsonObject["strategy"] as JsonObject
+        val prefix = strategy["prefix"].asJsonObject
         val className = config.strategy.prefix.javaClass.name
         prefix.add("name", JsonPrimitive(className.substring(className.indexOf('$') + 1)))
         val strategyPrefix = config.strategy.prefix
@@ -45,12 +74,19 @@ object ConfigFactory {
     }
 
     private fun getPrefix(strategy: Map<String, Any>): CompletionPrefix {
-        val prefix = strategy["prefix"] as Map<String, Any>
+        val prefix = strategy.getAs<Map<String, Any>>("prefix")
         return when (prefix["name"]) {
             "NoPrefix" -> CompletionPrefix.NoPrefix
-            "CapitalizePrefix" -> CompletionPrefix.CapitalizePrefix(prefix["emulateTyping"] as Boolean)
-            "SimplePrefix" -> CompletionPrefix.SimplePrefix(prefix["emulateTyping"] as Boolean, (prefix["n"] as Double).toInt())
+            "CapitalizePrefix" -> CompletionPrefix.CapitalizePrefix(prefix.getAs("emulateTyping"))
+            "SimplePrefix" -> CompletionPrefix.SimplePrefix(prefix.getAs("emulateTyping"), prefix.getAs<Double>("n").toInt())
             else -> throw IllegalArgumentException("Unknown completion prefix")
         }
+    }
+
+    private inline fun <reified T> Map<String, *>.getAs(key: String): T {
+        check(key in this.keys) { "$key not found. Existing keys: ${keys.toList()}" }
+        val value = this.getValue(key)
+        check(value is T) { "Unexpected type in config" }
+        return value
     }
 }

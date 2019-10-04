@@ -1,6 +1,6 @@
 FileNode
   VariableDeclarationNode (dec_num)
-  MethodCallNode (repr)
-    MethodCallNode (hex) - argument
-      MethodCallNode (int) - argument
-        VariableAccessNode (dec_num) - argument
+  MethodCallNode (repr) - {tokenType=METHOD_CALL, isArgument=false}
+    MethodCallNode (hex) - argument; {tokenType=METHOD_CALL, isArgument=true}
+      MethodCallNode (int) - argument; {tokenType=METHOD_CALL, isArgument=true}
+        VariableAccessNode (dec_num) - argument; {tokenType=VARIABLE, isArgument=true}

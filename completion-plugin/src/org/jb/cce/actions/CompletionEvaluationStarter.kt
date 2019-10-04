@@ -7,6 +7,7 @@ import com.intellij.openapi.project.ProjectManager
 import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.CompletionEvaluator
+import org.jb.cce.exceptions.ExceptionsUtil.stackTraceToString
 import org.jb.cce.util.ConfigFactory
 import java.io.File
 import java.nio.file.Paths
@@ -23,7 +24,7 @@ class CompletionEvaluationStarter : ApplicationStarter {
         val config = try {
             ConfigFactory.load(configPath)
         } catch (e: Exception) {
-            fatalError("Error for loading config: $configPath, $e")
+            fatalError("Error for loading config: $configPath, $e. StackTrace: ${stackTraceToString(e)}")
         }
 
         val project = try {

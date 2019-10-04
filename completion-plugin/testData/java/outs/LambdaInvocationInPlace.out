@@ -3,10 +3,10 @@ FileNode
     MethodDeclarationNode (main)
       MethodHeaderNode (main)
       MethodBodyNode
-        MethodCallNode (run)
+        MethodCallNode (run) - {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=<unknown package>}
           LambdaExpressionNode - prefix
             MethodBodyNode
-              MethodCallNode (test)
+              MethodCallNode (test) - {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
     MethodDeclarationNode (test)
       MethodHeaderNode (test)
       MethodBodyNode

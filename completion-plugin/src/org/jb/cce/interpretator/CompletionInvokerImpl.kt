@@ -27,7 +27,6 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
     private companion object {
         val LOG = Logger.getInstance(CompletionInvokerImpl::class.java)
         const val LOG_MAX_LENGTH = 50
-        const val WAITING_TIME = 100L
     }
 
     private val completionType = when (completionType) {
@@ -46,25 +45,27 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
 
     override fun callCompletion(expectedText: String, prefix: String): org.jb.cce.Lookup {
         LOG.info("Call completion. Type: $completionType. ${positionToString(editor!!.caretModel.offset)}")
-        assert(!dumbService.isDumb) { "Calling completion during indexing." }
+//        assert(!dumbService.isDumb) { "Calling completion during indexing." }
         LookupManager.getInstance(project).hideActiveLookup()
 
-        var latency = measureTimeMillis {
-            CodeCompletionHandlerBase(completionType, false, false, true).invokeCompletion(project, editor)
+        val latency = measureTimeMillis {
+            val handler = object : CodeCompletionHandlerBase(completionType, false, false, true) {
+                // Guarantees synchronous execution
+                override fun isTestingMode() = true
+            }
+            handler.invokeCompletion(project, editor)
         }
         if (LookupManager.getActiveLookup(editor) == null) {
             return org.jb.cce.Lookup(prefix, emptyList(), latency)
         } else {
             val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
-            latency += measureTimeMillis {
-                lookup.waitForResult(1000)
-            }
             val suggestions = lookup.items.map { Suggestion(it.lookupString, lookupElementText(it)) }
             return org.jb.cce.Lookup(prefix, suggestions, latency)
         }
     }
 
     override fun finishCompletion(expectedText: String, prefix: String): Boolean {
+        LOG.info("Finish completion. Expected text: $expectedText")
         if (completionType == CompletionType.SMART) return false
         val lookup = LookupManager.getActiveLookup(editor) as? LookupImpl ?: return false
         val expectedItemIndex = lookup.items.indexOfFirst { it.lookupString == expectedText }
@@ -88,6 +89,7 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
         val project = editor!!.project
         val runnable = Runnable { document.deleteString(begin, end) }
         WriteCommandAction.runWriteCommandAction(project, runnable)
+        if (editor!!.caretModel.offset != begin) editor!!.caretModel.moveToOffset(begin)
     }
 
     override fun openFile(file: String): String {
@@ -111,6 +113,8 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
         return FileEditorManager.getInstance(project).openFiles.any { it.path == file }
     }
 
+    override fun getText(): String = editor?.document?.text ?: throw IllegalStateException("No open editor")
+
     private fun positionToString(offset: Int): String {
         val logicalPosition = editor!!.offsetToLogicalPosition(offset)
         return "Offset: $offset, Line: ${logicalPosition.line}, Column: ${logicalPosition.column}."
@@ -133,19 +137,10 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
             return false
         }
         if (lengthBefore + completionLength != document.textLength) {
+            LOG.info("Undo operation after finishing completion.")
             UndoManagerImpl.getInstance(project).undo(FileEditorManager.getInstance(project).selectedEditor)
             return false
         }
         return true
-    }
-
-    private fun LookupImpl.waitForResult(timeMs: Long): Boolean {
-        var totalWaitingTimeMs = 0L
-        while (isCalculating && totalWaitingTimeMs < timeMs) {
-            Thread.sleep(WAITING_TIME)
-            totalWaitingTimeMs += WAITING_TIME
-        }
-
-        return !isCalculating
     }
 }

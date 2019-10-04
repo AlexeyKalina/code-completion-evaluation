@@ -4,9 +4,9 @@ FileNode
       MethodHeaderNode (main)
       MethodBodyNode
         VariableDeclarationNode (arg)
-        VariableAccessNode (args)
-        MethodCallNode (test)
-          VariableAccessNode (arg) - argument
+        VariableAccessNode (args) - {tokenType=VARIABLE, isArgument=false, isStatic=false, packageName=}
+        MethodCallNode (test) - {tokenType=METHOD_CALL, isArgument=false, isStatic=false, packageName=}
+          VariableAccessNode (arg) - argument; {tokenType=VARIABLE, isArgument=true, isStatic=false, packageName=}
     MethodDeclarationNode (test)
       MethodHeaderNode (test)
       MethodBodyNode

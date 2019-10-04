@@ -12,9 +12,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.util.io.readText
 import org.jb.cce.actions.ActionsGenerator
-import org.jb.cce.actions.CompletionStatement
 import org.jb.cce.actions.CompletionStrategy
 import org.jb.cce.actions.CompletionType
+import org.jb.cce.exceptions.ExceptionsUtil.stackTraceToString
 import org.jb.cce.highlighter.Highlighter
 import org.jb.cce.info.EvaluationInfo
 import org.jb.cce.info.FileErrorInfo
@@ -74,7 +74,7 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
     private fun generateActions(workspace: EvaluationWorkspace, languageName: String, files: Collection<VirtualFile>,
                                 strategy: CompletionStrategy, offset: Int?, psi: PsiElement?, indicator: Progress) {
         val actionsGenerator = ActionsGenerator(strategy)
-        val uastBuilder = UastBuilder.create(project, languageName, strategy.statement == CompletionStatement.ALL_TOKENS)
+        val uastBuilder = UastBuilder.create(project, languageName, strategy.completeAllTokens)
 
         val sortedFiles = files.sortedBy { f -> f.name }
         val errors = mutableListOf<FileErrorInfo>()
@@ -108,14 +108,13 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
     private fun interpretUnderProgress(workspace: EvaluationWorkspace, completionType: CompletionType, strategy: CompletionStrategy,
                                        languageName: String, generateReport: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
         val task = object : Task.Backgroundable(project, "Actions interpreting") {
-            private val sessionsStorage = workspace.sessionsStorage
             private lateinit var lastFileSessions: List<Session>
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
                 val logsPath = Paths.get(workspace.logsDirectory(), languageName.toLowerCase()).toString()
                 val logsWatcher = if (saveLogs) DirectoryWatcher(statsCollectorLogsDirectory(), logsPath, logsTrainingPercentage) else null
-                lastFileSessions = interpretActions(workspace.actionsStorage, sessionsStorage, completionType, strategy, project, logsWatcher, getProcess(indicator))
+                lastFileSessions = interpretActions(workspace, completionType, strategy, project, logsWatcher, getProcess(indicator))
             }
 
             override fun onSuccess() = finish()
@@ -130,12 +129,12 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    private fun interpretActions(actionsStorage: ActionsStorage, sessionsStorage: SessionsStorage, completionType: CompletionType, strategy: CompletionStrategy,
+    private fun interpretActions(workspace: EvaluationWorkspace, completionType: CompletionType, strategy: CompletionStrategy,
                                  project: Project, logsWatcher: DirectoryWatcher?, indicator: Progress): List<Session> {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, completionType), project)
         var sessionsCount = 0
         val computingTime = measureTimeMillis {
-            sessionsCount = actionsStorage.computeSessionsCount()
+            sessionsCount = workspace.actionsStorage.computeSessionsCount()
         }
         LOG.info("Computing of sessions count took $computingTime ms")
         val handler = InterpretationHandlerImpl(indicator, sessionsCount)
@@ -144,20 +143,21 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
         val mlCompletionFlag = isMLCompletionEnabled()
         LOG.info("Start interpreting actions")
         setMLCompletion(completionType == CompletionType.ML)
-        val files = actionsStorage.getActionFiles()
+        val files = workspace.actionsStorage.getActionFiles()
         var lastFileSessions = listOf<Session>()
         for (file in files) {
+            val fileActions = workspace.actionsStorage.getActions(file)
             try {
-                val fileActions = actionsStorage.getActions(file)
                 lastFileSessions = interpreter.interpret(fileActions)
                 val fileText = FilesHelper.getProjectPath(project, fileActions.path).readText()
-                sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, fileText, lastFileSessions))
+                workspace.sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, fileText, lastFileSessions))
             } catch (e: Throwable) {
+                workspace.errorsStorage.saveError(FileErrorInfo(fileActions.path, e.message ?: "No Message", stackTraceToString(e)))
                 LOG.error("Actions interpretation error for file ${file.path}.", e)
             }
             if (handler.isCancelled()) break
         }
-        sessionsStorage.saveEvaluationInfo(EvaluationInfo(completionType.name, strategy))
+        workspace.sessionsStorage.saveEvaluationInfo(EvaluationInfo(completionType.name, strategy))
         LOG.info("Interpreting actions completed")
         setMLCompletion(mlCompletionFlag)
         logsWatcher?.stop()
@@ -168,12 +168,6 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
 
     private fun statsCollectorLogsDirectory(): String {
         return Paths.get(PathManager.getSystemPath(), "completion-stats-data").toString()
-    }
-
-    private fun stackTraceToString(e: Throwable): String {
-        val sw = StringWriter()
-        e.printStackTrace(PrintWriter(sw))
-        return sw.toString()
     }
 
     private fun isMLCompletionEnabled(): Boolean {

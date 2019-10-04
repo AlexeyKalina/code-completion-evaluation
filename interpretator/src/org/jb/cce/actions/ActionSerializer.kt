@@ -1,11 +1,19 @@
 package org.jb.cce.actions
-import com.google.gson.Gson
-import org.jb.cce.TokenType
+import com.google.gson.ExclusionStrategy
+import com.google.gson.FieldAttributes
+import com.google.gson.GsonBuilder
 import org.jb.cce.exception.UnexpectedActionException
+import org.jb.cce.uast.NodeProperties
 
 class ActionSerializer {
 
-    private val gson = Gson()
+    private val gson = GsonBuilder()
+            .addSerializationExclusionStrategy(object : ExclusionStrategy {
+                // don't serialize field properties twice
+                override fun shouldSkipField(f: FieldAttributes) = f.name == "_properties"
+                override fun shouldSkipClass(aClass: Class<*>) = false
+            })
+            .create()
 
     fun serialize(actions: FileActions): String {
         return gson.toJson(actions)
@@ -15,7 +23,7 @@ class ActionSerializer {
         return when (action["type"]) {
             Action.ActionType.MOVE_CARET.name -> MoveCaret((action["offset"] as Double).toInt())
             Action.ActionType.CALL_COMPLETION.name -> CallCompletion(action["prefix"] as String, action["expectedText"] as String,
-                    TokenType.valueOf(action["tokenType"] as String))
+                    NodeProperties.create((action["nodeProperties"] as Map<String, Any>)["properties"] as Map<String, Any>))
             Action.ActionType.FINISH_SESSION.name -> FinishSession()
             Action.ActionType.PRINT_TEXT.name -> PrintText(action["text"] as String, action["completable"] as Boolean)
             Action.ActionType.DELETE_RANGE.name ->

@@ -4,8 +4,8 @@ FileNode
       MethodHeaderNode (main)
       MethodBodyNode
         VariableDeclarationNode (value)
-          MethodCallNode (three) - static
-          MethodCallNode (five) - static
+          MethodCallNode (three) - {tokenType=METHOD_CALL, isArgument=false, isStatic=true, packageName=}
+          MethodCallNode (five) - {tokenType=METHOD_CALL, isArgument=false, isStatic=true, packageName=}
     MethodDeclarationNode (five)
       MethodHeaderNode (five)
       MethodBodyNode
