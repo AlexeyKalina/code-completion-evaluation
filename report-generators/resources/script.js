@@ -7,22 +7,25 @@ document.addEventListener("click", function (e) {
 });
 elementsArray.forEach(function(elem) {
     elem.addEventListener("click", function() {
-        var lookups = completions[elem.id]["_lookups"];
-        var lastLookup = lookups[lookups.length - 1];
-        var suggestions = lastLookup["suggestions"];
-        var a, b, i, val = this.value;
+        const sessionId = elem.id.split(" ")[0];
+        const lookups = completions[sessionId]["_lookups"];
+        const prefixLengthInput = document.getElementById("prefix-length");
+        const prefixLength = prefixLengthInput != null ? prefixLengthInput.value : 0;
+        if (lookups.length <= prefixLength) return;
+        const lookup = lookups[prefixLength];
+        const suggestions = lookup["suggestions"];
+        let a, b, i = this.value;
         closeAllLists();
         a = document.createElement("DIV");
-        a.setAttribute("id", this.id + "autocomplete-list");
         a.setAttribute("class", "autocomplete-items");
         this.appendChild(a);
         prefixDiv = document.createElement("DIV");
-        prefixDiv.setAttribute("style", "background-color: lightgrey;")
-        prefixDiv.innerHTML = "prefix: &quot;" + lastLookup["text"] + "&quot;; latency: " + lastLookup["latency"];
+        prefixDiv.setAttribute("style", "background-color: lightgrey;");
+        prefixDiv.innerHTML = "prefix: &quot;" + lookup["text"] + "&quot;; latency: " + lookup["latency"];
         a.appendChild(prefixDiv);
         for (i = 0; i < suggestions.length; i++) {
             b = document.createElement("DIV");
-            if (completions[elem.id].expectedText === suggestions[i].text) {
+            if (completions[sessionId].expectedText === suggestions[i].text) {
                 b.innerHTML = "<b>" + suggestions[i].presentationText + "</b>"
             } else {
                 b.innerHTML = suggestions[i].presentationText
@@ -35,5 +38,17 @@ function closeAllLists(elmnt) {
     var x = document.getElementsByClassName("autocomplete-items");
     for (var i = 0; i < x.length; i++) {
         x[i].parentNode.removeChild(x[i]);
+    }
+}
+function changePrefix() {
+    const prefixLengthInput = document.getElementById("prefix-length");
+    const prefixLength = prefixLengthInput != null ? prefixLengthInput.value : 0;
+    const codeContainers = document.getElementsByClassName("code-container");
+    for (let i = 0; i < codeContainers.length; i++) {
+        if (prefixLength != i) {
+            codeContainers[i].classList.add("prefix-hidden");
+        } else {
+            codeContainers[i].classList.remove("prefix-hidden");
+        }
     }
 }

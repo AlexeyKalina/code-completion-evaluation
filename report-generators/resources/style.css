@@ -30,6 +30,18 @@ body {
     display: flex;
 }
 
+.label {
+    margin-left: 50px;
+}
+
+.prefix-hidden {
+    display: none;
+}
+
+#prefix-length {
+    font-size: 15px;
+}
+
 .completion {
   position: relative;
   display: inline-block;

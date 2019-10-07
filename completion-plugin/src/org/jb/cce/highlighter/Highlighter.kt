@@ -37,7 +37,7 @@ class Highlighter(private val project: Project) {
     }
 
     private fun addHighlight(editor: Editor, session: Session, begin: Int, end: Int) {
-        val color = getColor(session, HighlightColors)
+        val color = getColor(session, HighlightColors, session.lookups.lastIndex)
         editor.markupModel.addRangeHighlighter(begin, end, HighlighterLayer.LAST,
                 TextAttributes(null, color, null, EffectType.BOXED, Font.PLAIN), HighlighterTargetArea.EXACT_RANGE)
         listener.addSession(session, begin, end)
