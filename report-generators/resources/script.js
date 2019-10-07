@@ -1,7 +1,7 @@
 completions = JSON.parse(sessions);
 let elementsArray = document.querySelectorAll(".completion");
 document.addEventListener("click", function (e) {
-    if (!(e.target.className === "completion")) {
+    if (!(e.target.classList.contains("completion"))) {
         closeAllLists(e.target);
     }
 });
