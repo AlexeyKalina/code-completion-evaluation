@@ -12,6 +12,8 @@ import com.intellij.openapi.ui.Messages
 import org.jb.cce.actions.OpenBrowserDialog
 import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.metrics.MetricsEvaluator
+import org.jb.cce.storages.FileErrorsStorage
+import org.jb.cce.storages.SessionsStorage
 import kotlin.system.exitProcess
 
 class ReportGeneration(private val reportGenerator: HtmlReportGenerator) {
@@ -34,7 +36,11 @@ class ReportGeneration(private val reportGenerator: HtmlReportGenerator) {
                 }
             }
 
-            override fun onSuccess() = finishWork(reportPath, project, isHeadless)
+            override fun onSuccess() {
+                sessionStorages.forEach { it.compress() }
+                errorStorages.forEach { it.compress() }
+                finishWork(reportPath, project, isHeadless)
+            }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }

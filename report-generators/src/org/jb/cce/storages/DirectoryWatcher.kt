@@ -1,6 +1,5 @@
-package org.jb.cce.util
+package org.jb.cce.storages
 
-import com.intellij.util.io.*
 import java.io.BufferedWriter
 import java.io.FileWriter
 import java.nio.file.*
@@ -19,7 +18,7 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
 
     init {
         this.watchKey = Paths.get(logsDir).register(watcher, ENTRY_CREATE)
-        Paths.get(this.outputDir).createDirectories()
+        Files.createDirectories(Paths.get(this.outputDir))
     }
 
     fun start() {
@@ -34,12 +33,12 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
                                     .map { it.context().toString() }
                                     .sortedBy { it.substringAfterLast('_').toInt() }) {
                                 Paths.get(logsDir, logChunk).run {
-                                    if (exists()) {
-                                        with(readText()) {
+                                    if (Files.exists(this)) {
+                                        with(this.toFile().readText()) {
                                             sessionIds.addAll(split("\n").filter { it.isNotBlank() }.map { getSessionId(it) })
                                             writer.append(this)
                                         }
-                                        delete()
+                                        Files.delete(this)
                                     }
                                 }
                             }
@@ -65,7 +64,7 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
 
     private fun saveLogs() {
         val fullLogsFile = Paths.get(outputDir, "full.log")
-        if (!fullLogsFile.exists()) return
+        if (!Files.exists(fullLogsFile)) return
         val trainSize = (sessionIds.size * trainingPercentage.toDouble() / 100.0).toInt()
         val trainSessionIds = sessionIds.take(trainSize).toSet()
 
@@ -81,12 +80,14 @@ class DirectoryWatcher(private val logsDir: String, private val outputDir: Strin
                     trainingLogsWriter else validateLogsWriter).appendln(line)
         }
         saveSessionsInfo(sessionIds.size, trainSize)
-        fullLogsFile.delete()
+        fullLogsFile.toFile().delete()
     }
 
     private fun getLogsWriter(datasetType: String, userId: String): BufferedWriter {
-        val logsFile = Paths.get(outputDir, datasetType, formatter.format(Date()), userId)
-        logsFile.createFile()
+        val resultDir = Paths.get(outputDir, datasetType, formatter.format(Date()))
+        Files.createDirectories(resultDir)
+        val logsFile = Paths.get(resultDir.toString(), userId)
+        Files.createFile(logsFile)
         return logsFile.toFile().bufferedWriter()
     }
 

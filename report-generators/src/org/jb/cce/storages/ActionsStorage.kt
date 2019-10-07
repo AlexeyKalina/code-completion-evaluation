@@ -1,12 +1,11 @@
-package org.jb.cce
+package org.jb.cce.storages
 
 import org.jb.cce.actions.ActionSerializer
 import org.jb.cce.actions.FileActions
-import org.jb.cce.info.FileErrorInfo
 import java.io.File
 import java.nio.file.Paths
 
-class ActionsStorage(val storageDir: String) {
+class ActionsStorage(storageDir: String) : EvaluationStorage(storageDir) {
     companion object {
         private val actionSerializer = ActionSerializer()
     }

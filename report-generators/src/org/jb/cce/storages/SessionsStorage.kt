@@ -1,7 +1,8 @@
-package org.jb.cce
+package org.jb.cce.storages
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import org.jb.cce.SessionSerializer
 import org.jb.cce.info.EvaluationInfo
 import org.jb.cce.info.FileSessionsInfo
 import java.io.FileReader
@@ -9,7 +10,7 @@ import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Paths
 
-class SessionsStorage(val storageDir: String, val evaluationType: String) {
+class SessionsStorage(storageDir: String, val evaluationType: String) : EvaluationStorage(storageDir) {
     companion object {
         private const val pathsListFile = "files.json"
         private const val configFile = "config.json"

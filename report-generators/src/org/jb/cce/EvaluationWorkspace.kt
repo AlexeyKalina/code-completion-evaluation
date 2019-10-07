@@ -1,5 +1,9 @@
 package org.jb.cce
 
+import org.jb.cce.storages.ActionsStorage
+import org.jb.cce.storages.FileErrorsStorage
+import org.jb.cce.storages.LogsStorage
+import org.jb.cce.storages.SessionsStorage
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.text.SimpleDateFormat
@@ -25,8 +29,6 @@ class EvaluationWorkspace(outputDir: String, evaluationType: String, existing: B
         Files.createDirectories(reportsDir)
     }
 
-    fun logsDirectory() = logsDir.toString()
-
     fun reportsDirectory() = reportsDir.toString()
 
     val sessionsStorage = SessionsStorage(sessionsDir.toString(), evaluationType)
@@ -34,4 +36,28 @@ class EvaluationWorkspace(outputDir: String, evaluationType: String, existing: B
     val actionsStorage = ActionsStorage(actionsDir.toString())
 
     val errorsStorage = FileErrorsStorage(errorsDir.toString())
+
+    val logsStorage = LogsStorage(logsDir.toString())
+
+    fun onActionsGenerationCompleted() {
+        actionsStorage.compress()
+        errorsStorage.compress()
+    }
+
+    fun onActionsInterpretationStarted() {
+        actionsStorage.decompress()
+        errorsStorage.decompress()
+    }
+
+    fun onActionsInterpretationCompleted() {
+        actionsStorage.compress()
+        errorsStorage.compress()
+        logsStorage.compress()
+        sessionsStorage.compress()
+    }
+
+    fun onReportGenerationStarted() {
+        errorsStorage.decompress()
+        sessionsStorage.decompress()
+    }
 }

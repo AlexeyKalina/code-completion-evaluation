@@ -1,11 +1,11 @@
-package org.jb.cce
+package org.jb.cce.storages
 
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.FileErrorSerializer
 import java.io.File
 import java.nio.file.Paths
 
-class FileErrorsStorage(val storageDir: String) {
+class FileErrorsStorage(storageDir: String) : EvaluationStorage(storageDir) {
     companion object {
         private val fileErrorSerializer = FileErrorSerializer()
     }
