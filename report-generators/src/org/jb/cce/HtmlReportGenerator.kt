@@ -118,18 +118,7 @@ class HtmlReportGenerator(outputDir: String) {
                 h3 { +"${reportReferences.size} file(s) successfully processed" }
                 h3 { +"${errorReferences.size} errors occurred" }
                 unsafe { raw(getToolbar(globalMetrics)) }
-                script { unsafe { raw(getToolbarScript(globalMetrics)) } }
                 unsafe { raw(getMetricsTable(globalMetrics)) }
-                script {
-                    unsafe {
-                        raw("""
-                            |let table=new Tabulator('#metrics-table',{layout:'fitColumns',
-                            |pagination:'local',paginationSize:25,paginationSizeSelector:true,movableColumns:true,
-                            |dataLoaded:function(data){this.getRows()[0].freeze();this.setFilter(myFilter)}});
-                            """.trimMargin()
-                        )
-                    }
-                }
             }
         }.also { html -> FileWriter(reportPath).use { it.write(html) } }
         return reportPath
@@ -218,7 +207,7 @@ class HtmlReportGenerator(outputDir: String) {
 
     private fun getMetricsTable(globalMetrics: List<MetricInfo>): String {
         val sortedMetrics = globalMetrics.sortedBy { it.title }
-        return createHTML().table {
+        val table = createHTML().table {
             id = "metrics-table"
             thead {
                 tr {
@@ -268,11 +257,22 @@ class HtmlReportGenerator(outputDir: String) {
                 }
             }
         }
+        val tableScript = """
+        |<script>
+        |let table=new Tabulator('#metrics-table',{layout:'fitColumns',
+        |pagination:'local',paginationSize:25,paginationSizeSelector:true,movableColumns:true,
+        |dataLoaded:function(data){this.getRows()[0].freeze();this.setFilter(myFilter)}});
+        |</script>
+        |""".trimMargin()
+        return table + tableScript
     }
 
     private fun getToolbar(globalMetrics: List<MetricInfo>): String {
         val metricNames = globalMetrics.map { it.name }.toSet().sorted()
-        return createHTML().div {
+        val evaluationTypes = globalMetrics.map { it.evaluationType }.toSet()
+        val sessionMetricIsPresent = metricNames.contains("Sessions")
+        val ifSessions: (String) -> String = { if (sessionMetricIsPresent) it else "" }
+        val toolbar = createHTML().div {
             div("toolbar") {
                 input(InputType.text) {
                     id = "search"
@@ -303,20 +303,15 @@ class HtmlReportGenerator(outputDir: String) {
                     +"Redraw table"
                 }
             }
-            if (metricNames.contains("Sessions")) div("toolbar") {
+            if (sessionMetricIsPresent) div("toolbar") {
                 button(classes = "toolbarBtn") {
                     id = "emptyRowsBtn"
                     +"Show empty rows"
                 }
             }
         }
-    }
-
-    private fun getToolbarScript(globalMetrics: List<MetricInfo>): String {
-        val metricNames = globalMetrics.map { it.name }.toSet().sorted()
-        val evaluationTypes = globalMetrics.map { it.evaluationType }.toSet()
-        val ifSessions: (String) -> String = { if (metricNames.contains("Sessions")) it else "" }
-        return """
+        val toolbarScript = """
+        |<script>
         |function toggleColumn(name){${evaluationTypes.joinToString("") { "table.toggleColumn(name+' $it');" }}}
         |let search=document.getElementById('search');search.oninput=()=>table.setFilter(myFilter);
         |let redrawBtn=document.getElementById('redrawBtn');redrawBtn.onclick=()=>table.redraw();
@@ -331,8 +326,9 @@ class HtmlReportGenerator(outputDir: String) {
             """.trimMargin())}
         |let myFilter=(data)=>(new RegExp(`.*${'$'}{search.value}.*`,'i')).test(data.fileName)
         ${ifSessions("|&&Math.max(${evaluationTypes.joinToString { "toNum(data['Sessions $it'])" }})>-!emptyHidden();")}
+        |</script>
         """.trimMargin()
-
+        return toolbar + toolbarScript
     }
 
 
