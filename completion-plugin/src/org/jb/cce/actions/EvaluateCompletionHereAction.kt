@@ -29,7 +29,7 @@ class EvaluateCompletionHereAction : AnAction() {
             return
         }
 
-        val settingsDialog = CompletionSettingsDialog(project)
+        val settingsDialog = CompletionSettingsDialog(project, language.displayName)
         val result = settingsDialog.showAndGet()
         if (!result) return
 

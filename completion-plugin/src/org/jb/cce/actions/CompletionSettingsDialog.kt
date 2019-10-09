@@ -19,9 +19,11 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import javax.swing.JPanel
 
-class CompletionSettingsDialog(private val project: Project, private val language2files: Map<String, Set<VirtualFile>>,
+class CompletionSettingsDialog(project: Project, private val language2files: Map<String, Set<VirtualFile>>,
                                private val fullSettings: Boolean = true) : DialogWrapper(true) {
-    constructor(project: Project) : this(project, emptyMap(), false)
+    constructor(project: Project, languageName: String) : this(project, emptyMap(), false) {
+        language = languageName
+    }
 
     companion object {
         const val completionEvaluationDir = "completion-evaluation"
@@ -30,6 +32,7 @@ class CompletionSettingsDialog(private val project: Project, private val languag
     }
     lateinit var language: String
     private val properties = PropertiesComponent.getInstance(project)
+    private val configurableMap: MutableMap<String, EvaluationFilterConfiguration.Configurable> = mutableMapOf()
 
     private val statsCollectorId = "com.intellij.stats.completion"
     var workspaceDir = properties.getValue(workspaceDirProperty) ?: Paths.get(project.basePath ?: "", completionEvaluationDir).toString()
@@ -47,7 +50,6 @@ class CompletionSettingsDialog(private val project: Project, private val languag
     }
     private var completeAllTokensPrev = false
     private lateinit var filtersPanel: JPanel
-    private lateinit var configurableMap: MutableMap<String, EvaluationFilterConfiguration.Configurable>
     private lateinit var completeAllTokensCheckBox: JCheckBox
     private lateinit var contextButtons: List<JRadioButton>
 
