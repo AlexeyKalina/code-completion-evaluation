@@ -9,22 +9,26 @@ import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlinx.html.*
+import kotlinx.html.stream.createHTML
 
 class HtmlReportGenerator(outputDir: String) {
     companion object {
         private const val globalReportName = "index.html"
+        private const val fileScript = "/script.js"
+        private const val fileStyle = "/style.css"
         private const val tabulatorScript = "/tabulator.min.js"
         private const val tabulatorStyle = "/tabulator.min.css"
         private const val errorScript = "/error.js"
         private const val optionsStyle = "/options.css"
-        private val script = HtmlReportGenerator::class.java.getResource("/script.js").readText()
-        private val style = HtmlReportGenerator::class.java.getResource("/style.css").readText()
         private val sessionSerializer = SessionSerializer()
     }
+
     private lateinit var reportTitle: String
 
     private data class ResultPaths(val resourcePath: Path, val reportPath: Path)
     private data class ReferenceInfo(val pathToReport: Path, val metrics: List<MetricInfo>)
+
     private val reportReferences: MutableMap<String, ReferenceInfo> = mutableMapOf()
     private val errorReferences: MutableMap<String, Path> = mutableMapOf()
 
@@ -36,10 +40,12 @@ class HtmlReportGenerator(outputDir: String) {
         Files.createDirectories(baseDir)
         Files.createDirectories(filesDir)
         Files.createDirectories(resourcesDir)
-        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorStyle), Paths.get(resourcesDir.toString(), tabulatorStyle))
+        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(fileScript), Paths.get(resourcesDir.toString(), fileScript))
+        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(fileStyle), Paths.get(resourcesDir.toString(), fileStyle))
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(resourcesDir.toString(), tabulatorScript))
-        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(optionsStyle), Paths.get(resourcesDir.toString(), optionsStyle))
+        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorStyle), Paths.get(resourcesDir.toString(), tabulatorStyle))
         Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(errorScript), Paths.get(resourcesDir.toString(), errorScript))
+        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(optionsStyle), Paths.get(resourcesDir.toString(), optionsStyle))
     }
 
     fun generateFileReport(sessions: List<FileEvaluationInfo>) {
@@ -47,7 +53,7 @@ class HtmlReportGenerator(outputDir: String) {
         val fileInfo = sessions.first()
         val fileName = File(fileInfo.sessionsInfo.filePath).name
         val (resourcePath, reportPath) = getPaths(fileName)
-        FileWriter(resourcePath.toString()).use { it.write("sessions = \"$json\"") }
+        FileWriter(resourcePath.toString()).use { it.write("sessions = '$json'") }
         getHtml(
                 sessions.map { it.sessionsInfo.sessions },
                 fileName,
@@ -61,15 +67,31 @@ class HtmlReportGenerator(outputDir: String) {
         for (fileError in errors) {
             val filePath = Paths.get(fileError.path)
             val reportPath = getPaths(filePath.fileName.toString()).reportPath
-            reportTitle = "Error on actions generation for file <b>${filePath.fileName}</b>"
-            """
-            |<html><head><title>$reportTitle</title></head>
-            |<body><h1>$reportTitle</h1><h2>Message</h2>
-            |<pre><code>${fileError.message}</code></pre>
-            |<h2>StackTrace <button id='copyBtn'>&#128203</button></h2>
-            |<pre><code id='stackTrace'>${fileError.stackTrace}</code></pre>
-            |<script src='../res/error.js'></script></body></html>
-            """.trimMargin().also { html -> FileWriter(reportPath.toString()).use { it.write(html) } }
+            reportTitle = "Error on actions generation for file ${filePath.fileName}"
+            createHTML().html {
+                head {
+                    title(reportTitle)
+                }
+                body {
+                    h1 { +reportTitle }
+                    h2 { +"Message" }
+                    pre { code { +fileError.message } }
+                    h2 {
+                        +"Stacktrace "
+                        button {
+                            id = "copyBtn"
+                            unsafe { raw("&#128203") }
+                        }
+                    }
+                    pre {
+                        code {
+                            id = "stackTrace"
+                            +fileError.stackTrace
+                        }
+                    }
+                    script { src = "../res/error.js" }
+                }
+            }.also { html -> FileWriter(reportPath.toString()).use { it.write(html) } }
             errorReferences[filePath.toString()] = reportPath
         }
     }
@@ -77,21 +99,39 @@ class HtmlReportGenerator(outputDir: String) {
     fun generateGlobalReport(globalMetrics: List<MetricInfo>): String {
         val reportPath = Paths.get(baseDir.toString(), globalReportName).toString()
         reportTitle = "Code Completion Report"
-        """
-        |<html><head><title>$reportTitle</title><meta charset='utf-8'/>
-        |<script src='res/tabulator.min.js'></script>
-        |<link href='res/tabulator.min.css' rel='stylesheet'>
-        |<link href='res/options.css' rel='stylesheet'></head>
-        |<body><h1>$reportTitle</h1>
-        |<h3>${reportReferences.size} file(s) successfully processed</h3>
-        |<h3>${errorReferences.size} errors occurred</h3> 
-        |${getToolbar(globalMetrics)}
-        |${getMetricsTable(globalMetrics)}
-        |<script>let table = new Tabulator('#metrics-table',{layout:'fitColumns',
-        |pagination:'local',paginationSize:25,paginationSizeSelector:true,movableColumns:true,
-        |dataLoaded:function(data){this.getRows()[0].freeze();this.setFilter(myFilter)}});
-        |</script></body></html>
-        """.trimMargin().also { html -> FileWriter(reportPath).use { it.write(html) } }
+        createHTML().html {
+            head {
+                title(reportTitle)
+                meta { charset = "utf-8" }
+                script { src = "res/tabulator.min.js" }
+                link {
+                    href = "res/tabulator.min.css"
+                    rel = "stylesheet"
+                }
+                link {
+                    href = "res/options.css"
+                    rel = "stylesheet"
+                }
+            }
+            body {
+                h1 { +reportTitle }
+                h3 { +"${reportReferences.size} file(s) successfully processed" }
+                h3 { +"${errorReferences.size} errors occurred" }
+                unsafe { raw(getToolbar(globalMetrics)) }
+                script { unsafe { raw(getToolbarScript(globalMetrics)) } }
+                unsafe { raw(getMetricsTable(globalMetrics)) }
+                script {
+                    unsafe {
+                        raw("""
+                            |let table=new Tabulator('#metrics-table',{layout:'fitColumns',
+                            |pagination:'local',paginationSize:25,paginationSizeSelector:true,movableColumns:true,
+                            |dataLoaded:function(data){this.getRows()[0].freeze();this.setFilter(myFilter)}});
+                            """.trimMargin()
+                        )
+                    }
+                }
+            }
+        }.also { html -> FileWriter(reportPath).use { it.write(html) } }
         return reportPath
     }
 
@@ -118,18 +158,26 @@ class HtmlReportGenerator(outputDir: String) {
     }
 
     private fun getHtml(sessions: List<List<Session>>, fileName: String, resourcePath: String, text: String): String {
-        reportTitle = "Code Completion Report for file <b>$fileName</b>"
+        reportTitle = "Code Completion Report for file $fileName"
         val code = prepareCode(text, sessions)
-        return """
-            |<html><head><title>$reportTitle</title>
-            |<script src="$resourcePath"></script>
-            |<style>${style}</style></head>
-            |<body><h1>$reportTitle</h1>
-            |<div class="code-container">
-            |<div><pre class="line-numbers">${getLineNumbers(code.lines().size)}</pre></div>
-            |<div><pre class="code">$code</pre></div></div>
-            |<script>${script}</script></body>
-            """.trimMargin()
+        return createHTML().html {
+            head {
+                title(reportTitle)
+                script { src = resourcePath }
+                link {
+                    href = "../res/style.css"
+                    rel = "stylesheet"
+                }
+            }
+            body {
+                h1 { +reportTitle }
+                div("code-container") {
+                    div { pre("line-numbers") { +getLineNumbers(code.lines().size) } }
+                    div { pre("code") { unsafe { raw(code) } } }
+                }
+                script { src = "../res/script.js" }
+            }
+        }
     }
 
     private fun prepareCode(text: String, _sessions: List<List<Session>>): String {
@@ -163,52 +211,113 @@ class HtmlReportGenerator(outputDir: String) {
     }
 
     private fun getDiv(session: Session?, text: String): String =
-            "<div class='completion ${ReportColors.getColor(session, HtmlColorClasses)}' id='${session?.id}'>$text</div>"
+            createHTML().div("completion ${ReportColors.getColor(session, HtmlColorClasses)}") {
+                id = session?.id.toString()
+                +text
+            }
 
     private fun getMetricsTable(globalMetrics: List<MetricInfo>): String {
         val sortedMetrics = globalMetrics.sortedBy { it.title }
-        return """
-        |<table id='metrics-table'><thead><tr>
-        |<th tabulator-field='fileName' tabulator-formatter='html'>File Report</th>
-        ${sortedMetrics.joinToString("\n") {
-            "|<th tabulator-field='${it.title}' tabulator-sorter='number' tabulator-align='right'>${it.title}</th>"
-        }}
-        |</tr></thead><tbody>
-        ${getRow("Summary", sortedMetrics)}
-        ${errorReferences.map { errRef -> getRow(
-                "<a href='${baseDir.relativize(errRef.value)}' style='color:red;'>${Paths.get(errRef.key).fileName}</a>", 
-                sortedMetrics.map { MetricInfo(it.name, "—", it.evaluationType) }
-        ) }.joinToString("\n")}
-        ${reportReferences.map { repRef -> getRow(
-                "<a href='${baseDir.relativize(repRef.value.pathToReport)}'>${File(repRef.key).name}</a>",
-                sortedMetrics.map { MetricInfo(
-                        it.name, 
-                        repRef.value.metrics.find { that -> it.title == that.title }?.value ?: "—", 
-                        it.evaluationType
-                ) }
-        ) }.joinToString("\n")}
-        |</tbody></table>
-        """.trimMargin()
+        return createHTML().table {
+            id = "metrics-table"
+            thead {
+                tr {
+                    th {
+                        attributes["tabulator-field"] = "fileName"
+                        attributes["tabulator-formatter"] = "html"
+                        +"File Report"
+                    }
+                    sortedMetrics.map {
+                        th {
+                            attributes["tabulator-field"] = it.title
+                            attributes["tabulator-sorter"] = "number"
+                            attributes["tabulator-align"] = "right"
+                            +it.title
+                        }
+                    }
+                }
+            }
+            tbody {
+                tr {
+                    td { +"Summary" }
+                    sortedMetrics.map { td { +it.value } }
+                }
+                for (errRef in errorReferences) {
+                    tr {
+                        td {
+                            a(classes = "errRef") {
+                                href = baseDir.relativize(errRef.value).toString()
+                                +Paths.get(errRef.key).fileName.toString()
+                            }
+                        }
+                        sortedMetrics.map { td { +"—" } }
+                    }
+                }
+                for (repRef in reportReferences) {
+                    tr {
+                        td {
+                            a {
+                                href = baseDir.relativize(repRef.value.pathToReport).toString()
+                                +File(repRef.key).name.toString()
+                            }
+                        }
+                        sortedMetrics.map {
+                            td { +(repRef.value.metrics.find { that -> it.title == that.title }?.value ?: "—") }
+                        }
+                    }
+                }
+            }
+        }
     }
-
-
-    private fun getRow(name: String, metrics: List<MetricInfo>): String =
-            "|<tr><td>$name</td>\n|${metrics.joinToString("") { "<td>${it.value}</td>" }}</tr>"
 
     private fun getToolbar(globalMetrics: List<MetricInfo>): String {
         val metricNames = globalMetrics.map { it.name }.toSet().sorted()
+        return createHTML().div {
+            div("toolbar") {
+                input(InputType.text) {
+                    id = "search"
+                    placeholder = "Search"
+                    maxLength = "50"
+                }
+            }
+            div("toolbar") {
+                button(classes = "toolbarBtn") {
+                    id = "dropdownBtn"
+                    +"Metrics visibility"
+                }
+                ul("dropdown") {
+                    metricNames.map {
+                        li {
+                            input(InputType.checkBox) {
+                                checked = true
+                                onClick = "toggleColumn('$it')"
+                                +it
+                            }
+                        }
+                    }
+                }
+            }
+            div("toolbar") {
+                button(classes = "toolbarBtn") {
+                    id = "redrawBtn"
+                    +"Redraw table"
+                }
+            }
+            if (metricNames.contains("Sessions")) div("toolbar") {
+                button(classes = "toolbarBtn") {
+                    id = "emptyRowsBtn"
+                    +"Show empty rows"
+                }
+            }
+        }
+    }
+
+    private fun getToolbarScript(globalMetrics: List<MetricInfo>): String {
+        val metricNames = globalMetrics.map { it.name }.toSet().sorted()
         val evaluationTypes = globalMetrics.map { it.evaluationType }.toSet()
-        val sessionsMetricIsPresent = metricNames.contains("Sessions")
-        val ifSessions: (String) -> String = { if (sessionsMetricIsPresent) it else "" }
+        val ifSessions: (String) -> String = { if (metricNames.contains("Sessions")) it else "" }
         return """
-        |<div class='options'><input id='search' type='text' placeholder='Search' maxlength='50'/></div>
-        |<div class='options'><button class='options-btn' id='dropdownBtn'>Metrics visibility</button>
-        |<ul class='dropdown'>
-        ${metricNames.joinToString("\n") { "|<li><input type='checkbox' checked onclick=\"toggleColumn('$it')\">$it</li>" }}
-        |</ul></div>
-        |<div class='options'><button class='options-btn' id='redrawBtn'>Redraw table</button></div>
-        ${ifSessions("|<div class='options'><button class='options-btn' id='emptyRowsBtn'>Show empty rows</button></div>")}
-        |<script>function toggleColumn(name){${evaluationTypes.joinToString("") { "table.toggleColumn(name+' $it');" }}}
+        |function toggleColumn(name){${evaluationTypes.joinToString("") { "table.toggleColumn(name+' $it');" }}}
         |let search=document.getElementById('search');search.oninput=()=>table.setFilter(myFilter);
         |let redrawBtn=document.getElementById('redrawBtn');redrawBtn.onclick=()=>table.redraw();
         ${ifSessions("""
@@ -222,11 +331,12 @@ class HtmlReportGenerator(outputDir: String) {
             """.trimMargin())}
         |let myFilter=(data)=>(new RegExp(`.*${'$'}{search.value}.*`,'i')).test(data.fileName)
         ${ifSessions("|&&Math.max(${evaluationTypes.joinToString { "toNum(data['Sessions $it'])" }})>-!emptyHidden();")}
-        |</script>
         """.trimMargin()
+
     }
 
+
     private fun getLineNumbers(linesCount: Int): String =
-      (1..linesCount).joinToString("\n") { it.toString().padStart(linesCount.toString().length) }
-  
+            (1..linesCount).joinToString("\n") { it.toString().padStart(linesCount.toString().length) }
+
 }
