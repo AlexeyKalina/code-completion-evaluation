@@ -36,16 +36,16 @@ class HtmlReportGenerator(outputDir: String) {
     private val filesDir = Paths.get(baseDir.toString(), "files")
     private val resourcesDir = Paths.get(baseDir.toString(), "res")
 
+    private fun copyResources(resource: String) {
+        Files.copy(
+                HtmlReportGenerator::class.java.getResourceAsStream(resource),
+                Paths.get(resourcesDir.toString(), resource)
+        )
+    }
+
     init {
-        Files.createDirectories(baseDir)
-        Files.createDirectories(filesDir)
-        Files.createDirectories(resourcesDir)
-        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(fileScript), Paths.get(resourcesDir.toString(), fileScript))
-        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(fileStyle), Paths.get(resourcesDir.toString(), fileStyle))
-        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorScript), Paths.get(resourcesDir.toString(), tabulatorScript))
-        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(tabulatorStyle), Paths.get(resourcesDir.toString(), tabulatorStyle))
-        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(errorScript), Paths.get(resourcesDir.toString(), errorScript))
-        Files.copy(HtmlReportGenerator::class.java.getResourceAsStream(optionsStyle), Paths.get(resourcesDir.toString(), optionsStyle))
+        listOf(baseDir, filesDir, resourcesDir).map { Files.createDirectories(it) }
+        listOf(fileScript, fileStyle, tabulatorScript, tabulatorStyle, errorScript, optionsStyle).map { copyResources(it) }
     }
 
     fun generateFileReport(sessions: List<FileEvaluationInfo>) {
