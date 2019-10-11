@@ -187,11 +187,11 @@ class HtmlReportGenerator(outputDir: String) {
                 val center = session.expectedText.length / sessions.size
                 var shift = 0
                 for (j in 0 until sessionGroup.lastIndex) {
-                    append(getDiv(sessionGroup[j], session.expectedText.substring(shift, shift + center)))
+                    append(getSpan(sessionGroup[j], session.expectedText.substring(shift, shift + center)))
                     append(delimiter)
                     shift += center
                 }
-                append(getDiv(sessionGroup.last(), session.expectedText.substring(shift)))
+                append(getSpan(sessionGroup.last(), session.expectedText.substring(shift)))
                 offset = session.offset + session.expectedText.length
             }
             append(escapeHtml4(text.substring(offset)))
@@ -199,8 +199,8 @@ class HtmlReportGenerator(outputDir: String) {
         }
     }
 
-    private fun getDiv(session: Session?, text: String): String =
-            createHTML().div("completion ${ReportColors.getColor(session, HtmlColorClasses)}") {
+    private fun getSpan(session: Session?, text: String): String =
+            createHTML().span("completion ${ReportColors.getColor(session, HtmlColorClasses)}") {
                 id = session?.id.toString()
                 +text
             }
