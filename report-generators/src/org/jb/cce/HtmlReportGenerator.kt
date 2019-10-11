@@ -39,8 +39,7 @@ class HtmlReportGenerator(outputDir: String) {
     private fun copyResources(resource: String) {
         Files.copy(
                 HtmlReportGenerator::class.java.getResourceAsStream(resource),
-                Paths.get(resourcesDir.toString(), resource)
-        )
+                Paths.get(resourcesDir.toString(), resource))
     }
 
     init {
@@ -118,7 +117,8 @@ class HtmlReportGenerator(outputDir: String) {
                 h3 { +"${reportReferences.size} file(s) successfully processed" }
                 h3 { +"${errorReferences.size} errors occurred" }
                 unsafe { raw(getToolbar(globalMetrics)) }
-                unsafe { raw(getMetricsTable(globalMetrics)) }
+                div { id = "metricsTable" }
+                script { unsafe { raw(getMetricsTable(globalMetrics)) } }
             }
         }.also { html -> FileWriter(reportPath).use { it.write(html) } }
         return reportPath
@@ -206,66 +206,40 @@ class HtmlReportGenerator(outputDir: String) {
             }
 
     private fun getMetricsTable(globalMetrics: List<MetricInfo>): String {
-        val sortedMetrics = globalMetrics.sortedBy { it.title }
-        val table = createHTML().table {
-            id = "metrics-table"
-            thead {
-                tr {
-                    th {
-                        attributes["tabulator-field"] = "fileName"
-                        attributes["tabulator-formatter"] = "html"
-                        +"File Report"
-                    }
-                    sortedMetrics.map {
-                        th {
-                            attributes["tabulator-field"] = it.title
-                            attributes["tabulator-sorter"] = "number"
-                            attributes["tabulator-align"] = "right"
-                            +it.title
-                        }
-                    }
-                }
-            }
-            tbody {
-                tr {
-                    td { +"Summary" }
-                    sortedMetrics.map { td { +it.value } }
-                }
-                for (errRef in errorReferences) {
-                    tr {
-                        td {
-                            a(classes = "errRef") {
-                                href = baseDir.relativize(errRef.value).toString()
-                                +Paths.get(errRef.key).fileName.toString()
-                            }
-                        }
-                        sortedMetrics.map { td { +"—" } }
-                    }
-                }
-                for (repRef in reportReferences) {
-                    tr {
-                        td {
-                            a {
-                                href = baseDir.relativize(repRef.value.pathToReport).toString()
-                                +File(repRef.key).name.toString()
-                            }
-                        }
-                        sortedMetrics.map {
-                            td { +(repRef.value.metrics.find { that -> it.title == that.title }?.value ?: "—") }
-                        }
-                    }
-                }
-            }
-        }
-        val tableScript = """
-        |<script>
-        |let table=new Tabulator('#metrics-table',{layout:'fitColumns',
-        |pagination:'local',paginationSize:25,paginationSizeSelector:true,movableColumns:true,
-        |dataLoaded:function(data){this.getRows()[0].freeze();this.setFilter(myFilter)}});
-        |</script>
-        |""".trimMargin()
-        return table + tableScript
+        val sortedMetrics = globalMetrics.sortedBy { it.label }
+        val metricNames = globalMetrics.map { it.name }.toSet().sorted()
+        val evaluationTypes = globalMetrics.map { it.evaluationType }.toSet().sorted()
+        var rowId = 1
+        return """
+        |let tableData = [{id:0,file:'Summary',${sortedMetrics.joinToString(",") { "${it.label}:'${it.value}'" }}}
+        |${if (errorReferences.isNotEmpty()) errorReferences.map { errRef ->
+            "{id:${rowId++},file:\"${getErrorAnchor(errRef)}\",${sortedMetrics.joinToString(",") { "${it.label}:'—'" }}}"
+        }.joinToString(",", ",") else ""}
+        |${if (reportReferences.isNotEmpty()) reportReferences.map { repRef ->
+            "{id:${rowId++},file:\"${getReportAnchor(repRef)}\",${sortedMetrics.joinToString(",") {
+                "${it.label}:'${getMetricValue(repRef, it)}'"
+            }}}"
+        }.joinToString(",", ",") else ""}]
+        |let table=new Tabulator('#metricsTable',{data:tableData,
+        |columns:[{title:'File Report',field:'file',formatter:'html'},
+        |${metricNames.joinToString(",\n") { name ->
+            "{title:'$name',columns:[${evaluationTypes.joinToString(",") { type ->
+                "{title:'$type',field:'${name.filter { it.isLetterOrDigit() }}$type',sorter:'number',align:'right'}"
+            }}]}"
+        }}],
+        |layout:'fitColumns',pagination:'local',paginationSize:25,paginationSizeSelector:true,
+        |dataLoaded:function(){this.getRows()[0].freeze();this.setFilter(myFilter)}});
+        """.trimMargin()
     }
+
+    private fun getErrorAnchor(errRef: Map.Entry<String, Path>): String =
+            "<a href='${baseDir.relativize(errRef.value)}' class='errRef' target='_blank'>${Paths.get(errRef.key).fileName}</a>"
+
+    private fun getReportAnchor(repRef: Map.Entry<String, ReferenceInfo>): String =
+            "<a href='${baseDir.relativize(repRef.value.pathToReport)}' target='_blank'>${File(repRef.key).name}</a>"
+
+    private fun getMetricValue(repRef: Map.Entry<String, ReferenceInfo>, metric: MetricInfo): String =
+            repRef.value.metrics.find { it.label == metric.label }?.value ?: "—"
 
     private fun getToolbar(globalMetrics: List<MetricInfo>): String {
         val metricNames = globalMetrics.map { it.name }.toSet().sorted()
@@ -286,12 +260,12 @@ class HtmlReportGenerator(outputDir: String) {
                     +"Metrics visibility"
                 }
                 ul("dropdown") {
-                    metricNames.map {
+                    metricNames.map { metricName ->
                         li {
                             input(InputType.checkBox) {
                                 checked = true
-                                onClick = "toggleColumn('$it')"
-                                +it
+                                onClick = "toggleColumn('${metricName.filter { it.isLetterOrDigit() }}')"
+                                +metricName
                             }
                         }
                     }
@@ -310,9 +284,8 @@ class HtmlReportGenerator(outputDir: String) {
                 }
             }
         }
-        val toolbarScript = """
-        |<script>
-        |function toggleColumn(name){${evaluationTypes.joinToString("") { "table.toggleColumn(name+' $it');" }}}
+        val toolbarScript = """|<script>
+        |function toggleColumn(name){${evaluationTypes.joinToString("") { "table.toggleColumn(name+'$it');" }}}
         |let search=document.getElementById('search');search.oninput=()=>table.setFilter(myFilter);
         |let redrawBtn=document.getElementById('redrawBtn');redrawBtn.onclick=()=>table.redraw();
         ${ifSessions("""
@@ -324,10 +297,9 @@ class HtmlReportGenerator(outputDir: String) {
             ||table.setFilter(myFilter)}
             ||let toNum=(str)=>isNaN(+str)?0:+str;
             """.trimMargin())}
-        |let myFilter=(data)=>(new RegExp(`.*${'$'}{search.value}.*`,'i')).test(data.fileName)
-        ${ifSessions("|&&Math.max(${evaluationTypes.joinToString { "toNum(data['Sessions $it'])" }})>-!emptyHidden();")}
-        |</script>
-        """.trimMargin()
+        |let myFilter=(data)=>(new RegExp(`.*${'$'}{search.value}.*`,'i')).test(data.file)
+        ${ifSessions("|&&Math.max(${evaluationTypes.joinToString { "toNum(data['Sessions$it'])" }})>-!emptyHidden();")}
+        |</script>""".trimMargin()
         return toolbar + toolbarScript
     }
 
