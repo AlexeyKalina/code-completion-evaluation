@@ -1,11 +1,11 @@
-.options {
+.toolbar {
     position: relative;
     display: inline-block;
     font-size: 15px;
     margin-bottom: 15px;
 }
 
-.options-btn {
+.toolbarBtn {
     border: 2px solid gray;
     border-radius: 5px;
     margin: 2px;
@@ -30,13 +30,13 @@
     margin: 4px 0 4px 3px;
 }
 
-.options:hover #dropdownBtn {
+.toolbar:hover #dropdownBtn {
     color: white;
     background-color: gray;
     border-radius: 5px 5px 0 0;
 }
 
-.options:hover .dropdown {
+.toolbar:hover .dropdown {
     display: block;
 }
 
@@ -65,4 +65,8 @@
 
 .tabulator {
     background-color: transparent;
+}
+
+.errRef {
+    color: red;
 }
