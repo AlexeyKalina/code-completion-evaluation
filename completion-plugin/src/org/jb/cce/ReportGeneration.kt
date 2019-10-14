@@ -37,8 +37,6 @@ class ReportGeneration(private val reportGenerator: HtmlReportGenerator) {
             }
 
             override fun onSuccess() {
-                sessionStorages.forEach { it.compress() }
-                errorStorages.forEach { it.compress() }
                 finishWork(reportPath, project, isHeadless)
             }
         }

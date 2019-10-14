@@ -105,7 +105,6 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
             completed++
             LOG.info("Generating actions for file ${file.path} completed. Done: $completed/${files.size}. With error: ${errors.size}")
         }
-        workspace.onActionsGenerationCompleted()
     }
 
     private fun interpretUnderProgress(workspace: EvaluationWorkspace, completionType: CompletionType, strategy: CompletionStrategy,
@@ -124,10 +123,8 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
 
             private fun finish() {
                 if (saveLogs) workspace.logsStorage.stopWatching()
-                workspace.onActionsInterpretationCompleted()
                 if (!generateReport) return Highlighter(project).highlight(lastFileSessions)
                 val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
-                workspace.onReportGenerationStarted()
                 ReportGeneration(reportGenerator).generateReportUnderProgress(listOf(workspace.sessionsStorage), listOf(workspace.errorsStorage), project, isHeadless)
             }
         }
@@ -136,7 +133,6 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
 
     private fun interpretActions(workspace: EvaluationWorkspace, completionType: CompletionType, strategy: CompletionStrategy,
                                  project: Project, indicator: Progress): List<Session> {
-        workspace.onActionsInterpretationStarted()
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, completionType), project)
         var sessionsCount = 0
         val computingTime = measureTimeMillis {
@@ -151,7 +147,7 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
         val files = workspace.actionsStorage.getActionFiles()
         var lastFileSessions = listOf<Session>()
         for (file in files) {
-            val fileActions = workspace.actionsStorage.getActions(file)
+            val fileActions = workspace.actionsStorage.getActions(file.path)
             try {
                 lastFileSessions = interpreter.interpret(fileActions)
                 val fileText = FilesHelper.getFileText(project, fileActions.path)

@@ -13,15 +13,15 @@ class ActionsStorage(storageDir: String) : EvaluationStorage(storageDir) {
     private var filesCounter = 0
 
     fun saveActions(actions: FileActions) {
-        val actionsPath = Paths.get(storageDir, "${File(actions.path).name}($filesCounter).json")
+        val path = Paths.get(storageDir, "${File(actions.path).name}($filesCounter).json")
         filesCounter++
-        actionsPath.toFile().writeText(actionSerializer.serialize(actions))
+        saveFile(path.toString(), actionSerializer.serialize(actions))
     }
 
     fun computeSessionsCount(): Int {
         var count = 0
         for (file in getActionFiles())
-            count += actionSerializer.getSessionsCount(file.readText())
+            count += actionSerializer.getSessionsCount(readFile(file.path))
         return count
     }
 
@@ -29,7 +29,7 @@ class ActionsStorage(storageDir: String) : EvaluationStorage(storageDir) {
         return File(storageDir).listFiles()?.filter { it.isFile }?.toList() ?: emptyList()
     }
 
-    fun getActions(file: File): FileActions {
-        return actionSerializer.deserialize(file.readText())
+    fun getActions(path: String): FileActions {
+        return actionSerializer.deserialize(readFile(path))
     }
 }

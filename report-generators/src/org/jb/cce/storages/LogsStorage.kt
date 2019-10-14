@@ -11,5 +11,8 @@ class LogsStorage(storageDir: String) : EvaluationStorage(storageDir) {
         watcher.start()
     }
 
-    fun stopWatching() = watcher.stop()
+    fun stopWatching() {
+        watcher.stop()
+        compress()
+    }
 }

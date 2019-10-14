@@ -38,26 +38,4 @@ class EvaluationWorkspace(outputDir: String, evaluationType: String, existing: B
     val errorsStorage = FileErrorsStorage(errorsDir.toString())
 
     val logsStorage = LogsStorage(logsDir.toString())
-
-    fun onActionsGenerationCompleted() {
-        actionsStorage.compress()
-        errorsStorage.compress()
-    }
-
-    fun onActionsInterpretationStarted() {
-        actionsStorage.decompress()
-        errorsStorage.decompress()
-    }
-
-    fun onActionsInterpretationCompleted() {
-        actionsStorage.compress()
-        errorsStorage.compress()
-        logsStorage.compress()
-        sessionsStorage.compress()
-    }
-
-    fun onReportGenerationStarted() {
-        errorsStorage.decompress()
-        sessionsStorage.decompress()
-    }
 }

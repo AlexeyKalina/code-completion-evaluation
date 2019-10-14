@@ -5,7 +5,6 @@ import com.google.gson.reflect.TypeToken
 import org.jb.cce.SessionSerializer
 import org.jb.cce.info.EvaluationInfo
 import org.jb.cce.info.FileSessionsInfo
-import java.io.FileReader
 import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -25,8 +24,8 @@ class SessionsStorage(storageDir: String, val evaluationType: String) : Evaluati
         if (!typeFolder.toFile().exists()) Files.createDirectories(typeFolder)
         val json = sessionSerializer.serialize(sessionsInfo)
         val dataPath = Paths.get(typeFolder.toString(), "${Paths.get(sessionsInfo.filePath).fileName}($filesCounter).json")
-        FileWriter(dataPath.toString()).use { it.write(json) }
-        sessionFiles[sessionsInfo.filePath] = Paths.get(storageDir).relativize(dataPath).toString()
+        val archivePath = saveFile(dataPath.toString(), json)
+        sessionFiles[sessionsInfo.filePath] = Paths.get(storageDir).relativize(Paths.get(archivePath)).toString()
         filesCounter++
     }
 
@@ -47,7 +46,6 @@ class SessionsStorage(storageDir: String, val evaluationType: String) : Evaluati
 
     fun getSessions(path: String): FileSessionsInfo {
         val sessionsPath = sessionFiles[path] ?: throw NoSuchElementException()
-        val json = FileReader(sessionsPath).use { it.readText() }
-        return sessionSerializer.deserialize(json)
+        return sessionSerializer.deserialize(readFile(sessionsPath))
     }
 }
