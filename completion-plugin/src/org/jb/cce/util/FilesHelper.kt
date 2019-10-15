@@ -6,11 +6,12 @@ import com.intellij.openapi.fileTypes.LanguageFileType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.ContentIterator
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.GlobalSearchScope
 import org.apache.commons.io.input.UnixLineEndingInputStream
-import java.nio.file.Path
+import java.io.FileNotFoundException
 import java.nio.file.Paths
 
 object FilesHelper {
@@ -52,7 +53,11 @@ object FilesHelper {
         return if (projectPath == null) path else Paths.get(projectPath).relativize(Paths.get(path)).toString()
     }
 
-    fun getProjectPath(project: Project, path: String): Path = Paths.get(project.basePath ?: "").resolve(path)
+    fun getFileText(project: Project, relativePath: String): String {
+        val file = VfsUtil.findFile(Paths.get(project.basePath ?: "").resolve(relativePath), true)
+            ?: throw FileNotFoundException("File not found: $relativePath")
+        return file.text()
+    }
 }
 
 fun VirtualFile.text(): String {
