@@ -2,15 +2,13 @@ package org.jb.cce.interpretator
 
 import com.intellij.codeInsight.completion.CodeCompletionHandlerBase
 import com.intellij.codeInsight.completion.CompletionType
-import com.intellij.codeInsight.lookup.Lookup
-import com.intellij.codeInsight.lookup.LookupElement
-import com.intellij.codeInsight.lookup.LookupElementPresentation
-import com.intellij.codeInsight.lookup.LookupManager
+import com.intellij.codeInsight.lookup.*
 import com.intellij.codeInsight.lookup.impl.LookupImpl
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.command.impl.UndoManagerImpl
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.EditorModificationUtil
 import com.intellij.openapi.editor.ScrollType
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
@@ -21,7 +19,6 @@ import com.intellij.openapi.vfs.LocalFileSystem
 import org.jb.cce.CompletionInvoker
 import org.jb.cce.Suggestion
 import java.io.File
-import kotlin.system.measureTimeMillis
 
 class CompletionInvokerImpl(private val project: Project, completionType: org.jb.cce.actions.CompletionType) : CompletionInvoker {
     private companion object {
@@ -46,19 +43,14 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
     override fun callCompletion(expectedText: String, prefix: String): org.jb.cce.Lookup {
         LOG.info("Call completion. Type: $completionType. ${positionToString(editor!!.caretModel.offset)}")
 //        assert(!dumbService.isDumb) { "Calling completion during indexing." }
-        LookupManager.getInstance(project).hideActiveLookup()
 
-        val latency = measureTimeMillis {
-            val handler = object : CodeCompletionHandlerBase(completionType, false, false, true) {
-                // Guarantees synchronous execution
-                override fun isTestingMode() = true
-            }
-            handler.invokeCompletion(project, editor)
-        }
-        if (LookupManager.getActiveLookup(editor) == null) {
+        val start = System.currentTimeMillis()
+        val activeLookup = LookupManager.getActiveLookup(editor) ?: invokeCompletion()
+        val latency = System.currentTimeMillis() - start
+        if (activeLookup == null) {
             return org.jb.cce.Lookup(prefix, emptyList(), latency)
         } else {
-            val lookup = LookupManager.getActiveLookup(editor) as LookupImpl
+            val lookup = activeLookup as LookupImpl
             val suggestions = lookup.items.map { Suggestion(it.lookupString, lookupElementText(it)) }
             return org.jb.cce.Lookup(prefix, suggestions, latency)
         }
@@ -74,12 +66,16 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
 
     override fun printText(text: String) {
         LOG.info("Print text: ${StringUtil.shortenPathWithEllipsis(text, LOG_MAX_LENGTH)}. ${positionToString(editor!!.caretModel.offset)}")
-        val document = editor!!.document
         val project = editor!!.project
-        val initialOffset = editor!!.caretModel.offset
-        val runnable = Runnable { document.insertString(initialOffset, text) }
-        WriteCommandAction.runWriteCommandAction(project, runnable)
-        editor!!.caretModel.moveToOffset(initialOffset + text.length)
+        val runnable = Runnable { EditorModificationUtil.insertStringAtCaret(editor!!, text) }
+        WriteCommandAction.runWriteCommandAction(project) {
+            val lookup = LookupManager.getActiveLookup(editor) as? LookupImpl
+            if (lookup != null) {
+                lookup.replacePrefix(lookup.additionalPrefix, lookup.additionalPrefix + text)
+            } else {
+                runnable.run()
+            }
+        }
     }
 
     override fun deleteRange(begin: Int, end: Int) {
@@ -118,6 +114,15 @@ class CompletionInvokerImpl(private val project: Project, completionType: org.jb
     private fun positionToString(offset: Int): String {
         val logicalPosition = editor!!.offsetToLogicalPosition(offset)
         return "Offset: $offset, Line: ${logicalPosition.line}, Column: ${logicalPosition.column}."
+    }
+
+    private fun invokeCompletion(): LookupEx? {
+        val handler = object : CodeCompletionHandlerBase(completionType, false, false, true) {
+            // Guarantees synchronous execution
+            override fun isTestingMode() = true
+        }
+        handler.invokeCompletion(project, editor)
+        return LookupManager.getActiveLookup(editor)
     }
 
     private fun lookupElementText(element: LookupElement): String {
