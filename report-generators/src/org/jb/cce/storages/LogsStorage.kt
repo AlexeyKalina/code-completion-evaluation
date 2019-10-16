@@ -1,8 +1,9 @@
 package org.jb.cce.storages
 
+import java.io.File
 import java.nio.file.Paths
 
-class LogsStorage(storageDir: String) : EvaluationStorage(storageDir) {
+class LogsStorage(private val storageDir: String) {
     private lateinit var watcher: DirectoryWatcher
 
     fun watch(logsPath: String, languageName: String, trainingPercentage: Int) {
@@ -13,6 +14,6 @@ class LogsStorage(storageDir: String) : EvaluationStorage(storageDir) {
 
     fun stopWatching() {
         watcher.stop()
-        compress()
+        File(storageDir).compress()
     }
 }

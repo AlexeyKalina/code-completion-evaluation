@@ -2,21 +2,20 @@ package org.jb.cce.storages
 
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.FileErrorSerializer
-import java.io.File
 import java.nio.file.Paths
 
-class FileErrorsStorage(storageDir: String) : EvaluationStorage(storageDir) {
+class FileErrorsStorage(storageDir: String) {
     companion object {
         private val fileErrorSerializer = FileErrorSerializer()
     }
+    private val keyValueStorage = FileArchivesStorage(storageDir)
 
     fun saveError(error: FileErrorInfo) {
         val json = fileErrorSerializer.serialize(error)
-        val path = Paths.get(storageDir, "${Paths.get(error.path).fileName}.json")
-        saveFile(path.toString(), json)
+        keyValueStorage.save("${Paths.get(error.path).fileName}.json", json)
     }
 
     fun getErrors(): List<FileErrorInfo> {
-        return File(storageDir).listFiles()?.map { fileErrorSerializer.deserialize(readFile(it.path)) } ?: emptyList()
+        return keyValueStorage.getKeys().map { fileErrorSerializer.deserialize(keyValueStorage.get(it)) }
     }
 }

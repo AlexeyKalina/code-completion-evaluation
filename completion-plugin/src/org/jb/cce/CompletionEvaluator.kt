@@ -10,7 +10,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
-import com.intellij.util.io.readText
 import org.jb.cce.actions.ActionsGenerator
 import org.jb.cce.actions.CompletionStrategy
 import org.jb.cce.actions.CompletionType
@@ -147,14 +146,14 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
         val files = workspace.actionsStorage.getActionFiles()
         var lastFileSessions = listOf<Session>()
         for (file in files) {
-            val fileActions = workspace.actionsStorage.getActions(file.path)
+            val fileActions = workspace.actionsStorage.getActions(file)
             try {
                 lastFileSessions = interpreter.interpret(fileActions)
                 val fileText = FilesHelper.getFileText(project, fileActions.path)
                 workspace.sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, fileText, lastFileSessions))
             } catch (e: Throwable) {
                 workspace.errorsStorage.saveError(FileErrorInfo(fileActions.path, e.message ?: "No Message", stackTraceToString(e)))
-                LOG.error("Actions interpretation error for file ${file.path}.", e)
+                LOG.error("Actions interpretation error for file $file.", e)
             }
             if (handler.isCancelled()) break
         }

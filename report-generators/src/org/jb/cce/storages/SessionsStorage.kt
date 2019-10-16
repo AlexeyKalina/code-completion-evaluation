@@ -6,10 +6,9 @@ import org.jb.cce.SessionSerializer
 import org.jb.cce.info.EvaluationInfo
 import org.jb.cce.info.FileSessionsInfo
 import java.io.FileWriter
-import java.nio.file.Files
 import java.nio.file.Paths
 
-class SessionsStorage(storageDir: String, val evaluationType: String) : EvaluationStorage(storageDir) {
+class SessionsStorage(private val storageDir: String, val evaluationType: String) {
     companion object {
         private const val pathsListFile = "files.json"
         private const val configFile = "config.json"
@@ -19,12 +18,11 @@ class SessionsStorage(storageDir: String, val evaluationType: String) : Evaluati
     private var filesCounter = 0
     private var sessionFiles: MutableMap<String, String> = mutableMapOf()
     private val typeFolder = Paths.get(storageDir, evaluationType)
+    private val keyValueStorage = FileArchivesStorage(typeFolder.toString())
 
     fun saveSessions(sessionsInfo: FileSessionsInfo) {
-        if (!typeFolder.toFile().exists()) Files.createDirectories(typeFolder)
         val json = sessionSerializer.serialize(sessionsInfo)
-        val dataPath = Paths.get(typeFolder.toString(), "${Paths.get(sessionsInfo.filePath).fileName}($filesCounter).json")
-        val archivePath = saveFile(dataPath.toString(), json)
+        val archivePath = keyValueStorage.save("${Paths.get(sessionsInfo.filePath).fileName}($filesCounter).json", json)
         sessionFiles[sessionsInfo.filePath] = Paths.get(storageDir).relativize(Paths.get(archivePath)).toString()
         filesCounter++
     }
@@ -46,6 +44,6 @@ class SessionsStorage(storageDir: String, val evaluationType: String) : Evaluati
 
     fun getSessions(path: String): FileSessionsInfo {
         val sessionsPath = sessionFiles[path] ?: throw NoSuchElementException()
-        return sessionSerializer.deserialize(readFile(sessionsPath))
+        return sessionSerializer.deserialize(keyValueStorage.get(sessionsPath))
     }
 }
