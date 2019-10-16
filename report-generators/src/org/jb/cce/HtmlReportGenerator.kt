@@ -11,6 +11,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
+import org.jb.cce.metrics.Metric
 
 class HtmlReportGenerator(outputDir: String) {
     companion object {
@@ -169,6 +170,9 @@ class HtmlReportGenerator(outputDir: String) {
         }
     }
 
+    private fun getLineNumbers(linesCount: Int): String =
+            (1..linesCount).joinToString("\n") { it.toString().padStart(linesCount.toString().length) }
+
     private fun prepareCode(text: String, _sessions: List<List<Session>>): String {
         if (_sessions.isEmpty() || _sessions.all { it.isEmpty() }) return text
 
@@ -206,44 +210,72 @@ class HtmlReportGenerator(outputDir: String) {
             }
 
     private fun getMetricsTable(globalMetrics: List<MetricInfo>): String {
-        val sortedMetrics = globalMetrics.sortedBy { it.label }
         val metricNames = globalMetrics.map { it.name }.toSet().sorted()
-        val evaluationTypes = globalMetrics.map { it.evaluationType }.toSet().sorted()
+        val evaluationTypes = globalMetrics.mapTo(HashSet()) { it.evaluationType }
+        val withDiff = (evaluationTypes.size == 2)
+        if (withDiff) evaluationTypes.add("diff")
+        val manyTypes = (evaluationTypes.size > 1)
         var rowId = 1
+
+        val errorMetrics = globalMetrics.map { MetricInfo(it.name, "—", it.evaluationType) }
+
+        fun getReportMetrics(repRef: ReferenceInfo) = globalMetrics.map { metric ->
+            MetricInfo(
+                    metric.name,
+                    repRef.metrics.find { it.label == metric.label }?.value ?: "—",
+                    metric.evaluationType
+            )
+        }
+
+        fun formatMetrics(metrics: List<MetricInfo>): String = (
+                if (withDiff) listOf(metrics, metrics
+                        .groupBy({ it.name }, { it.evaluationType to it.value })
+                        .mapValues { getDiffValue(it.value.toMap()) }
+                        .map { MetricInfo(it.key, it.value, "diff") }).flatten()
+                else metrics
+                ).joinToString(",") { "${it.label}:'${it.value}'" }
+
+        fun getErrorRow(errRef: Map.Entry<String, Path>): String =
+                "{id:${rowId++},file:${getErrorLink(errRef)},${formatMetrics(errorMetrics)}}"
+
+        fun getReportRow(repRef: Map.Entry<String, ReferenceInfo>) =
+                "{id:${rowId++},file:${getReportLink(repRef)},${formatMetrics(getReportMetrics(repRef.value))}}"
+
         return """
-        |let tableData = [{id:0,file:'Summary',${sortedMetrics.joinToString(",") { "${it.label}:'${it.value}'" }}}
-        |${if (errorReferences.isNotEmpty()) errorReferences.map { errRef ->
-            "{id:${rowId++},file:\"${getErrorAnchor(errRef)}\",${sortedMetrics.joinToString(",") { "${it.label}:'—'" }}}"
-        }.joinToString(",", ",") else ""}
-        |${if (reportReferences.isNotEmpty()) reportReferences.map { repRef ->
-            "{id:${rowId++},file:\"${getReportAnchor(repRef)}\",${sortedMetrics.joinToString(",") {
-                "${it.label}:'${getMetricValue(repRef, it)}'"
-            }}}"
-        }.joinToString(",", ",") else ""}]
+        |let tableData = [{id:0,file:'Summary',${formatMetrics(globalMetrics)}}
+        |${with(errorReferences) { if (isNotEmpty()) map { getErrorRow(it) }.joinToString(",\n", ",") else "" }}
+        |${with(reportReferences) { if (isNotEmpty()) map { getReportRow(it) }.joinToString(",\n", ",") else "" }}]
         |let table=new Tabulator('#metricsTable',{data:tableData,
-        |columns:[{title:'File Report',field:'file',formatter:'html'},
+        |columns:[{title:'File Report',field:'file',formatter:'html'${if (manyTypes) ",width:'120'" else ""}},
         |${metricNames.joinToString(",\n") { name ->
-            "{title:'$name',columns:[${evaluationTypes.joinToString(",") { type ->
-                "{title:'$type',field:'${name.filter { it.isLetterOrDigit() }}$type',sorter:'number',align:'right'}"
+            "{title:'$name',columns:[${evaluationTypes.sorted().joinToString(",") { type ->
+                "{title:'$type',field:'${name.filter { it.isLetterOrDigit() }}$type',sorter:'number',align:'right',headerVertical:${manyTypes}}"
             }}]}"
         }}],
-        |layout:'fitColumns',pagination:'local',paginationSize:25,paginationSizeSelector:true,
+        |layout:'fitColumns',pagination:'local',paginationSize:25,paginationSizeSelector:true,movableColumns:true,
         |dataLoaded:function(){this.getRows()[0].freeze();this.setFilter(myFilter)}});
         """.trimMargin()
     }
 
-    private fun getErrorAnchor(errRef: Map.Entry<String, Path>): String =
-            "<a href='${baseDir.relativize(errRef.value)}' class='errRef' target='_blank'>${Paths.get(errRef.key).fileName}</a>"
+    private fun getDiffValue(type2value: Map<String, String>): String {
+        assert(type2value.size == 2)
+        return with(type2value) {
+            if (values.any { it.toDoubleOrNull() == null }) "—"
+            else Metric.DEFAULT_DOUBLE_VALUE_FORMAT(values.map { it.toDouble() }.run { first() - last() })
+        }
+    }
 
-    private fun getReportAnchor(repRef: Map.Entry<String, ReferenceInfo>): String =
-            "<a href='${baseDir.relativize(repRef.value.pathToReport)}' target='_blank'>${File(repRef.key).name}</a>"
+    private fun getErrorLink(errRef: Map.Entry<String, Path>): String =
+            "\"<a href='${baseDir.relativize(errRef.value)}' class='errRef' target='_blank'>${Paths.get(errRef.key).fileName}</a>\""
 
-    private fun getMetricValue(repRef: Map.Entry<String, ReferenceInfo>, metric: MetricInfo): String =
-            repRef.value.metrics.find { it.label == metric.label }?.value ?: "—"
+    private fun getReportLink(repRef: Map.Entry<String, ReferenceInfo>): String =
+            "\"<a href='${baseDir.relativize(repRef.value.pathToReport)}' target='_blank'>${File(repRef.key).name}</a>\""
+
 
     private fun getToolbar(globalMetrics: List<MetricInfo>): String {
         val metricNames = globalMetrics.map { it.name }.toSet().sorted()
-        val evaluationTypes = globalMetrics.map { it.evaluationType }.toSet()
+        val evaluationTypes = globalMetrics.mapTo(HashSet()) { it.evaluationType }
+        if (evaluationTypes.size == 2) evaluationTypes.add("diff")
         val sessionMetricIsPresent = metricNames.contains("Sessions")
         val ifSessions: (String) -> String = { if (sessionMetricIsPresent) it else "" }
         val toolbar = createHTML().div {
@@ -302,9 +334,5 @@ class HtmlReportGenerator(outputDir: String) {
         |</script>""".trimMargin()
         return toolbar + toolbarScript
     }
-
-
-    private fun getLineNumbers(linesCount: Int): String =
-            (1..linesCount).joinToString("\n") { it.toString().padStart(linesCount.toString().length) }
 
 }
