@@ -261,7 +261,9 @@ class HtmlReportGenerator(outputDir: String) {
         assert(type2value.size == 2)
         return with(type2value) {
             if (values.any { it.toDoubleOrNull() == null }) "—"
-            else Metric.DEFAULT_DOUBLE_VALUE_FORMAT(values.map { it.toDouble() }.run { first() - last() })
+            else values.map { it.toDouble() }.run { first() - last() }.let {
+                if (values.first().contains('.')) Metric.DEFAULT_DOUBLE_VALUE_FORMAT(it) else "${it.toInt()}"
+            }
         }
     }
 
