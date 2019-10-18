@@ -46,8 +46,8 @@ The plugin deals with the quality evaluation of code completion based on artific
   - Prefix of completion token (empty, first characters and uppercase characters). Also it can emulate typing
   - Type of completion tokens (method calls, variables, method arguments, static members and all tokens)
 - Different metrics:
-  - Precision@1
-  - Precision@5
+  - Found@1
+  - Found@5
   - Recall
   - [eSaved](http://terrierteam.dcs.gla.ac.uk/publications/kharitonov-sigir2013.pdf)
 - HTML-reports:

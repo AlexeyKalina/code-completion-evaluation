@@ -149,7 +149,7 @@ class HtmlReportGenerator(outputDir: String) {
 
     private fun getHtml(sessions: List<List<Session>>, fileName: String, resourcePath: String, text: String): String {
         reportTitle = "Code Completion Report for file $fileName"
-        val code = prepareCode(text, sessions)
+        val maxPrefixLength = sessions.flatMap { it.map { it.lookups.size - 1 } }.max() ?: 0
         return createHTML().html {
             head {
                 title(reportTitle)
@@ -161,10 +161,18 @@ class HtmlReportGenerator(outputDir: String) {
             }
             body {
                 h1 { +reportTitle }
-                div("code-container") {
-                    div { pre("line-numbers") { +getLineNumbers(code.lines().size) } }
-                    div { pre("code") { unsafe { raw(code) } } }
+                if (maxPrefixLength != 0) label("label") {
+                    htmlFor = "prefix-length"
+                    +"Prefix length:"
                 }
+                if (maxPrefixLength != 0) input(InputType.number) {
+                    id = "prefix-length"
+                    min = 0.toString()
+                    max = maxPrefixLength.toString()
+                    value = maxPrefixLength.toString()
+                    onChange = "changePrefix()"
+                }
+                unsafe { raw(getCodeBlocks(text, sessions, maxPrefixLength)) }
                 script { src = "../res/script.js" }
             }
         }
@@ -173,7 +181,18 @@ class HtmlReportGenerator(outputDir: String) {
     private fun getLineNumbers(linesCount: Int): String =
             (1..linesCount).joinToString("\n") { it.toString().padStart(linesCount.toString().length) }
 
-    private fun prepareCode(text: String, _sessions: List<List<Session>>): String {
+    private fun getCodeBlocks(text: String, sessions: List<List<Session>>, maxPrefixLength: Int): String {
+        return createHTML().div {
+            for (prefixLength in 0..maxPrefixLength) {
+                div("code-container ${if (prefixLength != maxPrefixLength) "prefix-hidden" else ""}") {
+                    div { pre("line-numbers") { +getLineNumbers(text.lines().size) } }
+                    div { pre("code") { unsafe { raw(prepareCode(text, sessions, prefixLength)) } } }
+                }
+            }
+        }
+    }
+
+    private fun prepareCode(text: String, _sessions: List<List<Session>>, prefixLength: Int): String {
         if (_sessions.isEmpty() || _sessions.all { it.isEmpty() }) return text
 
         val sessions = _sessions.filterNot { it.isEmpty() }
@@ -191,11 +210,11 @@ class HtmlReportGenerator(outputDir: String) {
                 val center = session.expectedText.length / sessions.size
                 var shift = 0
                 for (j in 0 until sessionGroup.lastIndex) {
-                    append(getSpan(sessionGroup[j], session.expectedText.substring(shift, shift + center)))
+                    append(getSpan(sessionGroup[j], session.expectedText.substring(shift, shift + center), prefixLength))
                     append(delimiter)
                     shift += center
                 }
-                append(getSpan(sessionGroup.last(), session.expectedText.substring(shift)))
+                append(getSpan(sessionGroup.last(), session.expectedText.substring(shift), prefixLength))
                 offset = session.offset + session.expectedText.length
             }
             append(escapeHtml4(text.substring(offset)))
@@ -203,8 +222,8 @@ class HtmlReportGenerator(outputDir: String) {
         }
     }
 
-    private fun getSpan(session: Session?, text: String): String =
-            createHTML().span("completion ${ReportColors.getColor(session, HtmlColorClasses)}") {
+    private fun getSpan(session: Session?, text: String, prefixLength: Int): String =
+            createHTML().span("completion ${ReportColors.getColor(session, HtmlColorClasses, prefixLength)}") {
                 id = session?.id.toString()
                 +text
             }

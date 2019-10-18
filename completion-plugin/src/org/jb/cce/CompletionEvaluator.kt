@@ -26,8 +26,6 @@ import org.jb.cce.util.*
 import org.jb.cce.visitors.DefaultEvaluationRootVisitor
 import org.jb.cce.visitors.EvaluationRootByOffsetVisitor
 import org.jb.cce.visitors.EvaluationRootByRangeVisitor
-import java.io.PrintWriter
-import java.io.StringWriter
 import java.nio.file.Paths
 import java.util.*
 import kotlin.system.measureTimeMillis
@@ -149,7 +147,7 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
             val fileActions = workspace.actionsStorage.getActions(file)
             try {
                 lastFileSessions = interpreter.interpret(fileActions)
-                val fileText = FilesHelper.getProjectPath(project, fileActions.path).readText()
+                val fileText = FilesHelper.getFileText(project, fileActions.path)
                 workspace.sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, fileText, lastFileSessions))
             } catch (e: Throwable) {
                 workspace.errorsStorage.saveError(FileErrorInfo(fileActions.path, e.message ?: "No Message", stackTraceToString(e)))
