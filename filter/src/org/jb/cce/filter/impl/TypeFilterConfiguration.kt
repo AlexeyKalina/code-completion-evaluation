@@ -14,7 +14,7 @@ import javax.swing.JCheckBox
 import javax.swing.JLabel
 import javax.swing.JPanel
 
-class TypeFilter(private val values: List<TypeProperty>) : EvaluationFilter {
+class TypeFilter(val values: List<TypeProperty>) : EvaluationFilter {
     override fun shouldEvaluate(properties: NodeProperties): Boolean = properties.tokenType == null || values.contains(properties.tokenType!!)
     override fun toJson(): JsonElement {
         val json = JsonArray()
@@ -28,7 +28,7 @@ class TypeFilterConfiguration : EvaluationFilterConfiguration {
     override val id: String = "statementTypes"
     override val description: String = "Filter out tokens by statement type"
 
-    override fun createConfigurable(): EvaluationFilterConfiguration.Configurable = TypeConfigurable()
+    override fun createConfigurable(previousState: EvaluationFilter): EvaluationFilterConfiguration.Configurable = TypeConfigurable(previousState)
 
     override fun isLanguageSupported(languageName: String): Boolean = Language.values().any { it.displayName == languageName }
 
@@ -38,8 +38,10 @@ class TypeFilterConfiguration : EvaluationFilterConfiguration {
 
     override fun defaultFilter(): EvaluationFilter = TypeFilter(listOf(TypeProperty.METHOD_CALL))
 
-    private inner class TypeConfigurable : EvaluationFilterConfiguration.Configurable {
-        private val types = mutableListOf(TypeProperty.METHOD_CALL)
+    private inner class TypeConfigurable(previousState: EvaluationFilter) : EvaluationFilterConfiguration.Configurable {
+        private val types: MutableList<TypeProperty> =
+                if (previousState == EvaluationFilter.ACCEPT_ALL) TypeProperty.values().toMutableList()
+                else (previousState as TypeFilter).values.toMutableList()
 
         override val panel: JPanel = createTypesPanel()
 
@@ -50,33 +52,27 @@ class TypeFilterConfiguration : EvaluationFilterConfiguration {
         override fun isLanguageSupported(languageName: String): Boolean = this@TypeFilterConfiguration.isLanguageSupported(languageName)
 
         private fun createTypesPanel(): JPanel {
-            val statementLabel = JLabel("Statements type:")
             val typesPanel = JPanel(FlowLayout(FlowLayout.LEFT))
-
-            typesPanel.add(statementLabel)
+            typesPanel.add(JLabel("Statements type:"))
             for (type in createTypeCheckBoxes()) {
                 typesPanel.add(type)
             }
             return typesPanel
         }
 
-        private fun createTypeCheckBoxes(): List<JCheckBox> {
-            val methodsButton = getTypeCheckBox(TypeProperty.METHOD_CALL, "Method calls")
-            val fieldsButton = getTypeCheckBox(TypeProperty.FIELD, "Fields")
-            val variablesButton = getTypeCheckBox(TypeProperty.VARIABLE, "Variables")
+        private fun createTypeCheckBoxes(): List<JCheckBox> = listOf(
+                getTypeCheckBox(TypeProperty.METHOD_CALL, "Method calls"),
+                getTypeCheckBox(TypeProperty.FIELD, "Fields"),
+                getTypeCheckBox(TypeProperty.VARIABLE, "Variables")
+        )
 
-            methodsButton.isSelected = true
-            return listOf(methodsButton, fieldsButton, variablesButton)
-        }
-
-        private fun getTypeCheckBox(type: TypeProperty, title: String): JCheckBox {
-            val typeButton =  JCheckBox(title)
-            typeButton.addItemListener { event ->
-                if (event.stateChange == ItemEvent.SELECTED) {
-                    if (!types.contains(type)) types.add(type)
-                } else types.remove(type)
-            }
-            return typeButton
-        }
+        private fun getTypeCheckBox(type: TypeProperty, title: String): JCheckBox =
+                JCheckBox(title, types.contains(type)).apply {
+                    addItemListener { event ->
+                        if (event.stateChange == ItemEvent.SELECTED) {
+                            if (!types.contains(type)) types.add(type)
+                        } else types.remove(type)
+                    }
+                }
     }
 }

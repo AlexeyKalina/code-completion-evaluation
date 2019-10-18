@@ -1,4 +1,4 @@
-package org.jb.cce.actions
+package org.jb.cce.dialog
 
 import com.intellij.openapi.ui.DialogWrapper
 import javax.swing.JComponent

@@ -13,7 +13,7 @@ interface EvaluationFilterConfiguration {
 
   val description: String
 
-  fun createConfigurable(): Configurable
+  fun createConfigurable(previousState: EvaluationFilter): Configurable
 
   fun isLanguageSupported(languageName: String): Boolean
 

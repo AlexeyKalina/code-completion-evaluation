@@ -10,7 +10,7 @@ import java.awt.FlowLayout
 import java.awt.event.ItemEvent
 import javax.swing.*
 
-class ArgumentFilter(private val expectedValue: Boolean) : EvaluationFilter {
+class ArgumentFilter(val expectedValue: Boolean) : EvaluationFilter {
     override fun shouldEvaluate(properties: NodeProperties): Boolean = properties.isArgument?.equals(expectedValue) ?: true
     override fun toJson(): JsonElement = JsonPrimitive(expectedValue)
 }
@@ -19,7 +19,7 @@ class ArgumentFilterConfiguration: EvaluationFilterConfiguration {
     override val id: String = "isArgument"
     override val description: String = "Filter out token if it's method argument"
 
-    override fun createConfigurable(): EvaluationFilterConfiguration.Configurable = ArgumentConfigurable()
+    override fun createConfigurable(previousState: EvaluationFilter): EvaluationFilterConfiguration.Configurable = ArgumentConfigurable(previousState)
 
     override fun isLanguageSupported(languageName: String): Boolean = listOf(Language.JAVA, Language.PYTHON).any { it.displayName == languageName }
 
@@ -33,8 +33,11 @@ class ArgumentFilterConfiguration: EvaluationFilterConfiguration {
         ALL
     }
 
-    private inner class ArgumentConfigurable : EvaluationFilterConfiguration.Configurable {
-        private var argument = ArgumentFilter.ALL
+    private inner class ArgumentConfigurable(previousState: EvaluationFilter) : EvaluationFilterConfiguration.Configurable {
+        private var argument =
+                if (previousState is org.jb.cce.filter.impl.ArgumentFilter) {
+                    if (previousState.expectedValue) ArgumentFilter.ARGUMENT else ArgumentFilter.NOT_ARGUMENT
+                } else ArgumentFilter.ALL
 
         override val panel: JPanel = createArgumentPanel()
 
@@ -49,11 +52,9 @@ class ArgumentFilterConfiguration: EvaluationFilterConfiguration {
         override fun isLanguageSupported(languageName: String): Boolean = this@ArgumentFilterConfiguration.isLanguageSupported(languageName)
 
         private fun createArgumentPanel(): JPanel {
-            val argumentLabel = JLabel("Arguments:")
             val argumentPanel = JPanel(FlowLayout(FlowLayout.LEFT))
-
             val argumentGroup =  ButtonGroup()
-            argumentPanel.add(argumentLabel)
+            argumentPanel.add(JLabel("Arguments:"))
             for (type in createArgumentButtons()) {
                 argumentPanel.add(type)
                 argumentGroup.add(type)
@@ -61,23 +62,19 @@ class ArgumentFilterConfiguration: EvaluationFilterConfiguration {
             return argumentPanel
         }
 
-        private fun createArgumentButtons(): List<JRadioButton> {
-            val argumentButton = getArgumentButton(ArgumentFilter.ARGUMENT, "Yes")
-            val notArgumentButton = getArgumentButton(ArgumentFilter.NOT_ARGUMENT, "No")
-            val allButton = getArgumentButton(ArgumentFilter.ALL, "All")
+        private fun createArgumentButtons(): List<JRadioButton> = listOf(
+                getArgumentButton(ArgumentFilter.ARGUMENT, "Yes"),
+                getArgumentButton(ArgumentFilter.NOT_ARGUMENT, "No"),
+                getArgumentButton(ArgumentFilter.ALL, "All")
+        )
 
-            allButton.isSelected = true
-            return listOf(argumentButton, notArgumentButton, allButton)
-        }
-
-        private fun getArgumentButton(value: ArgumentFilter, title: String): JRadioButton {
-            val typeButton =  JRadioButton(title)
-            typeButton.addItemListener { event ->
-                if (event.stateChange == ItemEvent.SELECTED) {
-                    argument = value
+        private fun getArgumentButton(value: ArgumentFilter, title: String): JRadioButton =
+                JRadioButton(title, value == argument).apply {
+                    addItemListener { event ->
+                        if (event.stateChange == ItemEvent.SELECTED) {
+                            argument = value
+                        }
+                    }
                 }
-            }
-            return typeButton
-        }
     }
 }

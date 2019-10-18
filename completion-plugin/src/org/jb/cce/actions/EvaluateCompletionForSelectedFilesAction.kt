@@ -6,7 +6,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.CompletionEvaluator
-import org.jb.cce.filter.EvaluationFilterManager
+import org.jb.cce.dialog.FullSettingsDialog
 import org.jb.cce.util.FilesHelper
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
@@ -22,13 +22,11 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             return
         }
 
-        val settingsDialog = CompletionSettingsDialog(project, language2files)
-        val result = settingsDialog.showAndGet()
+        val dialog = FullSettingsDialog(project, language2files)
+        val result = dialog.showAndGet()
         if (!result) return
 
-        val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionContext, settingsDialog.completeAllTokens, settingsDialog.getFilters())
-        val completionType = settingsDialog.completionType
-        evaluator.evaluateCompletion(files, settingsDialog.language, strategy, completionType, settingsDialog.workspaceDir,
-                settingsDialog.interpretActionsAfterGeneration, settingsDialog.saveLogs, settingsDialog.trainingPercentage)
+        val config = dialog.buildConfig()
+        evaluator.evaluateCompletion(config)
     }
 }

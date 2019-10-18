@@ -1,6 +1,5 @@
 package org.jb.cce.actions
 
-import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -10,7 +9,8 @@ import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.HtmlReportGenerator
 import org.jb.cce.ReportGeneration
 import org.jb.cce.SessionSerializer
-import java.nio.file.Paths
+import org.jb.cce.dialog.FullSettingsDialog
+import org.jb.cce.util.ConfigFactory
 
 class GenerateReportAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
@@ -24,11 +24,8 @@ class GenerateReportAction : AnAction() {
             workspaces.add(EvaluationWorkspace(configFile.parent.parent.path, config.evaluationType, true))
         }
 
-        val properties = PropertiesComponent.getInstance(project)
-        val workspaceDir = properties.getValue(CompletionSettingsDialog.workspaceDirProperty) ?:
-            Paths.get(project.basePath ?: "", CompletionSettingsDialog.completionEvaluationDir).toString()
-
-        val workspace = EvaluationWorkspace(workspaceDir, "COMPARE_MULTIPLE")
+        val config = ConfigFactory.getByKey(project, FullSettingsDialog.configStateKey)
+        val workspace = EvaluationWorkspace(config.workspaceDir, "COMPARE_MULTIPLE")
         val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
         ReportGeneration(reportGenerator).generateReportUnderProgress(workspaces.map { it.sessionsStorage }, workspaces.map { it.errorsStorage }, project, false)
     }

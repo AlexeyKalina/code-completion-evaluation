@@ -12,7 +12,7 @@ import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
 class PackageRegexFilter(pattern: String) : EvaluationFilter {
-    private val regex = Regex(pattern)
+    val regex = Regex(pattern)
     override fun shouldEvaluate(properties: NodeProperties): Boolean = properties.packageName?.matches(regex) ?: true
     override fun toJson(): JsonElement = JsonPrimitive(regex.pattern)
 }
@@ -21,7 +21,7 @@ class PackageRegexFilterConfiguration: EvaluationFilterConfiguration {
     override val id: String = "packageRegex"
     override val description: String = "Filter out tokens by package name regex"
 
-    override fun createConfigurable(): EvaluationFilterConfiguration.Configurable = PackageRegexConfigurable()
+    override fun createConfigurable(previousState: EvaluationFilter): EvaluationFilterConfiguration.Configurable = PackageRegexConfigurable(previousState)
 
     override fun isLanguageSupported(languageName: String): Boolean = Language.JAVA.displayName == languageName
 
@@ -29,8 +29,10 @@ class PackageRegexFilterConfiguration: EvaluationFilterConfiguration {
 
     override fun defaultFilter(): EvaluationFilter = PackageRegexFilter(".*")
 
-    private inner class PackageRegexConfigurable : EvaluationFilterConfiguration.Configurable {
-        private var packageRegex = ""
+    private inner class PackageRegexConfigurable(previousState: EvaluationFilter) : EvaluationFilterConfiguration.Configurable {
+        private var packageRegex =
+                if (previousState == EvaluationFilter.ACCEPT_ALL) ""
+                else (previousState as PackageRegexFilter).regex.pattern
 
         override val panel = createPackageRegexPanel()
 
@@ -38,25 +40,19 @@ class PackageRegexFilterConfiguration: EvaluationFilterConfiguration {
 
         override fun isLanguageSupported(languageName: String): Boolean = this@PackageRegexFilterConfiguration.isLanguageSupported(languageName)
 
-        private fun createPackageRegexPanel(): JPanel {
-            val packageLabel = JLabel("Package Regex:")
-            val packagePanel = JPanel(FlowLayout(FlowLayout.LEFT))
+        private fun createPackageRegexPanel(): JPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
+            add(JLabel("Package Regex:"))
+            add(JTextField(packageRegex).apply {
+                document.addDocumentListener(object : DocumentListener {
+                    override fun changedUpdate(e: DocumentEvent) = update()
+                    override fun removeUpdate(e: DocumentEvent) = update()
+                    override fun insertUpdate(e: DocumentEvent) = update()
 
-            val packageText = JTextField(packageRegex)
-            packageText.document.addDocumentListener(object : DocumentListener {
-                override fun changedUpdate(e: DocumentEvent) = update()
-                override fun removeUpdate(e: DocumentEvent) = update()
-                override fun insertUpdate(e: DocumentEvent) = update()
-
-                private fun update() {
-                    packageRegex = packageText.text
-                }
+                    private fun update() {
+                        packageRegex = text
+                    }
+                })
             })
-
-            packagePanel.add(packageLabel)
-            packagePanel.add(packageText)
-
-            return packagePanel
         }
     }
 }

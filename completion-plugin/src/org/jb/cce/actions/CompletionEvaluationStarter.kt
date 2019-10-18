@@ -4,8 +4,6 @@ import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import com.intellij.openapi.vfs.LocalFileSystem
-import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.CompletionEvaluator
 import org.jb.cce.exceptions.ExceptionsUtil.stackTraceToString
 import org.jb.cce.util.ConfigFactory
@@ -33,13 +31,9 @@ class CompletionEvaluationStarter : ApplicationStarter {
         catch (e: Throwable) {
             fatalError("Project could not be loaded: $e")
         }
-        val projectBasePath = project.basePath
-            ?: fatalError("Evaluation for default project impossible. Path: ${config.projectPath}")
 
         try {
-            val files = config.listOfFiles.findFilesInProject(projectBasePath)
-            CompletionEvaluator(true, project).evaluateCompletion(files, config.language, config.strategy,
-                config.completionType, config.outputDir, config.interpretActions, config.saveLogs, config.logsTrainingPercentage)
+            CompletionEvaluator(true, project).evaluateCompletion(config)
         } catch (e: Exception) {
             e.printStackTrace(System.err)
             fatalError("Could not start evaluation: ${e.message}")
@@ -49,16 +43,6 @@ class CompletionEvaluationStarter : ApplicationStarter {
     private fun fatalError(msg: String): Nothing {
         System.err.println("Evaluation failed: $msg")
         exitProcess(1)
-    }
-
-    private fun List<String?>.findFilesInProject(projectRootPath: String): List<VirtualFile> {
-        val fileSystem = LocalFileSystem.getInstance()
-        val projectRoot = Paths.get(projectRootPath)
-        val path2file = filterNotNull().associateWith { fileSystem.findFileByIoFile(projectRoot.resolve(it).toFile()) }
-        val unknownFiles = path2file.filterValues { it == null }
-        require(unknownFiles.isEmpty()) { "Evaluation roots not found: ${unknownFiles.keys}" }
-
-        return path2file.values.filterNotNull()
     }
 
     private fun openProjectHeadless(projectPath: String): Project {
