@@ -1,8 +1,14 @@
 package org.jb.cce
 
-import com.google.gson.*
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
+import com.google.gson.JsonSerializationContext
+import com.google.gson.JsonSerializer
 import org.apache.commons.text.StringEscapeUtils.escapeHtml4
-import org.jb.cce.actions.CompletionPrefix
+import org.jb.cce.actions.CompletionStrategy
+import org.jb.cce.actions.CompletionStrategyDeserializer
+import org.jb.cce.actions.CompletionStrategySerializer
+import org.jb.cce.actions.getAs
 import org.jb.cce.info.EvaluationInfo
 import org.jb.cce.info.FileSessionsInfo
 import java.lang.reflect.Type
@@ -11,10 +17,8 @@ import java.util.*
 class SessionSerializer {
     companion object {
         private val gson = GsonBuilder()
-                .addDeserializationExclusionStrategy(object : ExclusionStrategy {
-                    override fun shouldSkipField(f: FieldAttributes) = false
-                    override fun shouldSkipClass(aClass: Class<*>) = aClass == CompletionPrefix::class.java
-                }).registerTypeAdapter(Suggestion::class.java, object : JsonSerializer<Suggestion> {
+                .serializeNulls()
+                .registerTypeAdapter(Suggestion::class.java, object : JsonSerializer<Suggestion> {
                     override fun serialize(src: Suggestion, typeOfSrc: Type, context: JsonSerializationContext): JsonObject {
                         val jsonObject = JsonObject()
                         jsonObject.addProperty("text", src.text)
@@ -22,6 +26,7 @@ class SessionSerializer {
                         return jsonObject
                     }
                 })
+                .registerTypeAdapter(CompletionStrategy::class.java, CompletionStrategySerializer())
                 .create()
     }
 
@@ -43,5 +48,11 @@ class SessionSerializer {
         return gson.fromJson(json, FileSessionsInfo::class.java)
     }
 
-    fun deserializeConfig(json: String): EvaluationInfo = gson.fromJson(json, EvaluationInfo::class.java)
+    fun deserializeConfig(json: String): EvaluationInfo {
+        val map = gson.fromJson<HashMap<String, Any>>(json, HashMap<String, Any>().javaClass)
+        val strategyJson = map.getAs<Map<String, Any>>("strategy")
+        val strategy = CompletionStrategyDeserializer().deserialize(strategyJson)
+        val evaluationType = map.getAs<String>("evaluationType")
+        return EvaluationInfo(evaluationType, strategy)
+    }
 }
