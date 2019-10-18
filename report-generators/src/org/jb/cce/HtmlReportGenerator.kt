@@ -211,10 +211,10 @@ class HtmlReportGenerator(outputDir: String) {
 
     private fun getMetricsTable(globalMetrics: List<MetricInfo>): String {
         val metricNames = globalMetrics.map { it.name }.toSet().sorted()
-        val evaluationTypes = globalMetrics.mapTo(HashSet()) { it.evaluationType }
+        val evaluationTypes = globalMetrics.map { it.evaluationType }.toSet().sorted().toMutableList()
+        val manyTypes = (evaluationTypes.size > 1)
         val withDiff = (evaluationTypes.size == 2)
         if (withDiff) evaluationTypes.add("diff")
-        val manyTypes = (evaluationTypes.size > 1)
         var rowId = 1
 
         val errorMetrics = globalMetrics.map { MetricInfo(it.name, "—", it.evaluationType) }
@@ -248,7 +248,7 @@ class HtmlReportGenerator(outputDir: String) {
         |let table=new Tabulator('#metricsTable',{data:tableData,
         |columns:[{title:'File Report',field:'file',formatter:'html'${if (manyTypes) ",width:'120'" else ""}},
         |${metricNames.joinToString(",\n") { name ->
-            "{title:'$name',columns:[${evaluationTypes.sorted().joinToString(",") { type ->
+            "{title:'$name',columns:[${evaluationTypes.joinToString(",") { type ->
                 "{title:'$type',field:'${name.filter { it.isLetterOrDigit() }}$type',sorter:'number',align:'right',headerVertical:${manyTypes}}"
             }}]}"
         }}],
