@@ -22,7 +22,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             return
         }
 
-        val dialog = FullSettingsDialog(project, language2files)
+        val dialog = FullSettingsDialog(project, files, language2files)
         val result = dialog.showAndGet()
         if (!result) return
 

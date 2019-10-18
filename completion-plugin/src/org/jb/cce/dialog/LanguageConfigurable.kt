@@ -28,9 +28,7 @@ class LanguageConfigurable(private val dispatcher: EventDispatcher<SettingsListe
         }
     }
 
-    override fun configure(builder: Config.Builder) {
-        builder.evaluationRoots.addAll(language2files[language()]?.map { it.path } ?: emptyList())
-    }
+    override fun configure(builder: Config.Builder) { }
 
     private class LanguageItem(val languageName: String, val count: Int) {
         override fun toString(): String = "$languageName ($count)"

@@ -7,12 +7,14 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.EventDispatcher
 import org.jb.cce.util.Config
 import org.jb.cce.util.ConfigFactory
+import org.jb.cce.util.FilesHelper
 import java.awt.event.ActionEvent
 import java.nio.file.Paths
 import javax.swing.*
 
 class FullSettingsDialog(
         private val project: Project,
+        private val files: List<VirtualFile>,
         language2files: Map<String, Set<VirtualFile>>
 ) : DialogWrapper(true) {
     companion object {
@@ -62,6 +64,7 @@ class FullSettingsDialog(
     fun buildConfig(): Config {
         val config = Config.build(project.basePath!!, languageConfigurable.language()) {
             configurators.forEach { it.configure(this) }
+            evaluationRoots = files.map { FilesHelper.getRelativeToProjectPath(project, it.path) }.toMutableList()
         }
 
         ConfigFactory.storeByKey(project, configStateKey, config)
