@@ -20,7 +20,7 @@ class MetricsEvaluator private constructor(private val evaluationType: String) {
         registerMetric(ESavedMetric())
         registerMetric(MeanLatencyMetric())
         registerMetric(MaxLatencyMetric())
-        registerMetric(AverageSelectedPositionMetric())
+        registerMetric(MeanRankMetric())
         registerMetric(SessionsCountMetric())
     }
 

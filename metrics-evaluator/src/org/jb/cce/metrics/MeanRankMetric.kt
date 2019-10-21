@@ -3,7 +3,7 @@ package org.jb.cce.metrics
 import org.jb.cce.Session
 import org.jb.cce.metrics.util.Sample
 
-class AverageSelectedPositionMetric : Metric {
+class MeanRankMetric : Metric {
     private val sample = Sample()
 
     override val value: Double
