@@ -9,7 +9,6 @@ import org.jb.cce.util.Config
 import org.jb.cce.util.ConfigFactory
 import org.jb.cce.util.FilesHelper
 import java.awt.event.ActionEvent
-import java.nio.file.Paths
 import javax.swing.*
 
 class FullSettingsDialog(
@@ -54,7 +53,8 @@ class FullSettingsDialog(
                 }
                 val result = fileChooser.showOpenDialog(contentPanel)
                 if (result == JFileChooser.APPROVE_OPTION) {
-                    saveConfig(fileChooser.selectedFile.absolutePath)
+                    val config = buildConfig()
+                    ConfigFactory.save(config, fileChooser.selectedFile.absolutePath)
                     Messages.showInfoMessage("Config saved successfully", "Config saving")
                 }
             }
@@ -70,10 +70,5 @@ class FullSettingsDialog(
         ConfigFactory.storeByKey(project, configStateKey, config)
 
         return config
-    }
-
-    private fun saveConfig(path: String) {
-        val config = buildConfig()
-        ConfigFactory.save(config, Paths.get(path, "config.json").toString())
     }
 }

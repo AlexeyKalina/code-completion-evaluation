@@ -30,14 +30,14 @@ object ConfigFactory {
         return deserialize(FileReader(configFile).readText())
     }
 
-    fun save(path: String): Config {
-        save(defaultConfig(), path)
+    fun save(directoryPath: String, name: String = "config.json"): Config {
+        save(defaultConfig(), directoryPath, name)
         return defaultConfig()
     }
 
-    fun save(config: Config, path: String) {
+    fun save(config: Config, directoryPath: String, name: String = "config.json") {
         val json = serialize(config)
-        Files.write(Paths.get(path), json.toByteArray())
+        Files.write(Paths.get(directoryPath, name), json.toByteArray())
     }
 
     fun getByKey(project: Project, configStateKey: String): Config {

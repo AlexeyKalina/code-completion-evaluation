@@ -38,4 +38,6 @@ class EvaluationWorkspace(outputDir: String, evaluationType: String, existing: B
     val errorsStorage = FileErrorsStorage(errorsDir.toString())
 
     val logsStorage = LogsStorage(logsDir.toString())
+
+    override fun toString(): String = baseDir
 }
