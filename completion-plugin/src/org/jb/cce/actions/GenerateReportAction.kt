@@ -1,5 +1,6 @@
 package org.jb.cce.actions
 
+import com.google.gson.Gson
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
@@ -8,20 +9,23 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.HtmlReportGenerator
 import org.jb.cce.ReportGeneration
-import org.jb.cce.SessionSerializer
 import org.jb.cce.dialog.FullSettingsDialog
+import org.jb.cce.info.EvaluationInfo
 import org.jb.cce.util.ConfigFactory
 
 class GenerateReportAction : AnAction() {
+    companion object {
+        private val gson = Gson()
+    }
+
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val files = getFiles(e)
-        val serializer = SessionSerializer()
         val workspaces = mutableListOf<EvaluationWorkspace>()
 
         for (configFile in files) {
-            val config = serializer.deserializeConfig(VfsUtil.loadText(configFile))
-            workspaces.add(EvaluationWorkspace(configFile.parent.parent.path, config.evaluationType, true))
+            val evaluationInfo = gson.fromJson<EvaluationInfo>(VfsUtil.loadText(configFile), EvaluationInfo::class.java)
+            workspaces.add(EvaluationWorkspace(configFile.parent.parent.path, evaluationInfo.evaluationType, true))
         }
 
         val config = ConfigFactory.getByKey(project, FullSettingsDialog.configStateKey)

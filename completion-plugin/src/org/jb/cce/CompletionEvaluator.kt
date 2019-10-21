@@ -14,7 +14,6 @@ import org.jb.cce.actions.CompletionStrategy
 import org.jb.cce.actions.CompletionType
 import org.jb.cce.exceptions.ExceptionsUtil.stackTraceToString
 import org.jb.cce.highlighter.Highlighter
-import org.jb.cce.info.EvaluationInfo
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.FileSessionsInfo
 import org.jb.cce.interpretator.CompletionInvokerImpl
@@ -141,7 +140,7 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
             }
             if (handler.isCancelled()) break
         }
-        workspace.sessionsStorage.saveEvaluationInfo(EvaluationInfo(completionType.name, strategy))
+        workspace.sessionsStorage.saveEvaluationInfo(completionType.name)
         LOG.info("Interpreting actions completed")
         setMLCompletion(mlCompletionFlag)
         return lastFileSessions

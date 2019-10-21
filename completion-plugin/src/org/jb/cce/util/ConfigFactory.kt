@@ -4,6 +4,7 @@ import com.google.gson.GsonBuilder
 import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.project.Project
 import org.jb.cce.actions.*
+import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterManager
 import java.io.File
 import java.io.FileReader
@@ -52,18 +53,55 @@ object ConfigFactory {
 
     private fun deserialize(json: String): Config {
         val map = gson.fromJson<HashMap<String, Any>>(json, HashMap<String, Any>().javaClass)
-        val strategyJson = map.getAs<Map<String, Any>>("strategy")
-        val strategy = CompletionStrategyDeserializer().deserialize(strategyJson)
         val languageName = map.getAs<String>("language")
-        for ((id, _) in strategy.filters) {
-            val configuration = EvaluationFilterManager.getConfigurationById(id)
-            assert(configuration!!.isLanguageSupported(languageName)) { "filter $id is not supported for this language" }
-        }
-        return Config(map.getAs("projectPath"), map.getAs("listOfFiles"), languageName,
-                strategy,
-                CompletionType.valueOf(map.getAs("completionType")), map.getAs("workspaceDir"), map.getAs("interpretActions"),
-                map.getAs("saveLogs"), map.getAs<Double>("trainTestSplit").toInt())
+        val builder = Config.Builder(map.getAs("projectPath"), languageName)
+        val strategyJson = map.getAs<Map<String, Any>>("strategy")
+        CompletionStrategyDeserializer().deserialize(strategyJson, languageName, builder)
+        builder.evaluationRoots = map.getAs("listOfFiles")
+        builder.completionType = CompletionType.valueOf(map.getAs("completionType"))
+        builder.workspaceDir = map.getAs("workspaceDir")
+        builder.interpretActions = map.getAs("interpretActions")
+        builder.saveLogs = map.getAs("saveLogs")
+        builder.trainTestSplit = map.getAs<Double>("trainTestSplit").toInt()
+        return builder.build()
     }
 
     private fun serialize(config: Config): String = gson.toJson(config)
+
+    private class CompletionStrategyDeserializer {
+        fun deserialize(strategy: Map<String, Any>, language: String, builder: Config.Builder) {
+            val completeAllTokens = strategy.getAs<Boolean>("completeAllTokens")
+            builder.allTokens = completeAllTokens
+            if (!completeAllTokens) {
+                val evaluationFilters = mutableMapOf<String, EvaluationFilter>()
+                val filters = strategy.getAs<Map<String, Any>>("filters")
+                for ((id, description) in filters) {
+                    val configuration = EvaluationFilterManager.getConfigurationById(id)
+                            ?: throw IllegalStateException("Unknown filter: $id")
+                    assert(configuration.isLanguageSupported(language)) { "filter $id is not supported for this language" }
+                    evaluationFilters[id] = configuration.buildFromJson(description)
+                }
+                builder.filters = evaluationFilters
+            }
+            builder.prefixStrategy = getPrefix(strategy)
+            builder.contextStrategy = CompletionContext.valueOf(strategy.getAs("context"))
+        }
+
+        private fun getPrefix(strategy: Map<String, Any>): CompletionPrefix {
+            val prefix = strategy.getAs<Map<String, Any>>("prefix")
+            return when (prefix["name"]) {
+                "NoPrefix" -> CompletionPrefix.NoPrefix
+                "CapitalizePrefix" -> CompletionPrefix.CapitalizePrefix(prefix.getAs("emulateTyping"))
+                "SimplePrefix" -> CompletionPrefix.SimplePrefix(prefix.getAs("emulateTyping"), prefix.getAs<Double>("n").toInt())
+                else -> throw IllegalArgumentException("Unknown completion prefix")
+            }
+        }
+    }
+
+    private inline fun <reified T> Map<String, *>.getAs(key: String): T {
+        check(key in this.keys) { "$key not found. Existing keys: ${keys.toList()}" }
+        val value = this.getValue(key)
+        check(value is T) { "Unexpected type in config" }
+        return value
+    }
 }

@@ -33,8 +33,8 @@ class EvaluateCompletionHereAction : AnAction() {
         val result = settingsDialog.showAndGet()
         if (!result) return
         val config = settingsDialog.buildConfig()
-        CompletionEvaluator(false, project).evaluateCompletionHere(config, caret.offset,
-                if (config.strategy.completeAllTokens) getParentOnSameLine(psi, caret.offset, editor) else null)
+        val parentPsiElement = if (config.strategy.completeAllTokens) getParentOnSameLine(psi, caret.offset, editor) else null
+        CompletionEvaluator(false, project).evaluateCompletionHere(config, caret.offset, parentPsiElement)
     }
 
     private fun getParentOnSameLine(element: PsiElement, offset: Int, editor: Editor): PsiElement {
