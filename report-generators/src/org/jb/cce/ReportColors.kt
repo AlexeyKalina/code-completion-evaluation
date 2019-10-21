@@ -2,12 +2,12 @@ package org.jb.cce
 
 interface ReportColors<T> {
     companion object {
-        fun<T> getColor(session: Session?, colors: ReportColors<T>): T {
+        fun<T> getColor(session: Session?, colors: ReportColors<T>, prefixLength: Int): T {
             return when {
-                session == null -> colors.absentColor
-                !session.lookups.last().suggestions.any{ it.text == session.expectedText } -> colors.badColor
-                session.lookups.last().suggestions.size < colors.middleCountLookups ||
-                        session.lookups.last().suggestions.subList(0, colors.middleCountLookups).any{ it.text == session.expectedText } -> colors.goodColor
+                session == null || session.lookups.size <= prefixLength -> colors.absentColor
+                !session.lookups[prefixLength].suggestions.any{ it.text == session.expectedText } -> colors.badColor
+                session.lookups[prefixLength].suggestions.size < colors.middleCountLookups ||
+                        session.lookups[prefixLength].suggestions.subList(0, colors.middleCountLookups).any{ it.text == session.expectedText } -> colors.goodColor
                 else -> colors.middleColor
             }
         }
