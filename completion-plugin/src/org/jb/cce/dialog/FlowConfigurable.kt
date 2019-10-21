@@ -8,8 +8,6 @@ import org.jb.cce.util.Config
 import java.awt.FlowLayout
 import java.awt.event.ItemEvent
 import javax.swing.*
-import javax.swing.event.DocumentEvent
-import javax.swing.event.DocumentListener
 
 class FlowConfigurable : EvaluationConfigurable {
     companion object {
@@ -17,16 +15,17 @@ class FlowConfigurable : EvaluationConfigurable {
     }
     private var interpretActions = false
     private var saveLogs = true
-    private var trainTestSplit = 70
-    private var workspaceDir = ""
-    private val trainTestSpinner = JSpinner(SpinnerNumberModel(trainTestSplit, 1, 99, 1))
+    private lateinit var workspaceDirTextField: JTextField
+    private lateinit var trainTestSpinner: JSpinner
 
     override fun createPanel(previousState: Config): JPanel {
         interpretActions = previousState.interpretActions
-        workspaceDir = previousState.workspaceDir
         saveLogs = previousState.saveLogs
-        trainTestSplit = previousState.trainTestSplit
+        workspaceDirTextField = JTextField(previousState.workspaceDir)
         val statsCollectorEnabled = PluginManager.getPlugin(PluginId.getId(statsCollectorId))?.isEnabled ?: false
+        trainTestSpinner = JSpinner(SpinnerNumberModel(previousState.trainTestSplit, 1, 99, 1)).apply {
+            isEnabled = saveLogs && statsCollectorEnabled
+        }
 
         return panel(title = "Flow Control", constraints = *arrayOf(LCFlags.noGrid, LCFlags.flowY)) { }.apply {
             add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
@@ -35,48 +34,27 @@ class FlowConfigurable : EvaluationConfigurable {
             })
             add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                 add(JLabel("Results workspace directory:"))
-                add(JTextField(workspaceDir).configureWorkspace())
+                add(workspaceDirTextField)
             })
             add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
                 add(JLabel("Save completion logs:"))
                 add(JCheckBox("", saveLogs).configureSaveLogs(statsCollectorEnabled))
                 add(JLabel("Train/test split percentage:"))
-                add(trainTestSpinner.configureTrainTest(statsCollectorEnabled))
+                add(trainTestSpinner)
             })
         }
     }
 
     override fun configure(builder: Config.Builder) {
         builder.interpretActions = interpretActions
-        builder.workspaceDir = workspaceDir
+        builder.workspaceDir = workspaceDirTextField.text
         builder.saveLogs = saveLogs
-        builder.trainTestSplit = trainTestSplit
+        builder.trainTestSplit = trainTestSpinner.value as Int
     }
 
     private fun JCheckBox.configureInterpretActions(): JCheckBox {
         addItemListener { event ->
             interpretActions = event.stateChange == ItemEvent.SELECTED
-        }
-        return this
-    }
-
-    private fun JTextField.configureWorkspace(): JTextField {
-        document.addDocumentListener(object : DocumentListener {
-            override fun changedUpdate(e: DocumentEvent) = update()
-            override fun removeUpdate(e: DocumentEvent) = update()
-            override fun insertUpdate(e: DocumentEvent) = update()
-
-            private fun update() {
-                workspaceDir = text
-            }
-        })
-        return this
-    }
-
-    private fun JSpinner.configureTrainTest(statsCollectorEnabled: Boolean): JSpinner {
-        isEnabled = saveLogs && statsCollectorEnabled
-        addChangeListener {
-            trainTestSplit = value as Int
         }
         return this
     }

@@ -30,29 +30,21 @@ class PackageRegexFilterConfiguration: EvaluationFilterConfiguration {
     override fun defaultFilter(): EvaluationFilter = PackageRegexFilter(".*")
 
     private inner class PackageRegexConfigurable(previousState: EvaluationFilter) : EvaluationFilterConfiguration.Configurable {
-        private var packageRegex =
+        private val packageRegexTextField = JTextField(
                 if (previousState == EvaluationFilter.ACCEPT_ALL) ""
-                else (previousState as PackageRegexFilter).regex.pattern
+                else (previousState as PackageRegexFilter).regex.pattern)
 
         override val panel = createPackageRegexPanel()
 
-        override fun build(): EvaluationFilter = if (packageRegex.isEmpty()) EvaluationFilter.ACCEPT_ALL else PackageRegexFilter(packageRegex)
+        override fun build(): EvaluationFilter =
+                if (packageRegexTextField.text.isEmpty()) EvaluationFilter.ACCEPT_ALL
+                else PackageRegexFilter(packageRegexTextField.text)
 
         override fun isLanguageSupported(languageName: String): Boolean = this@PackageRegexFilterConfiguration.isLanguageSupported(languageName)
 
         private fun createPackageRegexPanel(): JPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
             add(JLabel("Package Regex:"))
-            add(JTextField(packageRegex).apply {
-                document.addDocumentListener(object : DocumentListener {
-                    override fun changedUpdate(e: DocumentEvent) = update()
-                    override fun removeUpdate(e: DocumentEvent) = update()
-                    override fun insertUpdate(e: DocumentEvent) = update()
-
-                    private fun update() {
-                        packageRegex = text
-                    }
-                })
-            })
+            add(packageRegexTextField)
         }
     }
 }
