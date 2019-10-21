@@ -55,9 +55,9 @@ class ArgumentFilterConfiguration: EvaluationFilterConfiguration {
             val argumentPanel = JPanel(FlowLayout(FlowLayout.LEFT))
             val argumentGroup =  ButtonGroup()
             argumentPanel.add(JLabel("Arguments:"))
-            for (type in createArgumentButtons()) {
-                argumentPanel.add(type)
-                argumentGroup.add(type)
+            for (button in createArgumentButtons()) {
+                argumentPanel.add(button)
+                argumentGroup.add(button)
             }
             return argumentPanel
         }

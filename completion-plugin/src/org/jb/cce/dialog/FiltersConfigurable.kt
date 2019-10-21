@@ -38,7 +38,8 @@ class FiltersConfigurable(private val dispatcher: EventDispatcher<SettingsListen
         builder.allTokens = completeAllTokens
         if (!completeAllTokens) {
             for (entry in configurableMap) {
-                builder.filters[entry.key] = entry.value.build()
+                if (entry.value.panel.isEnabled)
+                    builder.filters[entry.key] = entry.value.build()
             }
         }
     }
