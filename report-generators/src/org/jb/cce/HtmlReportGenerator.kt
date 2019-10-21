@@ -12,6 +12,10 @@ import java.nio.file.Paths
 import kotlinx.html.*
 import kotlinx.html.stream.createHTML
 import org.jb.cce.metrics.Metric
+import org.jb.cce.metrics.MetricValueType
+import java.lang.IllegalArgumentException
+import java.util.*
+import kotlin.collections.HashSet
 
 class HtmlReportGenerator(outputDir: String) {
     companion object {
@@ -218,23 +222,24 @@ class HtmlReportGenerator(outputDir: String) {
         if (withDiff) evaluationTypes.add(diffColumnTitle)
         var rowId = 1
 
-        val errorMetrics = globalMetrics.map { MetricInfo(it.name, "—", it.evaluationType) }
+        val errorMetrics = globalMetrics.map { MetricInfo(it.name, Double.NaN, it.evaluationType, it.valueType) }
 
         fun getReportMetrics(repRef: ReferenceInfo) = globalMetrics.map { metric ->
             MetricInfo(
                     metric.name,
-                    repRef.metrics.find { it.label == metric.label }?.value ?: "—",
-                    metric.evaluationType
+                    repRef.metrics.find { it.label == metric.label }?.value ?: Double.NaN,
+                    metric.evaluationType,
+                    metric.valueType
             )
         }
 
         fun formatMetrics(metrics: List<MetricInfo>): String = (
                 if (withDiff) listOf(metrics, metrics
-                        .groupBy({ it.name }, { it.evaluationType to it.value })
-                        .mapValues { getDiffValue(it.value.toMap()) }
-                        .map { MetricInfo(it.key, it.value, diffColumnTitle) }).flatten()
+                        .groupBy({ it.name }, { Pair(it.value, it.valueType) })
+                        .mapValues { with(it.value) { Pair(first().first - last().first, first().second) } }
+                        .map { MetricInfo(it.key, it.value.first, diffColumnTitle, it.value.second) }).flatten()
                 else metrics
-                ).joinToString(",") { "${it.label}:'${it.value}'" }
+                ).joinToString(",") { "${it.label}:'${formatMetricValue(it.value, it.valueType)}'" }
 
         fun getErrorRow(errRef: Map.Entry<String, Path>): String =
                 "{id:${rowId++},file:${getErrorLink(errRef)},${formatMetrics(errorMetrics)}}"
@@ -258,14 +263,11 @@ class HtmlReportGenerator(outputDir: String) {
         """.trimMargin()
     }
 
-    private fun getDiffValue(type2value: Map<String, String>): String {
-        assert(type2value.size == 2)
-        return with(type2value) {
-            if (values.any { it.toDoubleOrNull() == null }) "—"
-            else values.map { it.toDouble() }.run { first() - last() }.let {
-                if (values.first().contains('.')) Metric.DEFAULT_DOUBLE_VALUE_FORMAT(it) else "${it.toInt()}"
-            }
-        }
+    private fun formatMetricValue(value: Double, type: MetricValueType): String = when {
+        value.isNaN() -> "—"
+        type == MetricValueType.INT -> "${value.toInt()}"
+        type == MetricValueType.DOUBLE -> "%.3f".format(Locale.US, value)
+        else -> throw IllegalArgumentException("Unknown metric value type")
     }
 
     private fun getErrorLink(errRef: Map.Entry<String, Path>): String =

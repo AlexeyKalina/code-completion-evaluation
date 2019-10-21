@@ -29,10 +29,10 @@ class MetricsEvaluator private constructor(private val evaluationType: String) {
     }
 
     fun evaluate(sessions: List<Session>): List<MetricInfo> {
-        return metrics.map { MetricInfo(it.name, it.format(it.evaluate(sessions)), evaluationType) }
+        return metrics.map { MetricInfo(it.name, it.evaluate(sessions), evaluationType, it.valueType) }
     }
 
     fun result(): List<MetricInfo> {
-        return metrics.map { MetricInfo(it.name, it.format(it.value), evaluationType) }
+        return metrics.map { MetricInfo(it.name, it.value, evaluationType, it.valueType) }
     }
 }
