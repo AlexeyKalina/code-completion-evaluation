@@ -22,6 +22,7 @@ class HtmlReportGenerator(outputDir: String) {
         private const val tabulatorStyle = "/tabulator.min.css"
         private const val errorScript = "/error.js"
         private const val optionsStyle = "/options.css"
+        private const val diffColumnTitle = "diff"
         private val sessionSerializer = SessionSerializer()
     }
 
@@ -214,7 +215,7 @@ class HtmlReportGenerator(outputDir: String) {
         val evaluationTypes = globalMetrics.map { it.evaluationType }.toSet().sorted().toMutableList()
         val manyTypes = (evaluationTypes.size > 1)
         val withDiff = (evaluationTypes.size == 2)
-        if (withDiff) evaluationTypes.add("diff")
+        if (withDiff) evaluationTypes.add(diffColumnTitle)
         var rowId = 1
 
         val errorMetrics = globalMetrics.map { MetricInfo(it.name, "—", it.evaluationType) }
@@ -231,7 +232,7 @@ class HtmlReportGenerator(outputDir: String) {
                 if (withDiff) listOf(metrics, metrics
                         .groupBy({ it.name }, { it.evaluationType to it.value })
                         .mapValues { getDiffValue(it.value.toMap()) }
-                        .map { MetricInfo(it.key, it.value, "diff") }).flatten()
+                        .map { MetricInfo(it.key, it.value, diffColumnTitle) }).flatten()
                 else metrics
                 ).joinToString(",") { "${it.label}:'${it.value}'" }
 
@@ -277,7 +278,7 @@ class HtmlReportGenerator(outputDir: String) {
     private fun getToolbar(globalMetrics: List<MetricInfo>): String {
         val metricNames = globalMetrics.map { it.name }.toSet().sorted()
         val evaluationTypes = globalMetrics.mapTo(HashSet()) { it.evaluationType }
-        if (evaluationTypes.size == 2) evaluationTypes.add("diff")
+        if (evaluationTypes.size == 2) evaluationTypes.add(diffColumnTitle)
         val sessionMetricIsPresent = metricNames.contains("Sessions")
         val ifSessions: (String) -> String = { if (sessionMetricIsPresent) it else "" }
         val toolbar = createHTML().div {
