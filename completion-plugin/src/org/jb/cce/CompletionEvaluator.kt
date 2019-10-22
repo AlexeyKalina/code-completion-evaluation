@@ -10,7 +10,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
-import com.intellij.util.io.readText
 import org.jb.cce.actions.ActionsGenerator
 import org.jb.cce.actions.CompletionStrategy
 import org.jb.cce.actions.CompletionType
@@ -26,28 +25,32 @@ import org.jb.cce.util.*
 import org.jb.cce.visitors.DefaultEvaluationRootVisitor
 import org.jb.cce.visitors.EvaluationRootByOffsetVisitor
 import org.jb.cce.visitors.EvaluationRootByRangeVisitor
+import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
 import kotlin.system.measureTimeMillis
 
 class CompletionEvaluator(private val isHeadless: Boolean, private val project: Project) {
     private companion object {
+        const val tempDirName = "code-completion-evaluation"
         val LOG = Logger.getInstance(CompletionEvaluator::class.java)
     }
 
-    fun evaluateCompletion(files: List<VirtualFile>, languageName: String, strategy: CompletionStrategy,
-                           completionType: CompletionType, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
+    fun evaluateCompletion(files: List<VirtualFile>, languageName: String, strategy: CompletionStrategy, completionType: CompletionType,
+                           workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
         val language2files = FilesHelper.getFiles(project, files)
         if (language2files.isEmpty()) {
             println("Languages of selected files aren't supported.")
             return finishWork(null, project, isHeadless)
         }
-        evaluateUnderProgress(languageName, language2files.getValue(languageName), strategy, completionType, workspaceDir, interpretActions, saveLogs, logsTrainingPercentage, null, null)
+        evaluateUnderProgress(languageName, language2files.getValue(languageName), strategy, completionType, workspaceDir, interpretActions,
+                saveLogs, logsTrainingPercentage,null, null)
     }
 
     fun evaluateCompletionHere(file: VirtualFile, languageName: String, offset: Int, psi: PsiElement?,
                                strategy: CompletionStrategy, completionType: CompletionType) =
-            evaluateUnderProgress(languageName, listOf(file), strategy, completionType, "", true, false, 0, offset, psi)
+            evaluateUnderProgress(languageName, listOf(file), strategy, completionType, Files.createTempDirectory(tempDirName).toString(),
+                    interpretActions = true, saveLogs = false, logsTrainingPercentage = 0, offset = offset, psi = psi)
 
     private fun evaluateUnderProgress(languageName: String, files: Collection<VirtualFile>, strategy: CompletionStrategy,
                                       completionType: CompletionType, workspaceDir: String, interpretActions: Boolean, saveLogs: Boolean,
@@ -110,15 +113,15 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
-                val logsPath = Paths.get(workspace.logsDirectory(), languageName.toLowerCase()).toString()
-                val logsWatcher = if (saveLogs) DirectoryWatcher(statsCollectorLogsDirectory(), logsPath, logsTrainingPercentage) else null
-                lastFileSessions = interpretActions(workspace, completionType, strategy, project, logsWatcher, getProcess(indicator))
+                if (saveLogs) workspace.logsStorage.watch(statsCollectorLogsDirectory(), languageName, logsTrainingPercentage)
+                lastFileSessions = interpretActions(workspace, completionType, strategy, project, getProcess(indicator))
             }
 
             override fun onSuccess() = finish()
             override fun onCancel() = finish()
 
             private fun finish() {
+                if (saveLogs) workspace.logsStorage.stopWatching()
                 if (!generateReport) return Highlighter(project).highlight(lastFileSessions)
                 val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
                 ReportGeneration(reportGenerator).generateReportUnderProgress(listOf(workspace.sessionsStorage), listOf(workspace.errorsStorage), project, isHeadless)
@@ -128,7 +131,7 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
     }
 
     private fun interpretActions(workspace: EvaluationWorkspace, completionType: CompletionType, strategy: CompletionStrategy,
-                                 project: Project, logsWatcher: DirectoryWatcher?, indicator: Progress): List<Session> {
+                                 project: Project, indicator: Progress): List<Session> {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, completionType), project)
         var sessionsCount = 0
         val computingTime = measureTimeMillis {
@@ -137,7 +140,6 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
         LOG.info("Computing of sessions count took $computingTime ms")
         val handler = InterpretationHandlerImpl(indicator, sessionsCount)
         val interpreter = Interpreter(completionInvoker, handler, project.basePath)
-        logsWatcher?.start()
         val mlCompletionFlag = isMLCompletionEnabled()
         LOG.info("Start interpreting actions")
         setMLCompletion(completionType == CompletionType.ML)
@@ -151,14 +153,13 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
                 workspace.sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, fileText, lastFileSessions))
             } catch (e: Throwable) {
                 workspace.errorsStorage.saveError(FileErrorInfo(fileActions.path, e.message ?: "No Message", stackTraceToString(e)))
-                LOG.error("Actions interpretation error for file ${file.path}.", e)
+                LOG.error("Actions interpretation error for file $file.", e)
             }
             if (handler.isCancelled()) break
         }
         workspace.sessionsStorage.saveEvaluationInfo(EvaluationInfo(completionType.name, strategy))
         LOG.info("Interpreting actions completed")
         setMLCompletion(mlCompletionFlag)
-        logsWatcher?.stop()
         return lastFileSessions
     }
 
