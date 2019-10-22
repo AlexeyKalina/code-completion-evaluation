@@ -1,7 +1,6 @@
 package org.jb.cce.metrics
 
 import org.jb.cce.Session
-import org.jb.cce.metrics.Metric.Companion.DEFAULT_DOUBLE_VALUE_FORMAT
 import org.jb.cce.metrics.util.Sample
 import java.util.stream.Collectors
 
@@ -33,5 +32,5 @@ class FoundAtMetric(private val n: Int) : Metric {
 
     override val name: String = "Found@$n"
 
-    override val format: (Double) -> String = DEFAULT_DOUBLE_VALUE_FORMAT
+    override val valueType = MetricValueType.DOUBLE
 }

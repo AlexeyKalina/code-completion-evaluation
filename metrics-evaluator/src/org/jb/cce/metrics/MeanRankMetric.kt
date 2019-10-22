@@ -1,10 +1,9 @@
 package org.jb.cce.metrics
 
 import org.jb.cce.Session
-import org.jb.cce.metrics.Metric.Companion.DEFAULT_DOUBLE_VALUE_FORMAT
 import org.jb.cce.metrics.util.Sample
 
-class AverageSelectedPositionMetric : Metric {
+class MeanRankMetric : Metric {
     private val sample = Sample()
 
     override val value: Double
@@ -27,5 +26,6 @@ class AverageSelectedPositionMetric : Metric {
 
     override val name: String = "Mean Rank"
 
-    override val format: (Double) -> String = DEFAULT_DOUBLE_VALUE_FORMAT
+    override val valueType = MetricValueType.DOUBLE
+
 }
