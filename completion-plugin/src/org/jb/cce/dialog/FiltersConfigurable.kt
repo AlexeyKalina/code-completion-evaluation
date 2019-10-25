@@ -1,44 +1,52 @@
 package org.jb.cce.dialog
 
-import com.intellij.ui.layout.LCFlags
+import com.intellij.ui.layout.LayoutBuilder
+import com.intellij.ui.layout.Row
 import com.intellij.ui.layout.panel
 import com.intellij.util.EventDispatcher
+import org.jb.cce.dialog.configurable.UIConfigurable
+import org.jb.cce.dialog.configurable.UIConfigurableBuilder
 import org.jb.cce.filter.EvaluationFilterConfiguration
 import org.jb.cce.filter.EvaluationFilterManager
 import org.jb.cce.uast.Language
 import org.jb.cce.util.Config
-import java.awt.FlowLayout
 import java.awt.event.ItemEvent
 import javax.swing.JCheckBox
-import javax.swing.JLabel
 import javax.swing.JPanel
 
 class FiltersConfigurable(private val dispatcher: EventDispatcher<SettingsListener>, private val initLanguage: String) : EvaluationConfigurable {
     private var completeAllTokens = false
     private var completeAllTokensPrev = false
-    private val configurableMap: MutableMap<String, EvaluationFilterConfiguration.Configurable> = mutableMapOf()
+    private val configurableMap: MutableMap<String, UIConfigurable> = mutableMapOf()
 
     override fun createPanel(previousState: Config): JPanel {
         completeAllTokens = previousState.strategy.completeAllTokens
-        val completeAllTokensPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            add(JLabel("Complete all tokens:"))
-            add(JCheckBox("", completeAllTokens).configure())
-        }
-        val panel = panel(title = "Filters", constraints = *arrayOf(LCFlags.noGrid, LCFlags.flowY)) {}.apply { add(completeAllTokensPanel) }
-        EvaluationFilterManager.getAllFilters().forEach {
-            val configurable = it.createConfigurable(previousState.strategy.filters[it.id] ?: it.defaultFilter())
-            configurableMap[it.id] = configurable
-            panel.add(configurable.panel)
+        val panel = panel(title = "Filters") {
+            row {
+                cell {
+                    label("Complete all tokens:")
+                    checkBox("", completeAllTokens).configure()
+                }
+            }
+            for (filter in EvaluationFilterManager.getAllFilters()) {
+                getView(filter, previousState, this)
+            }
         }
         setFiltersByLanguage(initLanguage)
         return panel
+    }
+
+    private fun getView(filter: EvaluationFilterConfiguration, previousState: Config, layout: LayoutBuilder): Row {
+        val configurable = filter.createConfigurable(UIConfigurableBuilder(filter.id, previousState, layout))
+        configurableMap[filter.id] = configurable as UIConfigurable
+        return configurable.view
     }
 
     override fun configure(builder: Config.Builder) {
         builder.allTokens = completeAllTokens
         if (!completeAllTokens) {
             for (entry in configurableMap) {
-                if (entry.value.panel.isEnabled)
+                if (entry.value.view.enabled)
                     builder.filters[entry.key] = entry.value.build()
             }
         }
@@ -49,7 +57,7 @@ class FiltersConfigurable(private val dispatcher: EventDispatcher<SettingsListen
         dispatcher.multicaster.allTokensChanged(completeAllTokens)
         addItemListener {
             completeAllTokens = it.stateChange == ItemEvent.SELECTED
-            setFilterPanelsEnabled(it.stateChange != ItemEvent.SELECTED)
+            setFilterViewsEnabled(it.stateChange != ItemEvent.SELECTED)
             dispatcher.multicaster.allTokensChanged(it.stateChange == ItemEvent.SELECTED)
         }
         dispatcher.addListener(object : SettingsListener {
@@ -64,13 +72,13 @@ class FiltersConfigurable(private val dispatcher: EventDispatcher<SettingsListen
             completeAllTokens = true
             checkBox.isSelected = true
             checkBox.isEnabled = false
-            setFilterPanelsEnabled(false)
+            setFilterViewsEnabled(false)
         } else {
             checkBox.isEnabled = true
             if (!completeAllTokensPrev) {
                 completeAllTokens = false
                 checkBox.isSelected = false
-                setFilterPanelsEnabled(true)
+                setFilterViewsEnabled(true)
                 setFiltersByLanguage(language.displayName)
             }
         }
@@ -78,20 +86,15 @@ class FiltersConfigurable(private val dispatcher: EventDispatcher<SettingsListen
 
     private fun setFiltersByLanguage(language: String) {
         configurableMap.forEach {
-            if (!it.value.isLanguageSupported(language)) setPanelEnabled(it.value.panel, false)
-            else if (!completeAllTokens) setPanelEnabled(it.value.panel, true)
+            if (!EvaluationFilterManager.getConfigurationById(it.key)!!.isLanguageSupported(language)) setViewEnabled(it.value.view, false)
+            else if (!completeAllTokens) setViewEnabled(it.value.view, true)
         }
     }
 
-    private fun setFilterPanelsEnabled(isEnabled: Boolean) = configurableMap.values.map { it.panel }.forEach { setPanelEnabled(it, isEnabled) }
+    private fun setFilterViewsEnabled(isEnabled: Boolean) = configurableMap.values.forEach { setViewEnabled(it.view, isEnabled) }
 
-    private fun setPanelEnabled(panel: JPanel, isEnabled: Boolean) {
-        panel.isEnabled = isEnabled
-        for (component in panel.components) {
-            if (component is JPanel) {
-                setPanelEnabled(component, isEnabled)
-            }
-            component.isEnabled = isEnabled
-        }
+    private fun setViewEnabled(view: Row, isEnabled: Boolean) {
+        view.enabled = isEnabled
+        view.subRowsEnabled = isEnabled
     }
 }

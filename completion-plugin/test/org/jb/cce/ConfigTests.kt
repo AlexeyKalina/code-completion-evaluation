@@ -18,7 +18,7 @@ class ConfigTests {
     fun defaultConfig(@TempDir tempDir: Path) {
         val configName = "config.json"
         val directoryPath = tempDir.toAbsolutePath()
-        val before = ConfigFactory.save(directoryPath.toString(), configName)
+        val before = ConfigFactory.saveDefault(directoryPath.toString(), configName)
         val after = ConfigFactory.load(directoryPath.resolve(configName).toString())
         TestCase.assertEquals("Stored and restored configs are not equal", gson.toJson(before), gson.toJson(after))
     }

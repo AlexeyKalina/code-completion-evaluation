@@ -7,7 +7,7 @@ import org.jb.cce.actions.CompletionType
 import org.jb.cce.filter.EvaluationFilter
 import java.nio.file.Paths
 
-data class Config constructor(
+data class Config internal constructor(
         val projectPath: String,
         val listOfFiles: List<String>,
         val language: String,

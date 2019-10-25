@@ -29,7 +29,6 @@ import kotlin.system.measureTimeMillis
 
 class CompletionEvaluator(private val isHeadless: Boolean, private val project: Project) {
     private companion object {
-        const val tempDirName = "code-completion-evaluation"
         val LOG = Logger.getInstance(CompletionEvaluator::class.java)
     }
 
@@ -49,8 +48,8 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
 
             override fun onSuccess() {
                 if (config.interpretActions)
-                    interpretUnderProgress(workspace, config.completionType, config.strategy, config.language,
-                            offset == null, config.saveLogs, config.trainTestSplit)
+                    interpretUnderProgress(workspace, config.completionType, config.language, offset == null,
+                            config.saveLogs, config.trainTestSplit)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
@@ -90,15 +89,15 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
         }
     }
 
-    private fun interpretUnderProgress(workspace: EvaluationWorkspace, completionType: CompletionType, strategy: CompletionStrategy,
-                                       languageName: String, generateReport: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
+    private fun interpretUnderProgress(workspace: EvaluationWorkspace, completionType: CompletionType, languageName: String,
+                                       generateReport: Boolean, saveLogs: Boolean, logsTrainingPercentage: Int) {
         val task = object : Task.Backgroundable(project, "Actions interpreting") {
             private lateinit var lastFileSessions: List<Session>
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
                 if (saveLogs) workspace.logsStorage.watch(statsCollectorLogsDirectory(), languageName, logsTrainingPercentage)
-                lastFileSessions = interpretActions(workspace, completionType, strategy, project, getProcess(indicator))
+                lastFileSessions = interpretActions(workspace, completionType, project, getProcess(indicator))
             }
 
             override fun onSuccess() = finish()
@@ -114,8 +113,8 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    private fun interpretActions(workspace: EvaluationWorkspace, completionType: CompletionType, strategy: CompletionStrategy,
-                                 project: Project, indicator: Progress): List<Session> {
+    private fun interpretActions(workspace: EvaluationWorkspace, completionType: CompletionType, project: Project,
+                                 indicator: Progress): List<Session> {
         val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, completionType), project)
         var sessionsCount = 0
         val computingTime = measureTimeMillis {

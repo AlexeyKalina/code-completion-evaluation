@@ -30,9 +30,10 @@ object ConfigFactory {
         return deserialize(FileReader(configFile).readText())
     }
 
-    fun save(directoryPath: String, name: String = "config.json"): Config {
-        save(defaultConfig(), directoryPath, name)
-        return defaultConfig()
+    fun saveDefault(directoryPath: String, name: String = "config.json"): Config {
+        val config = defaultConfig()
+        save(config, directoryPath, name)
+        return config
     }
 
     fun save(config: Config, directoryPath: String, name: String = "config.json") {

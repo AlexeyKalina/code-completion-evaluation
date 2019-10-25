@@ -2,10 +2,8 @@ package org.jb.cce.dialog
 
 import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.extensions.PluginId
-import com.intellij.ui.layout.LCFlags
 import com.intellij.ui.layout.panel
 import org.jb.cce.util.Config
-import java.awt.FlowLayout
 import java.awt.event.ItemEvent
 import javax.swing.*
 
@@ -27,21 +25,31 @@ class FlowConfigurable : EvaluationConfigurable {
             isEnabled = saveLogs && statsCollectorEnabled
         }
 
-        return panel(title = "Flow Control", constraints = *arrayOf(LCFlags.noGrid, LCFlags.flowY)) { }.apply {
-            add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                add(JLabel("Interpret actions after generation:"))
-                add(JCheckBox("", interpretActions).configureInterpretActions())
-            })
-            add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                add(JLabel("Results workspace directory:"))
-                add(workspaceDirTextField)
-            })
-            add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                add(JLabel("Save completion logs:"))
-                add(JCheckBox("", saveLogs).configureSaveLogs(statsCollectorEnabled))
-                add(JLabel("Train/test split percentage:"))
-                add(trainTestSpinner)
-            })
+        return panel(title = "Flow Control") {
+            row {
+                cell {
+                    label("Interpret actions after generation:")
+                    checkBox("", interpretActions).configureInterpretActions()
+                }
+            }
+            row {
+                cell {
+                    label("Results workspace directory:")
+                    workspaceDirTextField()
+                }
+            }
+            row {
+                cell {
+                    label("Save completion logs:")
+                    checkBox("", saveLogs).configureSaveLogs(statsCollectorEnabled)
+                }
+            }
+            row {
+                cell {
+                    label("Train/test split percentage:")
+                    trainTestSpinner()
+                }
+            }
         }
     }
 

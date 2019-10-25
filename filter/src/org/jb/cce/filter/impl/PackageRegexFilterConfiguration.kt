@@ -6,10 +6,6 @@ import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterConfiguration
 import org.jb.cce.uast.Language
 import org.jb.cce.uast.NodeProperties
-import java.awt.FlowLayout
-import javax.swing.*
-import javax.swing.event.DocumentEvent
-import javax.swing.event.DocumentListener
 
 class PackageRegexFilter(pattern: String) : EvaluationFilter {
     val regex = Regex(pattern)
@@ -18,33 +14,15 @@ class PackageRegexFilter(pattern: String) : EvaluationFilter {
 }
 
 class PackageRegexFilterConfiguration: EvaluationFilterConfiguration {
-    override val id: String = "packageRegex"
+    companion object {
+        const val id = "packageRegex"
+    }
+    override val id: String = PackageRegexFilterConfiguration.id
     override val description: String = "Filter out tokens by package name regex"
-
-    override fun createConfigurable(previousState: EvaluationFilter): EvaluationFilterConfiguration.Configurable = PackageRegexConfigurable(previousState)
 
     override fun isLanguageSupported(languageName: String): Boolean = Language.JAVA.displayName == languageName
 
     override fun buildFromJson(json: Any?): EvaluationFilter = if (json == null) EvaluationFilter.ACCEPT_ALL else PackageRegexFilter(json as String)
 
     override fun defaultFilter(): EvaluationFilter = PackageRegexFilter(".*")
-
-    private inner class PackageRegexConfigurable(previousState: EvaluationFilter) : EvaluationFilterConfiguration.Configurable {
-        private val packageRegexTextField = JTextField(
-                if (previousState == EvaluationFilter.ACCEPT_ALL) ""
-                else (previousState as PackageRegexFilter).regex.pattern)
-
-        override val panel = createPackageRegexPanel()
-
-        override fun build(): EvaluationFilter =
-                if (packageRegexTextField.text.isEmpty()) EvaluationFilter.ACCEPT_ALL
-                else PackageRegexFilter(packageRegexTextField.text)
-
-        override fun isLanguageSupported(languageName: String): Boolean = this@PackageRegexFilterConfiguration.isLanguageSupported(languageName)
-
-        private fun createPackageRegexPanel(): JPanel = JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-            add(JLabel("Package Regex:"))
-            add(packageRegexTextField)
-        }
-    }
 }

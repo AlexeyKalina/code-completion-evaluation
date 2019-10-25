@@ -11,7 +11,7 @@ import java.awt.event.ItemEvent
 import javax.swing.JPanel
 
 class ContextConfigurable(private val dispatcher: EventDispatcher<SettingsListener>? = null) : EvaluationConfigurable {
-    var context: CompletionContext = CompletionContext.ALL
+    private var context: CompletionContext = CompletionContext.ALL
 
     override fun createPanel(previousState: Config): JPanel {
         context = previousState.strategy.context
