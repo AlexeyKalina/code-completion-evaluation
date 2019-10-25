@@ -269,7 +269,7 @@ class HtmlReportGenerator(outputDir: String) {
         return """
         |let tableData = [{id:0,file:'Summary',${formatMetrics(globalMetrics)}}
         |${with(errorReferences) { if (isNotEmpty()) map { getErrorRow(it) }.joinToString(",\n", ",") else "" }}
-        |${with(reportReferences) { if (isNotEmpty()) map { getReportRow(it) }.joinToString(",\n", ",") else "" }}]
+        |${with(reportReferences) { if (isNotEmpty()) map { getReportRow(it) }.joinToString(",\n", ",") else "" }}];
         |let table=new Tabulator('#metricsTable',{data:tableData,
         |columns:[{title:'File Report',field:'file',formatter:'html'${if (manyTypes) ",width:'120'" else ""}},
         |${metricNames.joinToString(",\n") { name ->
@@ -299,9 +299,9 @@ class HtmlReportGenerator(outputDir: String) {
     private fun getToolbar(globalMetrics: List<MetricInfo>): String {
         val metricNames = globalMetrics.map { it.name }.toSet().sorted()
         val evaluationTypes = globalMetrics.mapTo(HashSet()) { it.evaluationType }
-        if (evaluationTypes.size == 2) evaluationTypes.add(diffColumnTitle)
+        val withDiff = evaluationTypes.size == 2
+        if (withDiff) evaluationTypes.add(diffColumnTitle)
         val sessionMetricIsPresent = metricNames.contains("Sessions")
-        val ifSessions: (String) -> String = { if (sessionMetricIsPresent) it else "" }
         val toolbar = createHTML().div {
             div("toolbar") {
                 input(InputType.text) {
@@ -319,8 +319,9 @@ class HtmlReportGenerator(outputDir: String) {
                     metricNames.map { metricName ->
                         li {
                             input(InputType.checkBox) {
+                                id = metricName.filter { it.isLetterOrDigit() }
                                 checked = true
-                                onClick = "toggleColumn('${metricName.filter { it.isLetterOrDigit() }}')"
+                                onClick = "updateCols()"
                                 +metricName
                             }
                         }
@@ -339,11 +340,36 @@ class HtmlReportGenerator(outputDir: String) {
                     +"Show empty rows"
                 }
             }
+            if (withDiff) div("toolbar") {
+                button(classes = "toolbarBtn active") {
+                    id = "diffBtn"
+                    +"Hide diff"
+                }
+            }
+
         }
+        val ifDiff: (String) -> String = { if (withDiff) it else "" }
+        val ifSessions: (String) -> String = { if (sessionMetricIsPresent) it else "" }
+        val filteredNames = metricNames.map { it.filter { ch -> ch.isLetterOrDigit() } }
         val toolbarScript = """|<script>
+        |${filteredNames.joinToString("") { "let ${it}=document.getElementById('${it}');" }}
+        |function updateCols(${ifDiff("toggleDiff=false")}){
+        |${ifDiff("if(toggleDiff)diffBtn.classList.toggle('active');diffBtn.textContent=diffHidden()?'Show diff':'Hide diff';")}
+        ${filteredNames.joinToString("\n") { metric ->
+            """
+            ||if(${metric}.checked){${evaluationTypes.joinToString("") { type -> "table.showColumn('${metric}${type}');" }}
+            ||${ifDiff("if (diffHidden())table.hideColumn('${metric}${diffColumnTitle}');")}}
+            ||else{${evaluationTypes.joinToString("") { type -> "table.hideColumn('${metric}${type}');" }}}
+            """.trimMargin()
+        }}}
         |function toggleColumn(name){${evaluationTypes.joinToString("") { "table.toggleColumn(name+'$it');" }}}
         |let search=document.getElementById('search');search.oninput=()=>table.setFilter(myFilter);
         |let redrawBtn=document.getElementById('redrawBtn');redrawBtn.onclick=()=>table.redraw();
+        ${ifDiff("""
+            ||let diffBtn=document.getElementById('diffBtn');
+            ||diffBtn.onclick=()=>updateCols(true);
+            ||let diffHidden=()=>!diffBtn.classList.contains('active');
+            """.trimMargin())}
         ${ifSessions("""
             ||let emptyRowsBtn=document.getElementById('emptyRowsBtn');emptyRowsBtn.onclick=()=>toggleEmptyRows();
             ||let emptyHidden=()=>!emptyRowsBtn.classList.contains('active');

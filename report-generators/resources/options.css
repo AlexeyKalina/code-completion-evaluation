@@ -11,6 +11,7 @@
     margin: 2px;
     outline: none;
     font-size: 15px;
+    width: 140px;
 }
 
 .dropdown {
@@ -50,15 +51,20 @@
     border-color: gray
 }
 
-#emptyRowsBtn {
-    width: 140px;
-}
-
 #emptyRowsBtn:hover {
     border-color: lightgray;
 }
 
 .active#emptyRowsBtn {
+    color: white;
+    background-color: gray;
+}
+
+#diffBtn:hover {
+    border-color: lightgray;
+}
+
+.active#diffBtn {
     color: white;
     background-color: gray;
 }
