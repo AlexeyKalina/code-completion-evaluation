@@ -72,7 +72,7 @@ To start the evaluation in the headless mode you should describe where the proje
 ```javascript
     {
       "projectPath": "", // string with path to idea project
-      "listOfFiles": [ "" ], // list of string with paths to files/directories for evaluation
+      "evaluationRoots": [ "" ], // list of string with paths to files/directories for evaluation
       "language": "Java", // Java, Python, Shell Script or Another
       "strategy": {
         "prefix": {
@@ -95,7 +95,7 @@ Example of `config.json` to evaluate code completion on several modules from int
 ```javascript
 {
   "projectPath": "PATH_TO_COMMUNITY_PROJECT",
-  "listOfFiles": [
+  "evaluationRoots": [
     "java/java-indexing-impl",
     "java/java-analysis-impl",
     "platform/analysis-impl",

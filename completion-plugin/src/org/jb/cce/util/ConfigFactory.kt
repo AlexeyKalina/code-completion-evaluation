@@ -8,7 +8,6 @@ import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterManager
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.Paths
 
 object ConfigFactory {
     private val gson = GsonBuilder()
@@ -51,7 +50,7 @@ object ConfigFactory {
         val builder = Config.Builder(map.getAs("projectPath"), languageName)
         val strategyJson = map.getAs<Map<String, Any>>("strategy")
         CompletionStrategyDeserializer().deserialize(strategyJson, languageName, builder)
-        builder.evaluationRoots = map.getAs("listOfFiles")
+        builder.evaluationRoots = map.getAs("evaluationRoots")
         builder.completionType = CompletionType.valueOf(map.getAs("completionType"))
         builder.workspaceDir = map.getAs("workspaceDir")
         builder.interpretActions = map.getAs("interpretActions")
