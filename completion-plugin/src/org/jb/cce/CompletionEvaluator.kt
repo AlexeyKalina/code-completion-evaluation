@@ -8,6 +8,7 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
+import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import org.jb.cce.actions.ActionsGenerator
 import org.jb.cce.actions.CompletionStrategy
@@ -43,7 +44,8 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
                 ConfigFactory.save(config, workspace.path())
-                generateActions(workspace, config.language, config.listOfFiles, config.strategy, offset, psi, getProcess(indicator))
+                val filesForEvaluation = FilesHelper.getFilesOfLanguage(project, config.evaluationRoots, config.language)
+                generateActions(workspace, config.language, filesForEvaluation, config.strategy, offset, psi, getProcess(indicator))
             }
 
             override fun onSuccess() {
@@ -55,15 +57,14 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
     }
 
-    private fun generateActions(workspace: EvaluationWorkspace, languageName: String, files: Collection<String>,
+    private fun generateActions(workspace: EvaluationWorkspace, languageName: String, files: Collection<VirtualFile>,
                                 strategy: CompletionStrategy, offset: Int?, psi: PsiElement?, indicator: Progress) {
         val actionsGenerator = ActionsGenerator(strategy)
         val uastBuilder = UastBuilder.create(project, languageName, strategy.completeAllTokens)
 
         val errors = mutableListOf<FileErrorInfo>()
         var completed = 0
-        for (filePath in files) {
-            val file = FilesHelper.getFile(project, filePath)
+        for (file in files) {
             if (indicator.isCanceled()) {
                 LOG.info("Generating actions is canceled by user. Done: $completed/${files.size}. With error: ${errors.size}")
                 break

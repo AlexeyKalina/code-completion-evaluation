@@ -12,13 +12,19 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.GlobalSearchScope
 import org.apache.commons.io.input.UnixLineEndingInputStream
 import java.io.FileNotFoundException
+import java.lang.IllegalArgumentException
 import java.nio.file.Paths
 
 object FilesHelper {
-    fun getFiles(project: Project, selectedFiles: List<VirtualFile>): Map<String, Set<VirtualFile>> {
+    fun getFilesOfLanguage(project: Project, evaluationRoots: List<String>, language: String): List<VirtualFile> {
+        return getFiles(project, evaluationRoots.map { getFile(project, it) })[language]?.toList()
+            ?: throw IllegalArgumentException("No files for $language found")
+    }
+
+    fun getFiles(project: Project, evaluationRoots: List<VirtualFile>): Map<String, Set<VirtualFile>> {
         val language2files = mutableMapOf<String, MutableSet<VirtualFile>>()
         val index = ProjectRootManager.getInstance(project).fileIndex
-        for (file in selectedFiles) {
+        for (file in evaluationRoots) {
             VfsUtilCore.iterateChildrenRecursively(file, GlobalSearchScope.projectScope(project), object : ContentIterator {
                 override fun processFile(fileOrDir: VirtualFile): Boolean {
                     val extension = fileOrDir.extension
