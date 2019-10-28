@@ -1,5 +1,6 @@
 package org.jb.cce
 
+import org.jb.cce.actions.CompletionType
 import org.jb.cce.storages.ActionsStorage
 import org.jb.cce.storages.FileErrorsStorage
 import org.jb.cce.storages.LogsStorage
@@ -10,7 +11,7 @@ import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.*
 
-class EvaluationWorkspace(outputDir: String, evaluationType: String, existing: Boolean = false) {
+class EvaluationWorkspace(outputDir: String, completionType: CompletionType, existing: Boolean = false) {
     companion object {
         private val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
     }
@@ -28,7 +29,7 @@ class EvaluationWorkspace(outputDir: String, evaluationType: String, existing: B
 
     fun path(): Path = basePath
 
-    val sessionsStorage: SessionsStorage = SessionsStorage(sessionsDir.toString(), evaluationType)
+    val sessionsStorage: SessionsStorage = SessionsStorage(sessionsDir.toString(), completionType)
 
     val actionsStorage: ActionsStorage = ActionsStorage(actionsDir.toString())
 

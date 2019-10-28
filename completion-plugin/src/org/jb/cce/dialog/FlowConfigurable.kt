@@ -19,7 +19,7 @@ class FlowConfigurable : EvaluationConfigurable {
     override fun createPanel(previousState: Config): JPanel {
         interpretActions = previousState.interpretActions
         saveLogs = previousState.saveLogs
-        workspaceDirTextField = JTextField(previousState.workspaceDir)
+        workspaceDirTextField = JTextField(previousState.outputDir)
         val statsCollectorEnabled = PluginManager.getPlugin(PluginId.getId(statsCollectorId))?.isEnabled ?: false
         trainTestSpinner = JSpinner(SpinnerNumberModel(previousState.trainTestSplit, 1, 99, 1)).apply {
             isEnabled = saveLogs && statsCollectorEnabled
@@ -55,7 +55,7 @@ class FlowConfigurable : EvaluationConfigurable {
 
     override fun configure(builder: Config.Builder) {
         builder.interpretActions = interpretActions
-        builder.workspaceDir = workspaceDirTextField.text
+        builder.outputDir = workspaceDirTextField.text
         builder.saveLogs = saveLogs
         builder.trainTestSplit = trainTestSpinner.value as Int
     }

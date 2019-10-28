@@ -13,7 +13,8 @@ data class Config internal constructor(
     val language: String,
     val strategy: CompletionStrategy,
     val completionType: CompletionType,
-    val workspaceDir: String,
+    val evaluationTitle: String,
+    val outputDir: String,
     val interpretActions: Boolean,
     val saveLogs: Boolean,
     val trainTestSplit: Int) {
@@ -27,11 +28,12 @@ data class Config internal constructor(
 
     class Builder(private val projectPath: String, private val language: String) {
         var evaluationRoots = mutableListOf<String>()
-        var workspaceDir: String = Paths.get(projectPath, "completion-evaluation").toAbsolutePath().toString()
+        var outputDir: String = Paths.get(projectPath, "completion-evaluation").toAbsolutePath().toString()
         var interpretActions: Boolean = true
         var saveLogs = false
         var trainTestSplit: Int = 70
         var completionType: CompletionType = CompletionType.BASIC
+        var evaluationTitle: String = completionType.name
         var prefixStrategy: CompletionPrefix = CompletionPrefix.NoPrefix
         var contextStrategy: CompletionContext = CompletionContext.ALL
         var allTokens: Boolean = false
@@ -43,7 +45,8 @@ data class Config internal constructor(
                 language,
                 CompletionStrategy(prefixStrategy, contextStrategy, allTokens, filters),
                 completionType,
-                workspaceDir,
+                evaluationTitle,
+                outputDir,
                 interpretActions,
                 saveLogs,
                 trainTestSplit)

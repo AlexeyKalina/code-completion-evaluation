@@ -1,4 +1,4 @@
-package org.jb.cce
+package org.jb.cce.evaluation
 
 import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.uast.TextFragmentNode

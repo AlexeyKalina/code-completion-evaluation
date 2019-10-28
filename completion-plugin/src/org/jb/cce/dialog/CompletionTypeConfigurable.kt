@@ -27,6 +27,7 @@ class CompletionTypeConfigurable : EvaluationConfigurable {
 
     override fun configure(builder: Config.Builder) {
         builder.completionType = completionType
+        builder.evaluationTitle = completionType.name
     }
 
     private fun CellBuilder<JBRadioButton>.configure(value: CompletionType) {

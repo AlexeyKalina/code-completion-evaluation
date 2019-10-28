@@ -10,6 +10,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 object ConfigFactory {
+    const val DEFAULT_CONFIG_NAME = "config.json"
+
     private val gson = GsonBuilder()
             .serializeNulls()
             .setPrettyPrinting()
@@ -28,7 +30,7 @@ object ConfigFactory {
         return deserialize(configFile.readText())
     }
 
-    fun save(config: Config, directory: Path, name: String = "config.json") {
+    fun save(config: Config, directory: Path, name: String = DEFAULT_CONFIG_NAME) {
         val json = serialize(config)
         Files.write(directory.resolve(name), json.toByteArray())
     }
@@ -56,7 +58,8 @@ object ConfigFactory {
         CompletionStrategyDeserializer().deserialize(strategyJson, languageName, builder)
         builder.evaluationRoots = map.getAs("evaluationRoots")
         builder.completionType = CompletionType.valueOf(map.getAs("completionType"))
-        builder.workspaceDir = map.getAs("workspaceDir")
+        builder.evaluationTitle = map.getAs("evaluationTitle")
+        builder.outputDir = map.getAs("outputDir")
         builder.interpretActions = map.getAs("interpretActions")
         builder.saveLogs = map.getAs("saveLogs")
         builder.trainTestSplit = map.getAs<Double>("trainTestSplit").toInt()
