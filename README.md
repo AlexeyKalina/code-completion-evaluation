@@ -83,7 +83,7 @@ To start the evaluation in the headless mode you should describe where the proje
           "n": 1 // numbers of char to type before trigger completion
         },
         "filters": { // set of filters that allow to filter some completion locations out
-          "statementTypes": [ // possible values: METHOD_CALLS, ARGUMENTS, VARIABLES, ALL_STATIC, ALL, ALL_TOKENS
+          "statementTypes": [ // possible values: METHOD_CALL, FIELD, VARIABLE
             "METHOD_CALL" 
           ],
           "isArgument": null, // null / true / false
