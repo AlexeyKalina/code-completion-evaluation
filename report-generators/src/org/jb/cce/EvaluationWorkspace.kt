@@ -16,33 +16,31 @@ class EvaluationWorkspace(outputDir: String, evaluationType: String, existing: B
     }
 
     private val basePath: Path = Paths.get(outputDir).toAbsolutePath()
-        .let { if (existing) it else it.resolve(formatter.format(Date())) }
+            .let { if (existing) it else it.resolve(formatter.format(Date())) }
 
-    private val sessionsDir = basePath.resolve("data")
-    private val logsDir = basePath.resolve("logs")
-    private val actionsDir = basePath.resolve("actions")
-    private val errorsDir = basePath.resolve("errors")
-    private val reportsDir = basePath.resolve("reports")
+    private val sessionsDir = subdir("data")
+    private val logsDir = subdir("logs")
+    private val actionsDir = subdir("actions")
+    private val errorsDir = subdir("errors")
+    private val reportsDir = subdir("reports")
 
-    init {
-        Files.createDirectories(sessionsDir)
-        Files.createDirectories(logsDir)
-        Files.createDirectories(actionsDir)
-        Files.createDirectories(errorsDir)
-        Files.createDirectories(reportsDir)
-    }
-
-    fun reportsDirectory() = reportsDir.toString()
+    fun reportsDirectory(): String = reportsDir.toString()
 
     fun path(): Path = basePath
 
-    val sessionsStorage = SessionsStorage(sessionsDir.toString(), evaluationType)
+    val sessionsStorage: SessionsStorage = SessionsStorage(sessionsDir.toString(), evaluationType)
 
-    val actionsStorage = ActionsStorage(actionsDir.toString())
+    val actionsStorage: ActionsStorage = ActionsStorage(actionsDir.toString())
 
-    val errorsStorage = FileErrorsStorage(errorsDir.toString())
+    val errorsStorage: FileErrorsStorage = FileErrorsStorage(errorsDir.toString())
 
-    val logsStorage = LogsStorage(logsDir.toString())
+    val logsStorage: LogsStorage = LogsStorage(logsDir.toString())
 
     override fun toString(): String = "Evaluation workspace: $basePath"
+
+    private fun subdir(name: String): Path {
+        val directory = basePath.resolve(name)
+        Files.createDirectories(directory)
+        return directory
+    }
 }
