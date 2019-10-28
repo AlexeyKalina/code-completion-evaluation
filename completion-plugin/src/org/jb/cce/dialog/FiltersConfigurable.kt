@@ -1,11 +1,10 @@
 package org.jb.cce.dialog
 
-import com.intellij.ui.layout.LayoutBuilder
 import com.intellij.ui.layout.Row
 import com.intellij.ui.layout.panel
 import com.intellij.util.EventDispatcher
+import org.jb.cce.dialog.configurable.FilterUIConfigurableFactory
 import org.jb.cce.dialog.configurable.UIConfigurable
-import org.jb.cce.dialog.configurable.UIConfigurableBuilder
 import org.jb.cce.filter.EvaluationFilterConfiguration
 import org.jb.cce.filter.EvaluationFilterManager
 import org.jb.cce.uast.Language
@@ -28,17 +27,18 @@ class FiltersConfigurable(private val dispatcher: EventDispatcher<SettingsListen
                     checkBox("", completeAllTokens).configure()
                 }
             }
+            val provider = FilterUIConfigurableFactory(previousState, this)
             for (filter in EvaluationFilterManager.getAllFilters()) {
-                getView(filter, previousState, this)
+                getFilterView(filter, provider)
             }
         }
         setFiltersByLanguage(initLanguage)
         return panel
     }
 
-    private fun getView(filter: EvaluationFilterConfiguration, previousState: Config, layout: LayoutBuilder): Row {
-        val configurable = filter.createConfigurable(UIConfigurableBuilder(filter.id, previousState, layout))
-        configurableMap[filter.id] = configurable as UIConfigurable
+    private fun getFilterView(filter: EvaluationFilterConfiguration, provider: FilterUIConfigurableFactory): Row {
+        val configurable = provider.build(filter.id)
+        configurableMap[filter.id] = configurable
         return configurable.view
     }
 
