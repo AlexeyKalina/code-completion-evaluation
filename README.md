@@ -72,16 +72,24 @@ To start the evaluation in the headless mode you should describe where the proje
 ```javascript
     {
       "projectPath": "", // string with path to idea project
-      "evaluationRoots": [ "" ], // list of string with paths to files/directories for evaluation
+      "evaluationRoots": [ ], // list of string with paths to files/directories for evaluation
       "language": "Java", // Java, Python, Shell Script or Another
       "strategy": {
+        "completeAllTokens": false,
+        "context": "ALL",
         "prefix": {
-          "name": "SimplePrefix", // SimplePrefix, CapitalizePrefix or NoPrefix
-          "n": 2, // length of prefix (for SimplePrefix)
-          "emulateTyping": true // emulate typing or not for Simple and Capitalize prefix
+          "name": "SimplePrefix",
+          "emulateTyping": false,
+          "n": 1
         },
-        "statement": "ALL", // METHOD_CALLS, ARGUMENTS, VARIABLES, ALL_STATIC, ALL, ALL_TOKENS
-        "context": "ALL" // ALL, PREVIOUS
+        "filters": {
+          "statementTypes": [
+            "METHOD_CALL"
+          ],
+          "isArgument": null,
+          "isStatic": true,
+          "packageRegex": ".*"
+        }
       },
       "completionType": "BASIC", // BASIC, SMART, ML
       "outputDir": "", // string with path to output directory
@@ -113,13 +121,21 @@ Example of `config.json` to evaluate code completion on several modules from int
   ],
   "language": "Java",
   "strategy": {
+    "completeAllTokens": false,
+    "context": "ALL",
     "prefix": {
+      "name": "SimplePrefix",
       "emulateTyping": false,
-      "n": 1,
-      "name": "SimplePrefix"
+      "n": 1
     },
-    "statement": "ALL_STATIC",
-    "context": "ALL"
+    "filters": {
+      "statementTypes": [
+        "METHOD_CALL"
+      ],
+      "isArgument": null,
+      "isStatic": true,
+      "packageRegex": ".*"
+    }
   },
   "completionType": "BASIC",
   "outputDir": "PATH_TO_COMMUNITY_PROJECT/completion-evaluation",
