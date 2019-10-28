@@ -41,6 +41,21 @@ patchPluginXml {
     untilBuild '201.*'
 
     changeNotes """
+        0.0.9 <br>
+        <ul>
+            <li>Line numbers in files reports</li>
+            <li>Implement filters subsystem. Provide ability to filter locations out by package name</li>
+            <li>Diff column for comparison of two evaluation results in report</li>
+            <li>Toggle visibility of files without completion sessions in report</li>
+            <li>Switching between lengths of prefix in files reports</li>
+            <li>Save state of evaluation config in UI</li>
+            <li>Save state of evaluation config after evaluation with results</li>
+            <li>Improve stability of evaluation results in headless mode</li>
+            <li>Gzip intermediate results of evaluation (actions, session, etc)</li>
+            <li>Kill the process if something goes wrong in headless mode</li>
+            <li>Fix lots of minor bug</li>
+            <li>Though new unknown bugs were added :)</li>
+        </ul>
         0.0.2 <br>
         <ul>
             <li>Headless mode</li>
