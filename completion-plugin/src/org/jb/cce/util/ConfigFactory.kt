@@ -16,7 +16,7 @@ object ConfigFactory {
             .registerTypeAdapter(CompletionStrategy::class.java, CompletionStrategySerializer())
             .create()
 
-    fun defaultConfig(projectPath: String = "", language: String = "Java") = Config.build(projectPath, language) {}
+    fun defaultConfig(projectPath: String = "", language: String = "Java"): Config = Config.build(projectPath, language) {}
 
     fun load(path: Path): Config {
         val configFile = path.toFile()
@@ -36,7 +36,11 @@ object ConfigFactory {
     fun getByKey(project: Project, configStateKey: String): Config {
         val properties = PropertiesComponent.getInstance(project)
         val configState = properties.getValue(configStateKey) ?: return defaultConfig(project.basePath!!)
-        return deserialize(configState)
+        return try {
+            deserialize(configState)
+        } catch (e: Throwable) {
+            defaultConfig(project.basePath!!)
+        }
     }
 
     fun storeByKey(project: Project, configStateKey: String, config: Config) {

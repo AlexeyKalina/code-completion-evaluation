@@ -34,8 +34,8 @@ class EvaluateHereSettingsDialog(
     override fun createCenterPanel(): JComponent? {
         return JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            val defaultState = ConfigFactory.getByKey(project, configStateKey)
-            configurators.forEach { add(it.createPanel(defaultState)) }
+            val previousState = ConfigFactory.getByKey(project, configStateKey)
+            configurators.forEach { add(it.createPanel(previousState)) }
         }
     }
 
