@@ -74,28 +74,28 @@ To start the evaluation in the headless mode you should describe where the proje
       "projectPath": "", // string with path to idea project
       "evaluationRoots": [ ], // list of string with paths to files/directories for evaluation
       "language": "Java", // Java, Python, Shell Script or Another
-      "strategy": {
-        "completeAllTokens": false,
-        "context": "ALL",
-        "prefix": {
-          "name": "SimplePrefix",
-          "emulateTyping": false,
-          "n": 1
+      "strategy": { // describes evaluation rules
+        "completeAllTokens": false, // if true - all tokens will be tried to complete one by one
+        "context": "ALL", // ALL, PREVIOUS
+        "prefix": { // policy how to complete particular token
+          "name": "SimplePrefix", // SimplePrefix (type 1 or more letters), CapitalizePrefix or NoPrefix
+          "emulateTyping": false, // type token char by char and save intermediate results
+          "n": 1 // numbers of char to type before trigger completion
         },
-        "filters": {
-          "statementTypes": [
-            "METHOD_CALL"
+        "filters": { // set of filters that allow to filter some completion locations out
+          "statementTypes": [ // possible values: METHOD_CALLS, ARGUMENTS, VARIABLES, ALL_STATIC, ALL, ALL_TOKENS
+            "METHOD_CALL" 
           ],
-          "isArgument": null,
-          "isStatic": true,
-          "packageRegex": ".*"
+          "isArgument": null, // null / true / false
+          "isStatic": true, // null / true / false
+          "packageRegex": ".*" // regex to check  if java package of resulting token is suitable for evaluation
         }
       },
       "completionType": "BASIC", // BASIC, SMART, ML
+      "interpretActions": true, // interpret or not actions after its generation
       "outputDir": "", // string with path to output directory
-      "saveLogs": true, // save completion logs or not (only if Completion-Stats-Collector plugin installed)
-      "logsTrainingPercentage": 70, // percentage for logs separation on training/validate
-      "interpretActions": true // interpret or not actions after its generation
+      "saveLogs": false, // save completion logs or not (only if Completion-Stats-Collector plugin installed)
+      "logsTrainingPercentage": 70 // percentage for logs separation on training/validate
     }
 ```
 
@@ -133,7 +133,7 @@ Example of `config.json` to evaluate code completion on several modules from int
         "METHOD_CALL"
       ],
       "isArgument": null,
-      "isStatic": true,
+      "isStatic": null,
       "packageRegex": ".*"
     }
   },
