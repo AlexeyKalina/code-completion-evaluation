@@ -1,19 +1,17 @@
 package org.jb.cce
 
+import kotlinx.html.*
+import kotlinx.html.stream.createHTML
 import org.apache.commons.text.StringEscapeUtils.escapeHtml4
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.metrics.MetricInfo
+import org.jb.cce.metrics.MetricValueType
 import java.io.File
 import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import kotlinx.html.*
-import kotlinx.html.stream.createHTML
-import org.jb.cce.metrics.Metric
-import org.jb.cce.metrics.MetricValueType
-import java.lang.IllegalArgumentException
 import java.util.*
 import kotlin.collections.HashSet
 
@@ -290,11 +288,14 @@ class HtmlReportGenerator(outputDir: String) {
     }
 
     private fun getErrorLink(errRef: Map.Entry<String, Path>): String =
-            "\"<a href='${baseDir.relativize(errRef.value)}' class='errRef' target='_blank'>${Paths.get(errRef.key).fileName}</a>\""
+            "\"<a href='${getHtmlRelativePath(baseDir, errRef.value)}' class='errRef' target='_blank'>${Paths.get(errRef.key).fileName}</a>\""
 
     private fun getReportLink(repRef: Map.Entry<String, ReferenceInfo>): String =
-            "\"<a href='${baseDir.relativize(repRef.value.pathToReport)}' target='_blank'>${File(repRef.key).name}</a>\""
+            "\"<a href='${getHtmlRelativePath(baseDir, repRef.value.pathToReport)}' target='_blank'>${File(repRef.key).name}</a>\""
 
+    private fun getHtmlRelativePath(base: Path, path: Path): String {
+        return base.relativize(path).toString().replace(File.separatorChar, '/')
+    }
 
     private fun getToolbar(globalMetrics: List<MetricInfo>): String {
         val metricNames = globalMetrics.map { it.name }.toSet().sorted()
