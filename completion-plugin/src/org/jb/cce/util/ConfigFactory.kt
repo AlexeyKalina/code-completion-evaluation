@@ -6,8 +6,8 @@ import com.intellij.openapi.project.Project
 import org.jb.cce.actions.*
 import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterManager
-import java.io.File
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 
 object ConfigFactory {
@@ -17,22 +17,16 @@ object ConfigFactory {
             .registerTypeAdapter(CompletionStrategy::class.java, CompletionStrategySerializer())
             .create()
 
-    private fun defaultConfig(projectPath: String = "", language: String = "Java") = Config.build(projectPath, language) {}
+    fun defaultConfig(projectPath: String = "", language: String = "Java") = Config.build(projectPath, language) {}
 
-    fun load(path: String): Config {
-        val configFile = File(path)
+    fun load(path: Path): Config {
+        val configFile = path.toFile()
         if (!configFile.exists()) {
-            save(defaultConfig(), path)
+            save(defaultConfig(), configFile.parent, configFile.name)
             throw IllegalArgumentException("Config file missing. Config created by path: ${configFile.absolutePath}. Fill settings in config.")
         }
 
         return deserialize(configFile.readText())
-    }
-
-    fun saveDefault(directoryPath: String, name: String = "config.json"): Config {
-        val config = defaultConfig()
-        save(config, directoryPath, name)
-        return config
     }
 
     fun save(config: Config, directoryPath: String, name: String = "config.json") {
