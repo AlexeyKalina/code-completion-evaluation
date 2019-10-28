@@ -54,7 +54,7 @@ class FullSettingsDialog(
                 val result = fileChooser.showOpenDialog(contentPanel)
                 if (result == JFileChooser.APPROVE_OPTION) {
                     val config = buildConfig()
-                    ConfigFactory.save(config, fileChooser.selectedFile.absolutePath)
+                    ConfigFactory.save(config, fileChooser.selectedFile.toPath())
                     Messages.showInfoMessage("Config saved successfully", "Config saving")
                 }
             }

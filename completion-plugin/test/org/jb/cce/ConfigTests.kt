@@ -57,7 +57,7 @@ class ConfigTests {
 
     private fun doTest(init: Config.Builder.() -> Unit) {
         val before = Config.build(tempDir.resolve("project").toString(), "Java", init)
-        ConfigFactory.save(before, tempDir.toString(), FILENAME)
+        ConfigFactory.save(before, tempDir, FILENAME)
         val after = ConfigFactory.load(tempDir.resolve(FILENAME))
         assertConfigsTheSame("Stored and restored configs should be equal", before, after)
     }

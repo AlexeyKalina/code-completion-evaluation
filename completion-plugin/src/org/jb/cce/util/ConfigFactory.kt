@@ -22,16 +22,16 @@ object ConfigFactory {
     fun load(path: Path): Config {
         val configFile = path.toFile()
         if (!configFile.exists()) {
-            save(defaultConfig(), configFile.parent, configFile.name)
+            save(defaultConfig(), path.parent, configFile.name)
             throw IllegalArgumentException("Config file missing. Config created by path: ${configFile.absolutePath}. Fill settings in config.")
         }
 
         return deserialize(configFile.readText())
     }
 
-    fun save(config: Config, directoryPath: String, name: String = "config.json") {
+    fun save(config: Config, directory: Path, name: String = "config.json") {
         val json = serialize(config)
-        Files.write(Paths.get(directoryPath, name), json.toByteArray())
+        Files.write(directory.resolve(name), json.toByteArray())
     }
 
     fun getByKey(project: Project, configStateKey: String): Config {

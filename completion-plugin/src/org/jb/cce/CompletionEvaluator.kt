@@ -42,7 +42,7 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
-                ConfigFactory.save(config, workspace.toString())
+                ConfigFactory.save(config, workspace.path())
                 generateActions(workspace, config.language, config.listOfFiles, config.strategy, offset, psi, getProcess(indicator))
             }
 
