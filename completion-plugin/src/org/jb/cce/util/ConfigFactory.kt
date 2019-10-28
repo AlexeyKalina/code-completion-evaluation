@@ -7,7 +7,6 @@ import org.jb.cce.actions.*
 import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterManager
 import java.io.File
-import java.io.FileReader
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -27,7 +26,7 @@ object ConfigFactory {
             throw IllegalArgumentException("Config file missing. Config created by path: ${configFile.absolutePath}. Fill settings in config.")
         }
 
-        return deserialize(FileReader(configFile).readText())
+        return deserialize(configFile.readText())
     }
 
     fun saveDefault(directoryPath: String, name: String = "config.json"): Config {
