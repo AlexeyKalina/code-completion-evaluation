@@ -72,22 +72,30 @@ To start the evaluation in the headless mode you should describe where the proje
 ```javascript
     {
       "projectPath": "", // string with path to idea project
-      "listOfFiles": [ "" ], // list of string with paths to files/directories for evaluation
+      "evaluationRoots": [ ], // list of string with paths to files/directories for evaluation
       "language": "Java", // Java, Python, Shell Script or Another
-      "strategy": {
-        "prefix": {
-          "name": "SimplePrefix", // SimplePrefix, CapitalizePrefix or NoPrefix
-          "n": 2, // length of prefix (for SimplePrefix)
-          "emulateTyping": true // emulate typing or not for Simple and Capitalize prefix
+      "strategy": { // describes evaluation rules
+        "completeAllTokens": false, // if true - all tokens will be tried to complete one by one
+        "context": "ALL", // ALL, PREVIOUS
+        "prefix": { // policy how to complete particular token
+          "name": "SimplePrefix", // SimplePrefix (type 1 or more letters), CapitalizePrefix or NoPrefix
+          "emulateTyping": false, // type token char by char and save intermediate results
+          "n": 1 // numbers of char to type before trigger completion
         },
-        "statement": "ALL", // METHOD_CALLS, ARGUMENTS, VARIABLES, ALL_STATIC, ALL, ALL_TOKENS
-        "context": "ALL" // ALL, PREVIOUS
+        "filters": { // set of filters that allow to filter some completion locations out
+          "statementTypes": [ // possible values: METHOD_CALLS, ARGUMENTS, VARIABLES, ALL_STATIC, ALL, ALL_TOKENS
+            "METHOD_CALL" 
+          ],
+          "isArgument": null, // null / true / false
+          "isStatic": true, // null / true / false
+          "packageRegex": ".*" // regex to check  if java package of resulting token is suitable for evaluation
+        }
       },
       "completionType": "BASIC", // BASIC, SMART, ML
+      "interpretActions": true, // interpret or not actions after its generation
       "outputDir": "", // string with path to output directory
-      "saveLogs": true, // save completion logs or not (only if Completion-Stats-Collector plugin installed)
-      "logsTrainingPercentage": 70, // percentage for logs separation on training/validate
-      "interpretActions": true // interpret or not actions after its generation
+      "saveLogs": false, // save completion logs or not (only if Completion-Stats-Collector plugin installed)
+      "logsTrainingPercentage": 70 // percentage for logs separation on training/validate
     }
 ```
 
@@ -95,7 +103,7 @@ Example of `config.json` to evaluate code completion on several modules from int
 ```javascript
 {
   "projectPath": "PATH_TO_COMMUNITY_PROJECT",
-  "listOfFiles": [
+  "evaluationRoots": [
     "java/java-indexing-impl",
     "java/java-analysis-impl",
     "platform/analysis-impl",
@@ -113,13 +121,21 @@ Example of `config.json` to evaluate code completion on several modules from int
   ],
   "language": "Java",
   "strategy": {
+    "completeAllTokens": false,
+    "context": "ALL",
     "prefix": {
+      "name": "SimplePrefix",
       "emulateTyping": false,
-      "n": 1,
-      "name": "SimplePrefix"
+      "n": 1
     },
-    "statement": "ALL_STATIC",
-    "context": "ALL"
+    "filters": {
+      "statementTypes": [
+        "METHOD_CALL"
+      ],
+      "isArgument": null,
+      "isStatic": null,
+      "packageRegex": ".*"
+    }
   },
   "completionType": "BASIC",
   "outputDir": "PATH_TO_COMMUNITY_PROJECT/completion-evaluation",

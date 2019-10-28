@@ -6,10 +6,8 @@ import com.intellij.openapi.project.Project
 import org.jb.cce.actions.*
 import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterManager
-import java.io.File
-import java.io.FileReader
 import java.nio.file.Files
-import java.nio.file.Paths
+import java.nio.file.Path
 
 object ConfigFactory {
     private val gson = GsonBuilder()
@@ -18,33 +16,31 @@ object ConfigFactory {
             .registerTypeAdapter(CompletionStrategy::class.java, CompletionStrategySerializer())
             .create()
 
-    private fun defaultConfig(projectPath: String = "", language: String = "Java") = Config.build(projectPath, language) {}
+    fun defaultConfig(projectPath: String = "", language: String = "Java"): Config = Config.build(projectPath, language) {}
 
-    fun load(path: String): Config {
-        val configFile = File(path)
+    fun load(path: Path): Config {
+        val configFile = path.toFile()
         if (!configFile.exists()) {
-            save(defaultConfig(), path)
+            save(defaultConfig(), path.parent, configFile.name)
             throw IllegalArgumentException("Config file missing. Config created by path: ${configFile.absolutePath}. Fill settings in config.")
         }
 
-        return deserialize(FileReader(configFile).readText())
+        return deserialize(configFile.readText())
     }
 
-    fun saveDefault(directoryPath: String, name: String = "config.json"): Config {
-        val config = defaultConfig()
-        save(config, directoryPath, name)
-        return config
-    }
-
-    fun save(config: Config, directoryPath: String, name: String = "config.json") {
+    fun save(config: Config, directory: Path, name: String = "config.json") {
         val json = serialize(config)
-        Files.write(Paths.get(directoryPath, name), json.toByteArray())
+        Files.write(directory.resolve(name), json.toByteArray())
     }
 
     fun getByKey(project: Project, configStateKey: String): Config {
         val properties = PropertiesComponent.getInstance(project)
         val configState = properties.getValue(configStateKey) ?: return defaultConfig(project.basePath!!)
-        return deserialize(configState)
+        return try {
+            deserialize(configState)
+        } catch (e: Throwable) {
+            defaultConfig(project.basePath!!)
+        }
     }
 
     fun storeByKey(project: Project, configStateKey: String, config: Config) {
@@ -58,7 +54,7 @@ object ConfigFactory {
         val builder = Config.Builder(map.getAs("projectPath"), languageName)
         val strategyJson = map.getAs<Map<String, Any>>("strategy")
         CompletionStrategyDeserializer().deserialize(strategyJson, languageName, builder)
-        builder.evaluationRoots = map.getAs("listOfFiles")
+        builder.evaluationRoots = map.getAs("evaluationRoots")
         builder.completionType = CompletionType.valueOf(map.getAs("completionType"))
         builder.workspaceDir = map.getAs("workspaceDir")
         builder.interpretActions = map.getAs("interpretActions")

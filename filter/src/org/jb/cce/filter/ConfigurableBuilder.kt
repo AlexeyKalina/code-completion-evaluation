@@ -1,5 +1,5 @@
 package org.jb.cce.filter
 
-interface ConfigurableBuilder {
-    fun build(): EvaluationFilterConfiguration.Configurable
+interface ConfigurableBuilder<T> {
+    fun build(filterId: String): EvaluationFilterConfiguration.Configurable<T>
 }

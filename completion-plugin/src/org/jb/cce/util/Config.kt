@@ -8,15 +8,15 @@ import org.jb.cce.filter.EvaluationFilter
 import java.nio.file.Paths
 
 data class Config internal constructor(
-        val projectPath: String,
-        val listOfFiles: List<String>,
-        val language: String,
-        val strategy: CompletionStrategy,
-        val completionType: CompletionType,
-        val workspaceDir: String,
-        val interpretActions: Boolean,
-        val saveLogs: Boolean,
-        val trainTestSplit: Int) {
+    val projectPath: String,
+    val evaluationRoots: List<String>,
+    val language: String,
+    val strategy: CompletionStrategy,
+    val completionType: CompletionType,
+    val workspaceDir: String,
+    val interpretActions: Boolean,
+    val saveLogs: Boolean,
+    val trainTestSplit: Int) {
     companion object {
         fun build(projectPath: String, language: String, init: Builder.() -> Unit): Config {
             val builder = Builder(projectPath, language)

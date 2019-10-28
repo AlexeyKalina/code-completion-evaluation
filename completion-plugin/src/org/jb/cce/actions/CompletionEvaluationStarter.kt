@@ -17,12 +17,13 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
     override fun main(params: Array<out String>) {
         val configPath = if (params.size == 2) params[1] else "config.json"
-        println("Config path: ${Paths.get(configPath).toAbsolutePath()}")
+        val path = Paths.get(configPath).toAbsolutePath()
+        println("Config path: $path")
 
         val config = try {
-            ConfigFactory.load(configPath)
+            ConfigFactory.load(path)
         } catch (e: Exception) {
-            fatalError("Error for loading config: $configPath, $e. StackTrace: ${stackTraceToString(e)}")
+            fatalError("Error for loading config: $path, $e. StackTrace: ${stackTraceToString(e)}")
         }
 
         val project = try {
