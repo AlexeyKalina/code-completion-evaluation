@@ -17,8 +17,8 @@ dependencies {
 }
 
 intellij {
-    version '192.5728.12-EAP-SNAPSHOT'
-    plugins "PythonCore:2019.2.192.5728.12", "sh", 'java'
+    version '193.4778.7-EAP-SNAPSHOT'
+    plugins "PythonCore:193.4778.7", "sh", 'java'
 }
 
 task runIdeHeadless (type: RunIdeTask) {
@@ -37,8 +37,8 @@ runIde {
 }
 
 patchPluginXml {
-    sinceBuild '192.5118'
-    untilBuild '193.*'
+    sinceBuild '193'
+    untilBuild '201.*'
 
     changeNotes """
         0.0.2 <br>
