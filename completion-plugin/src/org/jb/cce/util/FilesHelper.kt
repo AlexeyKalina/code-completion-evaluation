@@ -53,11 +53,9 @@ object FilesHelper {
         return if (projectPath == null) path else Paths.get(projectPath).relativize(Paths.get(path)).toString()
     }
 
-    fun getFileText(project: Project, relativePath: String): String {
-        val file = VfsUtil.findFile(Paths.get(project.basePath ?: "").resolve(relativePath), true)
-            ?: throw FileNotFoundException("File not found: $relativePath")
-        return file.text()
-    }
+    fun getFile(project: Project, relativePath: String): VirtualFile =
+            VfsUtil.findFile(Paths.get(project.basePath ?: "").resolve(relativePath), true)
+                    ?: throw FileNotFoundException("File not found: $relativePath")
 }
 
 fun VirtualFile.text(): String {

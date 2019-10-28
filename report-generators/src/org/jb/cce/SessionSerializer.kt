@@ -1,9 +1,12 @@
 package org.jb.cce
 
-import com.google.gson.*
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonObject
+import com.google.gson.JsonSerializationContext
+import com.google.gson.JsonSerializer
 import org.apache.commons.text.StringEscapeUtils.escapeHtml4
-import org.jb.cce.actions.CompletionPrefix
-import org.jb.cce.info.EvaluationInfo
+import org.jb.cce.actions.CompletionStrategy
+import org.jb.cce.actions.CompletionStrategySerializer
 import org.jb.cce.info.FileSessionsInfo
 import java.lang.reflect.Type
 import java.util.*
@@ -11,10 +14,8 @@ import java.util.*
 class SessionSerializer {
     companion object {
         private val gson = GsonBuilder()
-                .addDeserializationExclusionStrategy(object : ExclusionStrategy {
-                    override fun shouldSkipField(f: FieldAttributes) = false
-                    override fun shouldSkipClass(aClass: Class<*>) = aClass == CompletionPrefix::class.java
-                }).registerTypeAdapter(Suggestion::class.java, object : JsonSerializer<Suggestion> {
+                .serializeNulls()
+                .registerTypeAdapter(Suggestion::class.java, object : JsonSerializer<Suggestion> {
                     override fun serialize(src: Suggestion, typeOfSrc: Type, context: JsonSerializationContext): JsonObject {
                         val jsonObject = JsonObject()
                         jsonObject.addProperty("text", src.text)
@@ -22,12 +23,11 @@ class SessionSerializer {
                         return jsonObject
                     }
                 })
+                .registerTypeAdapter(CompletionStrategy::class.java, CompletionStrategySerializer())
                 .create()
     }
 
     fun serialize(sessions: FileSessionsInfo): String = gson.toJson(sessions)
-
-    fun serializeConfig(config: EvaluationInfo): String = gson.toJson(config)
 
     fun serialize(sessions: List<Session>): String {
         val map = HashMap<UUID, Session>()
@@ -42,6 +42,4 @@ class SessionSerializer {
     fun deserialize(json: String) : FileSessionsInfo {
         return gson.fromJson(json, FileSessionsInfo::class.java)
     }
-
-    fun deserializeConfig(json: String): EvaluationInfo = gson.fromJson(json, EvaluationInfo::class.java)
 }

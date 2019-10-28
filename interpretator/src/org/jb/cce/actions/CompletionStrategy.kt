@@ -1,6 +1,11 @@
 package org.jb.cce.actions
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonPrimitive
+import com.google.gson.JsonSerializationContext
+import com.google.gson.JsonSerializer
 import org.jb.cce.filter.EvaluationFilter
+import java.lang.reflect.Type
 
 data class CompletionStrategy(val prefix: CompletionPrefix,
                               val context: CompletionContext,
@@ -22,4 +27,22 @@ enum class CompletionType {
 enum class CompletionContext {
     ALL,
     PREVIOUS
+}
+
+class CompletionStrategySerializer : JsonSerializer<CompletionStrategy> {
+    override fun serialize(src: CompletionStrategy, typeOfSrc: Type, context: JsonSerializationContext): JsonObject {
+        val jsonObject = JsonObject()
+        jsonObject.addProperty("completeAllTokens", src.completeAllTokens)
+        jsonObject.addProperty("context", src.context.name)
+        val prefixClassName = src.prefix.javaClass.name
+        val prefixObject = JsonObject()
+        prefixObject.add("name", JsonPrimitive(prefixClassName.substring(prefixClassName.indexOf('$') + 1)))
+        jsonObject.add("prefix", prefixObject)
+        if (src.prefix !is CompletionPrefix.NoPrefix) prefixObject.add("emulateTyping", JsonPrimitive(src.prefix.emulateTyping))
+        if (src.prefix is CompletionPrefix.SimplePrefix) prefixObject.add("n", JsonPrimitive(src.prefix.n))
+        val filtersObject = JsonObject()
+        src.filters.forEach { id, filter -> filtersObject.add(id, filter.toJson()) }
+        jsonObject.add("filters", filtersObject)
+        return jsonObject
+    }
 }

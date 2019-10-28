@@ -11,7 +11,7 @@ import java.nio.file.Paths
 class SessionsStorage(private val storageDir: String, val evaluationType: String) {
     companion object {
         private const val pathsListFile = "files.json"
-        private const val configFile = "config.json"
+        private const val evaluationInfoFile = "evaluation_info.json"
         private val gson = Gson()
         private val sessionSerializer = SessionSerializer()
     }
@@ -27,11 +27,10 @@ class SessionsStorage(private val storageDir: String, val evaluationType: String
         filesCounter++
     }
 
-    fun saveEvaluationInfo(info: EvaluationInfo) {
+    fun saveEvaluationInfo(evaluationType: String) {
         val filesJson = gson.toJson(sessionFiles)
         FileWriter(Paths.get(storageDir, pathsListFile).toString()).use { it.write(filesJson) }
-        val configJson = sessionSerializer.serializeConfig(info)
-        FileWriter(Paths.get(storageDir, configFile).toString()).use { it.write(configJson) }
+        FileWriter(Paths.get(storageDir, evaluationInfoFile).toString()).use { it.write(gson.toJson(EvaluationInfo(evaluationType))) }
     }
 
     fun getSessionFiles(): List<Pair<String, String>> {

@@ -8,7 +8,7 @@ import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiElement
 import org.jb.cce.CompletionEvaluator
-import org.jb.cce.filter.EvaluationFilterManager
+import org.jb.cce.dialog.EvaluateHereSettingsDialog
 import org.jb.cce.util.FilesHelper
 
 class EvaluateCompletionHereAction : AnAction() {
@@ -29,13 +29,12 @@ class EvaluateCompletionHereAction : AnAction() {
             return
         }
 
-        val settingsDialog = CompletionSettingsDialog(project, language.displayName)
+        val settingsDialog = EvaluateHereSettingsDialog(project, language.displayName, file.path)
         val result = settingsDialog.showAndGet()
         if (!result) return
-
-        val strategy = CompletionStrategy(settingsDialog.completionPrefix, settingsDialog.completionContext, settingsDialog.completeAllTokens, settingsDialog.getFilters())
-        CompletionEvaluator(false, project).evaluateCompletionHere(file, language.displayName, caret.offset,
-                if (strategy.completeAllTokens) getParentOnSameLine(psi, caret.offset, editor) else null, strategy, settingsDialog.completionType)
+        val config = settingsDialog.buildConfig()
+        val parentPsiElement = if (config.strategy.completeAllTokens) getParentOnSameLine(psi, caret.offset, editor) else null
+        CompletionEvaluator(false, project).evaluateCompletionHere(config, caret.offset, parentPsiElement)
     }
 
     private fun getParentOnSameLine(element: PsiElement, offset: Int, editor: Editor): PsiElement {

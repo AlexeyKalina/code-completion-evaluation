@@ -1,19 +1,15 @@
 package org.jb.cce.filter
 
-import javax.swing.JPanel
-
 interface EvaluationFilterConfiguration {
   interface Configurable {
-    val panel: JPanel
     fun build(): EvaluationFilter
-    fun isLanguageSupported(languageName: String): Boolean
   }
 
   val id: String
 
   val description: String
 
-  fun createConfigurable(): Configurable
+  fun createConfigurable(configurableBuilder: ConfigurableBuilder): Configurable = configurableBuilder.build()
 
   fun isLanguageSupported(languageName: String): Boolean
 
