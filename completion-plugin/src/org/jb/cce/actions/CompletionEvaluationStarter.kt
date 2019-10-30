@@ -58,7 +58,7 @@ class CompletionEvaluationStarter : ApplicationStarter {
     private fun interpretActions(generateReport: Boolean, workspacePath: String) {
         val configPath = Paths.get(workspacePath, ConfigFactory.DEFAULT_CONFIG_NAME)
         val config = loadConfig(configPath)
-        val workspace = EvaluationWorkspace(workspacePath, config.completionType, existing = true)
+        val workspace = EvaluationWorkspace(workspacePath, existing = true)
         val project = loadProject(config.projectPath)
         val evaluator = ActionsInterpretationEvaluator(project, true)
         evaluator.evaluateUnderProgress(workspace, config, true, generateReport, false)
@@ -70,13 +70,13 @@ class CompletionEvaluationStarter : ApplicationStarter {
         lateinit var config: Config
         for (workspacePath in paths) {
             config = ConfigFactory.load(Paths.get(workspacePath, ConfigFactory.DEFAULT_CONFIG_NAME))
-            workspaces.add(EvaluationWorkspace(workspacePath, config.completionType, true).apply {
+            workspaces.add(EvaluationWorkspace(workspacePath, true).apply {
                 sessionsStorage.evaluationTitle = config.evaluationTitle
             })
         }
 
         val project = loadProject(config.projectPath)
-        val workspace = EvaluationWorkspace(config.outputDir, config.completionType)
+        val workspace = EvaluationWorkspace(config.outputDir)
         val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
         val evaluator = ReportGenerationEvaluator(reportGenerator, project, true)
         evaluator.generateReportUnderProgress(workspaces.map { it.sessionsStorage }, workspaces.map { it.errorsStorage })

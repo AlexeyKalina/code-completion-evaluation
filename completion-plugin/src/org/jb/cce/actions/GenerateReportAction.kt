@@ -20,12 +20,12 @@ class GenerateReportAction : AnAction() {
         lateinit var config: Config
         for (workspaceDir in dirs) {
             config = ConfigFactory.load(Paths.get(workspaceDir.path, ConfigFactory.DEFAULT_CONFIG_NAME))
-            workspaces.add(EvaluationWorkspace(workspaceDir.path, config.completionType, true).apply {
+            workspaces.add(EvaluationWorkspace(workspaceDir.path, true).apply {
                 sessionsStorage.evaluationTitle = config.evaluationTitle
             })
         }
 
-        val workspace = EvaluationWorkspace(config.outputDir, config.completionType)
+        val workspace = EvaluationWorkspace(config.outputDir)
         val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
         val evaluator = ReportGenerationEvaluator(reportGenerator, project, false)
         evaluator.generateReportUnderProgress(workspaces.map { it.sessionsStorage }, workspaces.map { it.errorsStorage })

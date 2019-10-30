@@ -33,7 +33,7 @@ class ActionsInterpretationEvaluator(project: Project, isHeadless: Boolean): Bas
         val task = object : Task.Backgroundable(project, "Actions interpreting") {
             private lateinit var lastFileSessions: List<Session>
             private var sessionsWorkspace =
-                    if (createWorkspace) EvaluationWorkspace(config.outputDir, config.completionType)
+                    if (createWorkspace) EvaluationWorkspace(config.outputDir)
                     else actionsWorkspace
 
             override fun run(indicator: ProgressIndicator) {

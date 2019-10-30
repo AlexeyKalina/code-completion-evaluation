@@ -36,13 +36,13 @@ class ReportGenerationEvaluator(private val reportGenerator: HtmlReportGenerator
     }
 
     fun generateReport(sessionStorages: List<SessionsStorage>, errorStorages: List<FileErrorsStorage>): String {
-        val evaluationType2storage = mutableMapOf<String, SessionsStorage>()
-        val evaluationType2evaluator = mutableMapOf<String, MetricsEvaluator>()
+        val title2storage = mutableMapOf<String, SessionsStorage>()
+        val title2evaluator = mutableMapOf<String, MetricsEvaluator>()
         for (storage in sessionStorages) {
-            if (evaluationType2evaluator.containsKey(storage.evaluationTitle))
+            if (title2evaluator.containsKey(storage.evaluationTitle))
                 throw IllegalStateException("Workspaces have same evaluation titles. Change evaluation title in config.json.")
-            evaluationType2storage[storage.evaluationTitle] = storage
-            evaluationType2evaluator[storage.evaluationTitle] = MetricsEvaluator.withDefaultMetrics(storage.evaluationTitle)
+            title2storage[storage.evaluationTitle] = storage
+            title2evaluator[storage.evaluationTitle] = MetricsEvaluator.withDefaultMetrics(storage.evaluationTitle)
             for (pathsPair in storage.getSessionFiles()) {
                 val sessionFile = sessionFiles.getOrPut(pathsPair.first) { mutableListOf() }
                 sessionFile.add(SessionsInfo(pathsPair.first, pathsPair.second, storage.evaluationTitle))
@@ -51,14 +51,14 @@ class ReportGenerationEvaluator(private val reportGenerator: HtmlReportGenerator
         for (sessionFile in sessionFiles) {
             val fileEvaluations = mutableListOf<FileEvaluationInfo>()
             for (file in sessionFile.value) {
-                val sessionsEvaluation = evaluationType2storage[file.evaluationType]!!.getSessions(file.path)
-                val metricsEvaluation = evaluationType2evaluator[file.evaluationType]!!.evaluate(sessionsEvaluation.sessions)
+                val sessionsEvaluation = title2storage[file.evaluationType]!!.getSessions(file.path)
+                val metricsEvaluation = title2evaluator[file.evaluationType]!!.evaluate(sessionsEvaluation.sessions)
                 fileEvaluations.add(FileEvaluationInfo(sessionsEvaluation, metricsEvaluation, file.evaluationType))
             }
             reportGenerator.generateFileReport(fileEvaluations)
         }
         for (errorsStorage in errorStorages)
             reportGenerator.generateErrorReports(errorsStorage.getErrors())
-        return reportGenerator.generateGlobalReport(evaluationType2evaluator.values.map { it.result() }.flatten())
+        return reportGenerator.generateGlobalReport(title2evaluator.values.map { it.result() }.flatten())
     }
 }

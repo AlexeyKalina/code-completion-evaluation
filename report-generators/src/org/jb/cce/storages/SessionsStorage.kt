@@ -8,7 +8,7 @@ import org.jb.cce.info.FileSessionsInfo
 import java.io.FileWriter
 import java.nio.file.Paths
 
-class SessionsStorage(private val storageDir: String, completionType: CompletionType) {
+class SessionsStorage(private val storageDir: String) {
     companion object {
         private const val pathsListFile = "files.json"
         private val gson = Gson()
@@ -16,10 +16,10 @@ class SessionsStorage(private val storageDir: String, completionType: Completion
     }
     private var filesCounter = 0
     private var sessionFiles: MutableMap<String, String> = mutableMapOf()
-    private val typeFolder = Paths.get(storageDir, completionType.name)
-    private val keyValueStorage = FileArchivesStorage(typeFolder.toString())
+    private val filesDir = Paths.get(storageDir, "files")
+    private val keyValueStorage = FileArchivesStorage(filesDir.toString())
 
-    var evaluationTitle: String = completionType.name
+    var evaluationTitle: String = "DEFAULT"
 
     fun saveSessions(sessionsInfo: FileSessionsInfo) {
         val json = sessionSerializer.serialize(sessionsInfo)

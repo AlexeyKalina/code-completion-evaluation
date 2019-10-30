@@ -21,7 +21,7 @@ class ActionsGenerationEvaluator(project: Project, isHeadless: Boolean): BaseEva
 
     fun evaluateUnderProgress(config: Config, offset: Int?, psi: PsiElement?) {
         val task = object : Task.Backgroundable(project, "Generating actions", true) {
-            private val workspace = EvaluationWorkspace(config.outputDir, config.completionType)
+            private val workspace = EvaluationWorkspace(config.outputDir)
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
