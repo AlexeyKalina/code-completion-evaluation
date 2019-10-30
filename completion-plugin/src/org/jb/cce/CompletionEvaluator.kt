@@ -82,7 +82,7 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
                 val fileActions = actionsGenerator.generate(uast)
                 workspace.actionsStorage.saveActions(fileActions)
                 val sessionsCount = fileActions.sessionsCount.toString().padStart(3)
-                indicator.setProgress(filename, "$sessionsCount | $filename", progress)
+                indicator.setProgress(filename, "$sessionsCount sessions | $filename", progress)
             } catch (e: Throwable) {
                 indicator.setProgress(filename, "error: ${e.message} | $filename", progress)
                 workspace.errorsStorage.saveError(FileErrorInfo(FilesHelper.getRelativeToProjectPath(project, file.path), e.message
