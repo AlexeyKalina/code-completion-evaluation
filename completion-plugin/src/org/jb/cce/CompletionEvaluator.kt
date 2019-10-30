@@ -63,14 +63,15 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
         val uastBuilder = UastBuilder.create(project, languageName, strategy.completeAllTokens)
 
         val errors = mutableListOf<FileErrorInfo>()
-        var completed = 0
-        for (file in files) {
+        for ((i, file) in files.withIndex()) {
             if (indicator.isCanceled()) {
-                LOG.info("Generating actions is canceled by user. Done: $completed/${files.size}. With error: ${errors.size}")
+                LOG.info("Generating actions is canceled by user. Done: $i/${files.size}. With error: ${errors.size}")
                 break
             }
-            LOG.info("Start generating actions for file ${file.path}. Done: $completed/${files.size}. With error: ${errors.size}")
-            indicator.setProgress(file.name, file.name, completed.toDouble() / files.size)
+            LOG.info("Start generating actions for file ${file.path}. Done: $i/${files.size}. With error: ${errors.size}")
+            val filename = file.name
+            val progress = (i + 1).toDouble() / files.size
+            var totalSessions = 0
             try {
                 val rootVisitor = when {
                     psi != null -> EvaluationRootByRangeVisitor(psi.textRange?.startOffset ?: psi.textOffset,
@@ -81,12 +82,16 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
                 val uast = uastBuilder.build(file, rootVisitor)
                 val fileActions = actionsGenerator.generate(uast)
                 workspace.actionsStorage.saveActions(fileActions)
+                totalSessions += fileActions.sessionsCount
+                indicator.setProgress(filename, "${totalSessions.toString().padStart(3)} sessions | $filename", progress)
             } catch (e: Throwable) {
-                workspace.errorsStorage.saveError(FileErrorInfo(FilesHelper.getRelativeToProjectPath(project, file.path), e.message ?: "No Message", stackTraceToString(e)))
+                indicator.setProgress(filename, "error: ${e.message} | $filename", progress)
+                workspace.errorsStorage.saveError(FileErrorInfo(FilesHelper.getRelativeToProjectPath(project, file.path), e.message
+                        ?: "No Message", stackTraceToString(e)))
                 LOG.error("Generating actions error for file ${file.path}.", e)
             }
-            completed++
-            LOG.info("Generating actions for file ${file.path} completed. Done: $completed/${files.size}. With error: ${errors.size}")
+
+            LOG.info("Generating actions for file ${file.path} completed. Done: $i/${files.size}. With error: ${errors.size}")
         }
     }
 
