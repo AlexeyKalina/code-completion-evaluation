@@ -71,6 +71,7 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
             LOG.info("Start generating actions for file ${file.path}. Done: $i/${files.size}. With error: ${errors.size}")
             val filename = file.name
             val progress = (i + 1).toDouble() / files.size
+            var totalSessions = 0
             try {
                 val rootVisitor = when {
                     psi != null -> EvaluationRootByRangeVisitor(psi.textRange?.startOffset ?: psi.textOffset,
@@ -81,8 +82,8 @@ class CompletionEvaluator(private val isHeadless: Boolean, private val project: 
                 val uast = uastBuilder.build(file, rootVisitor)
                 val fileActions = actionsGenerator.generate(uast)
                 workspace.actionsStorage.saveActions(fileActions)
-                val sessionsCount = fileActions.sessionsCount.toString().padStart(3)
-                indicator.setProgress(filename, "$sessionsCount sessions | $filename", progress)
+                totalSessions += fileActions.sessionsCount
+                indicator.setProgress(filename, "${totalSessions.toString().padStart(3)} sessions | $filename", progress)
             } catch (e: Throwable) {
                 indicator.setProgress(filename, "error: ${e.message} | $filename", progress)
                 workspace.errorsStorage.saveError(FileErrorInfo(FilesHelper.getRelativeToProjectPath(project, file.path), e.message
