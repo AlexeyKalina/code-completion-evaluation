@@ -27,6 +27,7 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
             stats[step.name] = duration
             if (hasError) break
         }
+        currentWorkspace.dumpStatistics(stats)
     }
 
     class Builder {
