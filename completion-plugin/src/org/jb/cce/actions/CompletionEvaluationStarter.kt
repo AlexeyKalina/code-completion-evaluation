@@ -1,15 +1,21 @@
 package org.jb.cce.actions
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.subcommands
+import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.default
+import com.github.ajalt.clikt.parameters.arguments.multiple
+import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.option
 import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
-import org.jb.cce.*
-import org.jb.cce.evaluation.ActionsGenerationEvaluator
-import org.jb.cce.evaluation.ActionsInterpretationEvaluator
-import org.jb.cce.evaluation.ReportGenerationEvaluator
+import org.jb.cce.EvaluationWorkspace
+import org.jb.cce.evaluation.BackgroundStepFactory
+import org.jb.cce.evaluation.EvaluationProcess
+import org.jb.cce.evaluation.EvaluationRootInfo
 import org.jb.cce.exceptions.ExceptionsUtil.stackTraceToString
-import org.jb.cce.util.Config
 import org.jb.cce.util.ConfigFactory
 import java.io.File
 import java.nio.file.Path
@@ -20,99 +26,94 @@ class CompletionEvaluationStarter : ApplicationStarter {
     override fun getCommandName(): String = "evaluate-completion"
     override fun isHeadless(): Boolean = true
 
-    override fun main(params: Array<out String>) {
-        val paramsList = params.toMutableList()
-        paramsList.removeAt(0)
-        val interpret = paramsList.remove("--interpret-actions") || paramsList.remove("-i")
-        val generateReport = paramsList.remove("--generate-report") || paramsList.remove("-r")
+    override fun main(args: Array<String>) =
+            MainEvaluationCommand().subcommands(FullCommand(), CustomCommand(), MultipleEvaluations()).main(args.toList().subList(1, args.size))
 
-        when {
-            interpret -> {
-                if (paramsList.size != 1) fatalError("Unexpected arguments count")
-                interpretActions(generateReport, paramsList.first())
+    abstract class EvaluationCommand(name: String, help: String): CliktCommand(name = name, help = help) {
+        protected fun loadConfig(configPath: Path) = try {
+            ConfigFactory.load(configPath)
+        } catch (e: Exception) {
+            fatalError("Error for loading config: $configPath, $e. StackTrace: ${stackTraceToString(e)}")
+        }
+
+        protected fun loadProject(projectPath: String) = try {
+            openProjectHeadless(projectPath)
+        } catch (e: Throwable) {
+            fatalError("Project could not be loaded: $e")
+        }
+
+        private fun fatalError(msg: String): Nothing {
+            System.err.println("Evaluation failed: $msg")
+            exitProcess(1)
+        }
+
+        private fun openProjectHeadless(projectPath: String): Project {
+            val project = File(projectPath)
+
+            assert (project.exists()) { "File $projectPath does not exist" }
+            assert (project.isDirectory) { "$projectPath is not a directory" }
+
+            val projectDir = File(project, Project.DIRECTORY_STORE_FOLDER)
+            assert(projectDir.exists()) { "$projectPath is not a project. .idea directory is missing" }
+
+            val existing = ProjectManager.getInstance().openProjects.firstOrNull { proj ->
+                !proj.isDefault && ProjectUtil.isSameProject(projectPath, proj)
             }
-            generateReport -> {
-                if (paramsList.size == 0) fatalError("Unexpected arguments count")
-                generateReport(paramsList)
-            }
-            else -> {
-                val configPath =
-                        when {
-                            paramsList.isEmpty() -> ConfigFactory.DEFAULT_CONFIG_NAME
-                            paramsList.size == 1 -> paramsList.first()
-                            else -> fatalError("Unexpected arguments count")
-                        }
-                val path = Paths.get(configPath).toAbsolutePath()
-                println("Config path: $path")
-                evaluateCompletion(path)
-            }
+            if (existing != null) return existing
+
+            return ProjectManager.getInstance().loadAndOpenProject(projectPath)!!
         }
     }
 
-    private fun evaluateCompletion(configPath: Path) {
-        val config = loadConfig(configPath)
-        val project = loadProject(config.projectPath)
-        ActionsGenerationEvaluator(project, true).evaluateUnderProgress(config, null, null)
+    inner class MainEvaluationCommand: EvaluationCommand(commandName, "Evaluate code completion quality in headless mode") {
+        override fun run() = Unit
     }
 
-    private fun interpretActions(generateReport: Boolean, workspacePath: String) {
-        val configPath = Paths.get(workspacePath, ConfigFactory.DEFAULT_CONFIG_NAME)
-        val config = loadConfig(configPath)
-        val workspace = EvaluationWorkspace(workspacePath, existing = true)
-        val project = loadProject(config.projectPath)
-        val evaluator = ActionsInterpretationEvaluator(project, true)
-        evaluator.evaluateUnderProgress(workspace, config, true, generateReport, false)
-    }
+    class FullCommand: EvaluationCommand(name = "full", help = "Start process from actions generation (set up by config)") {
+        private val configPath by argument(name = "config-path", help = "Path to config").default(ConfigFactory.DEFAULT_CONFIG_NAME)
 
-    private fun generateReport(paths: List<String>) {
-        val workspaces = mutableListOf<EvaluationWorkspace>()
-
-        lateinit var config: Config
-        for (workspacePath in paths) {
-            config = ConfigFactory.load(Paths.get(workspacePath, ConfigFactory.DEFAULT_CONFIG_NAME))
-            workspaces.add(EvaluationWorkspace(workspacePath, true).apply {
-                sessionsStorage.evaluationTitle = config.evaluationTitle
-            })
+        override fun run() {
+            val config = loadConfig(Paths.get(configPath))
+            val workspace = EvaluationWorkspace(config.outputDir)
+            val project = loadProject(config.projectPath)
+            val process = EvaluationProcess.build({ this.apply {
+                this.shouldGenerateActions = true
+                this.shouldInterpretActions = config.interpretActions
+                this.shouldGenerateReports = config.interpretActions
+            } }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
+            process.start(workspace)
         }
-
-        val project = loadProject(config.projectPath)
-        val workspace = EvaluationWorkspace(config.outputDir)
-        val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
-        val evaluator = ReportGenerationEvaluator(reportGenerator, project, true)
-        evaluator.generateReportUnderProgress(workspaces.map { it.sessionsStorage }, workspaces.map { it.errorsStorage })
     }
 
-    private fun loadConfig(configPath: Path) = try {
-        ConfigFactory.load(configPath)
-    } catch (e: Exception) {
-        fatalError("Error for loading config: $configPath, $e. StackTrace: ${stackTraceToString(e)}")
-    }
+    class CustomCommand: EvaluationCommand(name = "custom", help = "Start process from actions interpretation or report generation") {
+        private val workspacePath by argument(name = "workspace", help = "Path to workspace")
+        private val interpretActions by option(names = *arrayOf("--interpret-actions", "-i"), help = "Interpret actions").flag()
+        private val generateReport by option(names = *arrayOf("--generate-report", "-r"), help = "Generate report").flag()
 
-    private fun loadProject(projectPath: String) = try {
-        openProjectHeadless(projectPath)
-    } catch (e: Throwable) {
-        fatalError("Project could not be loaded: $e")
-    }
-
-    private fun fatalError(msg: String): Nothing {
-        System.err.println("Evaluation failed: $msg")
-        exitProcess(1)
-    }
-
-    private fun openProjectHeadless(projectPath: String): Project {
-        val project = File(projectPath)
-
-        assert (project.exists()) { "File $projectPath does not exist" }
-        assert (project.isDirectory) { "$projectPath is not a directory" }
-
-        val projectDir = File(project, Project.DIRECTORY_STORE_FOLDER)
-        assert(projectDir.exists()) { "$projectPath is not a project. .idea directory is missing" }
-
-        val existing = ProjectManager.getInstance().openProjects.firstOrNull { proj ->
-            !proj.isDefault && ProjectUtil.isSameProject(projectPath, proj)
+        override fun run() {
+            val config = loadConfig(Paths.get(workspacePath, ConfigFactory.DEFAULT_CONFIG_NAME))
+            val workspace = EvaluationWorkspace(workspacePath, true)
+            val project = loadProject(config.projectPath)
+            val process = EvaluationProcess.build({ this.apply {
+                this.shouldGenerateActions = false
+                this.shouldInterpretActions = interpretActions
+                this.shouldGenerateReports = generateReport
+            } }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
+            process.start(workspace)
         }
-        if (existing != null) return existing
+    }
 
-        return ProjectManager.getInstance().loadAndOpenProject(projectPath)!!
+    class MultipleEvaluations: EvaluationCommand(name = "multiple-evaluations", help = "Generate report by multiple evaluations") {
+        private val workspaces by argument(name = "workspaces", help = "List of workspaces").multiple()
+
+        override fun run() {
+            val config = loadConfig(Paths.get(workspaces.first(), ConfigFactory.DEFAULT_CONFIG_NAME))
+            val project = loadProject(config.projectPath)
+            val workspace = EvaluationWorkspace(config.outputDir)
+            val process = EvaluationProcess.build({ this.apply {
+                this.shouldGenerateReports = true
+            } }, BackgroundStepFactory(config, project, true, workspaces, EvaluationRootInfo(true)))
+            process.start(workspace)
+        }
     }
 }

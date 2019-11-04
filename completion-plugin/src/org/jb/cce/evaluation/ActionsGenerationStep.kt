@@ -6,7 +6,7 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiElement
+import com.intellij.util.concurrency.FutureResult
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.actions.ActionsGenerator
 import org.jb.cce.actions.CompletionStrategy
@@ -17,35 +17,42 @@ import org.jb.cce.visitors.DefaultEvaluationRootVisitor
 import org.jb.cce.visitors.EvaluationRootByOffsetVisitor
 import org.jb.cce.visitors.EvaluationRootByRangeVisitor
 
-class ActionsGenerationEvaluator(project: Project, isHeadless: Boolean): BaseEvaluator(project, isHeadless) {
+class ActionsGenerationStep(private val config: Config, private val evaluationRootInfo: EvaluationRootInfo, project: Project, isHeadless: Boolean): BackgroundEvaluationStep(project, isHeadless) {
+    override val name: String = "Generating actions"
 
-    fun evaluateUnderProgress(config: Config, offset: Int?, psi: PsiElement?) {
-        val task = object : Task.Backgroundable(project, "Generating actions", true) {
-            private val workspace = EvaluationWorkspace(config.outputDir)
+    override val description: String = "Generating actions by selected files"
+
+    override fun start(workspace: EvaluationWorkspace): EvaluationWorkspace? {
+        val result = FutureResult<EvaluationWorkspace?>()
+        val task = object : Task.Backgroundable(project, name, true) {
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
                 ConfigFactory.save(config, workspace.path())
                 val filesForEvaluation = FilesHelper.getFilesOfLanguage(project, config.evaluationRoots, config.language)
-                generateActions(workspace, config.language, filesForEvaluation, config.strategy, offset, psi, getProcess(indicator))
+                generateActions(workspace, config.language, filesForEvaluation, config.strategy, evaluationRootInfo, getProcess(indicator))
             }
 
             override fun onSuccess() {
-                if (config.interpretActions) {
-                    val interpretationEvaluator = ActionsInterpretationEvaluator(project, isHeadless)
-                    interpretationEvaluator.evaluateUnderProgress(workspace, config, createWorkspace = false, generateReport = offset == null, highlight = offset != null)
-                } else finisher.onSuccess()
+                result.set(workspace)
             }
 
-            override fun onCancel() = finisher.onCancel(this.title)
+            override fun onCancel() {
+                evaluationAbortedHandler.onCancel(this.title)
+                result.set(null)
+            }
 
-            override fun onThrowable(error: Throwable) = finisher.onError(error, this.title)
+            override fun onThrowable(error: Throwable) {
+                evaluationAbortedHandler.onError(error, this.title)
+                result.set(null)
+            }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
+        return result.get()
     }
 
     private fun generateActions(workspace: EvaluationWorkspace, languageName: String, files: Collection<VirtualFile>,
-                                strategy: CompletionStrategy, offset: Int?, psi: PsiElement?, indicator: Progress) {
+                                strategy: CompletionStrategy, evaluationRootInfo: EvaluationRootInfo, indicator: Progress) {
         val actionsGenerator = ActionsGenerator(strategy)
         val uastBuilder = UastBuilder.create(project, languageName, strategy.completeAllTokens)
 
@@ -61,10 +68,12 @@ class ActionsGenerationEvaluator(project: Project, isHeadless: Boolean): BaseEva
             var totalSessions = 0
             try {
                 val rootVisitor = when {
-                    psi != null -> EvaluationRootByRangeVisitor(psi.textRange?.startOffset ?: psi.textOffset,
-                            psi.textRange?.endOffset ?:psi.textOffset + psi.textLength)
-                    offset != null -> EvaluationRootByOffsetVisitor(offset, file.path, file.text())
-                    else -> DefaultEvaluationRootVisitor()
+                    evaluationRootInfo.useDefault -> DefaultEvaluationRootVisitor()
+                    evaluationRootInfo.parentPsi != null -> EvaluationRootByRangeVisitor(
+                            evaluationRootInfo.parentPsi.textRange?.startOffset ?: evaluationRootInfo.parentPsi.textOffset,
+                            evaluationRootInfo.parentPsi.textRange?.endOffset ?: evaluationRootInfo.parentPsi.textOffset + evaluationRootInfo.parentPsi.textLength)
+                    evaluationRootInfo.offset != null -> EvaluationRootByOffsetVisitor(evaluationRootInfo.offset, file.path, file.text())
+                    else -> throw IllegalStateException("Parent psi and offset are null.")
                 }
                 val uast = uastBuilder.build(file, rootVisitor)
                 val fileActions = actionsGenerator.generate(uast)

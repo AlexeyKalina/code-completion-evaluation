@@ -5,9 +5,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.EvaluationWorkspace
-import org.jb.cce.HtmlReportGenerator
-import org.jb.cce.evaluation.ReportGenerationEvaluator
-import org.jb.cce.util.Config
+import org.jb.cce.evaluation.BackgroundStepFactory
+import org.jb.cce.evaluation.EvaluationProcess
+import org.jb.cce.evaluation.EvaluationRootInfo
 import org.jb.cce.util.ConfigFactory
 import java.nio.file.Paths
 
@@ -15,20 +15,12 @@ class GenerateReportAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val dirs = getFiles(e)
-        val workspaces = mutableListOf<EvaluationWorkspace>()
-
-        lateinit var config: Config
-        for (workspaceDir in dirs) {
-            config = ConfigFactory.load(Paths.get(workspaceDir.path, ConfigFactory.DEFAULT_CONFIG_NAME))
-            workspaces.add(EvaluationWorkspace(workspaceDir.path, true).apply {
-                sessionsStorage.evaluationTitle = config.evaluationTitle
-            })
-        }
-
+        val config = ConfigFactory.load(Paths.get(dirs.first().path, ConfigFactory.DEFAULT_CONFIG_NAME))
         val workspace = EvaluationWorkspace(config.outputDir)
-        val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
-        val evaluator = ReportGenerationEvaluator(reportGenerator, project, false)
-        evaluator.generateReportUnderProgress(workspaces.map { it.sessionsStorage }, workspaces.map { it.errorsStorage })
+        val process = EvaluationProcess.build({ this.apply {
+            this.shouldGenerateReports = true
+        } }, BackgroundStepFactory(config, project, false, dirs.map { it.path }, EvaluationRootInfo(true)))
+        process.start(workspace)
     }
 
     override fun update(e: AnActionEvent) {

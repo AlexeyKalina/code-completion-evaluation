@@ -6,12 +6,12 @@ import com.intellij.openapi.project.Project
 import org.jb.cce.util.CommandLineProgress
 import org.jb.cce.util.IdeaProgress
 
-abstract class BaseEvaluator(protected val project: Project, private val isHeadless: Boolean) {
+abstract class BackgroundEvaluationStep(protected val project: Project, private val isHeadless: Boolean): EvaluationStep {
     protected companion object {
-        val LOG = Logger.getInstance(ActionsInterpretationEvaluator::class.java)
+        val LOG = Logger.getInstance(ActionsInterpretationStep::class.java)
     }
 
-    protected val finisher = EvaluationFinisher(project, isHeadless)
+    protected val evaluationAbortedHandler = EvaluationAbortedHandler(project, isHeadless)
 
     protected fun getProcess(indicator: ProgressIndicator) = if (isHeadless) CommandLineProgress(indicator.text) else IdeaProgress(indicator)
 }

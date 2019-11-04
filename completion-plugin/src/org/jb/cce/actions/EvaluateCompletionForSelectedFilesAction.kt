@@ -5,8 +5,9 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
-import org.jb.cce.evaluation.ActionsGenerationEvaluator
+import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.dialog.FullSettingsDialog
+import org.jb.cce.evaluation.*
 import org.jb.cce.util.FilesHelper
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
@@ -25,7 +26,12 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         if (!result) return
 
         val config = dialog.buildConfig()
-        val evaluator = ActionsGenerationEvaluator(project, false)
-        evaluator.evaluateUnderProgress(config, null, null)
+        val workspace = EvaluationWorkspace(config.outputDir)
+        val process = EvaluationProcess.build({ this.apply {
+            this.shouldGenerateActions = true
+            this.shouldInterpretActions = config.interpretActions
+            this.shouldGenerateReports = config.interpretActions
+        } }, BackgroundStepFactory(config, project, false, null, EvaluationRootInfo(true)))
+        process.start(workspace)
     }
 }

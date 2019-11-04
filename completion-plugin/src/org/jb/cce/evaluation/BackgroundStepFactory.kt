@@ -1,0 +1,53 @@
+package org.jb.cce.evaluation
+
+import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.Messages
+import com.intellij.util.io.exists
+import org.jb.cce.EvaluationWorkspace
+import org.jb.cce.HtmlReportGenerator
+import org.jb.cce.dialog.OpenBrowserDialog
+import org.jb.cce.util.Config
+import java.nio.file.Paths
+import kotlin.system.exitProcess
+
+class BackgroundStepFactory(
+        private val config: Config,
+        private val project: Project,
+        private val isHeadless: Boolean,
+        private val inputWorkspacePaths: List<String>?,
+        private val evaluationRootInfo: EvaluationRootInfo
+) : StepFactory {
+
+    override fun generateActionsStep(): EvaluationStep =
+            ActionsGenerationStep(config, evaluationRootInfo, project, isHeadless)
+
+    override fun interpretActionsStep(createWorkspace: Boolean, highlightInIde: Boolean): EvaluationStep =
+            ActionsInterpretationStep(config, createWorkspace, highlightInIde, project, isHeadless)
+
+    override fun generateReportStep(): EvaluationStep =
+            ReportGenerationStep(inputWorkspacePaths?.map { EvaluationWorkspace(it, true) }, project, isHeadless)
+
+    override fun finishEvaluation(): EvaluationStep {
+        return object : EvaluationStep {
+            override val name: String = "Evaluation completed"
+            override val description: String = "Correct termination of evaluation"
+
+            override fun start(workspace: EvaluationWorkspace): EvaluationWorkspace? {
+                val reportPath = Paths.get(workspace.reportsDirectory(), HtmlReportGenerator.pathToGlobalReport())
+                when {
+                    isHeadless -> {
+                        println("Evaluation completed.${if (reportPath.exists()) " Report: $reportPath" else " Workspace: ${workspace.path()}"}")
+                        exitProcess(0)
+                    }
+                    reportPath.exists() -> ApplicationManager.getApplication().invokeAndWait {
+                        if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath.toString())
+                    }
+                    else -> Messages.showInfoMessage(project, "Evaluation completed", "Evaluation completed")
+                }
+                return workspace
+            }
+        }
+    }
+}

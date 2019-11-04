@@ -7,8 +7,8 @@ import com.intellij.openapi.progress.Task
 import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
+import com.intellij.util.concurrency.FutureResult
 import org.jb.cce.EvaluationWorkspace
-import org.jb.cce.HtmlReportGenerator
 import org.jb.cce.Interpreter
 import org.jb.cce.Session
 import org.jb.cce.actions.CompletionType
@@ -27,38 +27,50 @@ import java.nio.file.Paths
 import java.util.*
 import kotlin.system.measureTimeMillis
 
-class ActionsInterpretationEvaluator(project: Project, isHeadless: Boolean): BaseEvaluator(project, isHeadless) {
+class ActionsInterpretationStep(private val config: Config, private val createWorkspace: Boolean, private val highlight: Boolean, project: Project, isHeadless: Boolean): BackgroundEvaluationStep(project, isHeadless) {
+    override val name: String = "Actions interpreting"
 
-    fun evaluateUnderProgress(actionsWorkspace: EvaluationWorkspace, config: Config, createWorkspace: Boolean, generateReport: Boolean, highlight: Boolean) {
-        val task = object : Task.Backgroundable(project, "Actions interpreting") {
+    override val description: String = "Interpretation of generated actions"
+
+    override fun start(workspace: EvaluationWorkspace): EvaluationWorkspace? {
+        val result = FutureResult<EvaluationWorkspace?>()
+        val task = object : Task.Backgroundable(project, name) {
             private lateinit var lastFileSessions: List<Session>
             private var sessionsWorkspace =
-                    if (createWorkspace) EvaluationWorkspace(config.outputDir)
-                    else actionsWorkspace
+                    if (createWorkspace) EvaluationWorkspace(config.outputDir) else workspace
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
                 if (createWorkspace) ConfigFactory.save(config, sessionsWorkspace.path())
                 if (config.saveLogs) sessionsWorkspace.logsStorage.watch(statsCollectorLogsDirectory(), config.language, config.trainTestSplit)
-                lastFileSessions = interpretActions(actionsWorkspace.actionsStorage, sessionsWorkspace.sessionsStorage,
+                sessionsWorkspace.apply {
+                    this.sessionsStorage.evaluationTitle = config.evaluationTitle
+                }
+                lastFileSessions = interpretActions(workspace.actionsStorage, sessionsWorkspace.sessionsStorage,
                         sessionsWorkspace.errorsStorage, config.completionType, project, getProcess(indicator))
+                if (config.saveLogs) sessionsWorkspace.logsStorage.stopWatching()
             }
 
             override fun onSuccess() {
                 if (config.saveLogs) sessionsWorkspace.logsStorage.stopWatching()
                 if (highlight) Highlighter(project).highlight(lastFileSessions)
-                if (generateReport) {
-                    val reportGenerator = HtmlReportGenerator(sessionsWorkspace.reportsDirectory())
-                    val evaluator = ReportGenerationEvaluator(reportGenerator, project, isHeadless)
-                    evaluator.generateReportUnderProgress(listOf(sessionsWorkspace.sessionsStorage), listOf(sessionsWorkspace.errorsStorage))
-                } else finisher.onSuccess()
+                result.set(sessionsWorkspace)
             }
 
-            override fun onCancel() = finisher.onCancel(this.title)
+            override fun onCancel() {
+                if (config.saveLogs) sessionsWorkspace.logsStorage.stopWatching()
+                evaluationAbortedHandler.onCancel(this.title)
+                result.set(null)
+            }
 
-            override fun onThrowable(error: Throwable) = finisher.onError(error, this.title)
+            override fun onThrowable(error: Throwable) {
+                if (config.saveLogs) sessionsWorkspace.logsStorage.stopWatching()
+                evaluationAbortedHandler.onError(error, this.title)
+                result.set(null)
+            }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
+        return result.get()
     }
 
     private fun interpretActions(actionsStorage: ActionsStorage, sessionsStorage: SessionsStorage, errorsStorage: FileErrorsStorage, completionType: CompletionType, project: Project, indicator: Progress): List<Session> {

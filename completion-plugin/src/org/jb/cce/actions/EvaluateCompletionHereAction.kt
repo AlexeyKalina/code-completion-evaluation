@@ -7,8 +7,11 @@ import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.ui.Messages
 import com.intellij.psi.PsiElement
-import org.jb.cce.evaluation.ActionsGenerationEvaluator
+import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.dialog.EvaluateHereSettingsDialog
+import org.jb.cce.evaluation.BackgroundStepFactory
+import org.jb.cce.evaluation.EvaluationProcess
+import org.jb.cce.evaluation.EvaluationRootInfo
 import org.jb.cce.util.FilesHelper
 
 class EvaluateCompletionHereAction : AnAction() {
@@ -33,8 +36,14 @@ class EvaluateCompletionHereAction : AnAction() {
         val result = settingsDialog.showAndGet()
         if (!result) return
         val config = settingsDialog.buildConfig()
+        val workspace = EvaluationWorkspace(config.outputDir)
         val parentPsiElement = if (config.strategy.completeAllTokens) getParentOnSameLine(psi, caret.offset, editor) else null
-        ActionsGenerationEvaluator(project, false).evaluateUnderProgress(config, caret.offset, parentPsiElement)
+        val process = EvaluationProcess.build({ this.apply {
+            this.shouldGenerateActions = true
+            this.shouldInterpretActions = true
+            this.highlightInIde = true
+        } }, BackgroundStepFactory(config, project, false, null, EvaluationRootInfo(false, caret.offset, parentPsiElement)))
+        process.start(workspace)
     }
 
     private fun getParentOnSameLine(element: PsiElement, offset: Int, editor: Editor): PsiElement {

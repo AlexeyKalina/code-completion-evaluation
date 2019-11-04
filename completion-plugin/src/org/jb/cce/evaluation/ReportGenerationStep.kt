@@ -5,37 +5,61 @@ import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
+import com.intellij.util.concurrency.FutureResult
+import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.HtmlReportGenerator
 import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.metrics.MetricsEvaluator
 import org.jb.cce.storages.FileErrorsStorage
 import org.jb.cce.storages.SessionsStorage
+import org.jb.cce.util.ConfigFactory
+import java.nio.file.Paths
 
-class ReportGenerationEvaluator(private val reportGenerator: HtmlReportGenerator, project: Project, isHeadless: Boolean) : BaseEvaluator(project, isHeadless) {
-    data class SessionsInfo(val path: String, val sessionsPath: String, val evaluationType: String)
-    private val sessionFiles: MutableMap<String, MutableList<SessionsInfo>> = mutableMapOf()
+class ReportGenerationStep(private val inputWorkspaces: List<EvaluationWorkspace>?, project: Project, isHeadless: Boolean) : BackgroundEvaluationStep(project, isHeadless) {
+    override val name: String = "Report generation"
 
-    fun generateReportUnderProgress(sessionStorages: List<SessionsStorage>, errorStorages: List<FileErrorsStorage>) {
-        val task = object : Task.Backgroundable(project, "Report generation") {
+    override val description: String = "Generation of HTML-report"
+
+    override fun start(workspace: EvaluationWorkspace): EvaluationWorkspace? {
+        val result = FutureResult<EvaluationWorkspace?>()
+        val task = object : Task.Backgroundable(project, name) {
             private var reportPath: String? = null
 
             override fun run(indicator: ProgressIndicator) {
-                reportPath = generateReport(sessionStorages, errorStorages)
+                val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
+                val workspaces = inputWorkspaces ?: listOf(workspace)
+                workspaces.forEach { it.setEvaluationTitle() }
+                reportPath = generateReport(reportGenerator, workspaces.map { it.sessionsStorage }, workspaces.map { it.errorsStorage })
             }
 
-            override fun onSuccess() = finisher.onSuccess(reportPath)
+            override fun onSuccess() {
+                result.set(workspace)
+            }
 
-            override fun onCancel() = finisher.onCancel(this.title)
+            override fun onCancel() {
+                evaluationAbortedHandler.onCancel(this.title)
+                result.set(null)
+            }
 
             override fun onThrowable(error: Throwable) {
                 LOG.error(error)
-                finisher.onError(error, this.title)
+                evaluationAbortedHandler.onError(error, this.title)
+                result.set(null)
             }
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
+        return result.get()
     }
 
-    fun generateReport(sessionStorages: List<SessionsStorage>, errorStorages: List<FileErrorsStorage>): String {
+    private fun EvaluationWorkspace.setEvaluationTitle() {
+        val config = ConfigFactory.load(Paths.get(path().toString(), ConfigFactory.DEFAULT_CONFIG_NAME))
+        sessionsStorage.evaluationTitle = config.evaluationTitle
+    }
+
+    data class SessionsInfo(val path: String, val sessionsPath: String, val evaluationType: String)
+    private val sessionFiles: MutableMap<String, MutableList<SessionsInfo>> = mutableMapOf()
+
+    private fun generateReport(reportGenerator: HtmlReportGenerator, sessionStorages: List<SessionsStorage>, errorStorages: List<FileErrorsStorage>): String {
         val title2storage = mutableMapOf<String, SessionsStorage>()
         val title2evaluator = mutableMapOf<String, MetricsEvaluator>()
         for (storage in sessionStorages) {
