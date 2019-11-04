@@ -17,7 +17,12 @@ import org.jb.cce.visitors.DefaultEvaluationRootVisitor
 import org.jb.cce.visitors.EvaluationRootByOffsetVisitor
 import org.jb.cce.visitors.EvaluationRootByRangeVisitor
 
-class ActionsGenerationStep(private val config: Config, private val evaluationRootInfo: EvaluationRootInfo, project: Project, isHeadless: Boolean): BackgroundEvaluationStep(project, isHeadless) {
+class ActionsGenerationStep(
+        private val config: Config.ActionsGeneration,
+        private val language: String,
+        private val evaluationRootInfo: EvaluationRootInfo,
+        project: Project,
+        isHeadless: Boolean): BackgroundEvaluationStep(project, isHeadless) {
     override val name: String = "Generating actions"
 
     override val description: String = "Generating actions by selected files"
@@ -28,9 +33,8 @@ class ActionsGenerationStep(private val config: Config, private val evaluationRo
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
-                ConfigFactory.save(config, workspace.path())
-                val filesForEvaluation = FilesHelper.getFilesOfLanguage(project, config.evaluationRoots, config.language)
-                generateActions(workspace, config.language, filesForEvaluation, config.strategy, evaluationRootInfo, getProcess(indicator))
+                val filesForEvaluation = FilesHelper.getFilesOfLanguage(project, config.evaluationRoots, language)
+                generateActions(workspace, language, filesForEvaluation, config.strategy, evaluationRootInfo, getProcess(indicator))
             }
 
             override fun onSuccess() {

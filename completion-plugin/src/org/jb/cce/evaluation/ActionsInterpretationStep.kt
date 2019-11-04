@@ -23,11 +23,18 @@ import org.jb.cce.storages.ActionsStorage
 import org.jb.cce.storages.FileErrorsStorage
 import org.jb.cce.storages.SessionsStorage
 import org.jb.cce.util.*
+import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
 import kotlin.system.measureTimeMillis
 
-class ActionsInterpretationStep(private val config: Config, private val createWorkspace: Boolean, private val highlight: Boolean, project: Project, isHeadless: Boolean): BackgroundEvaluationStep(project, isHeadless) {
+class ActionsInterpretationStep(
+        private val config: Config.ActionsInterpretation,
+        private val language: String,
+        private val createWorkspace: Boolean,
+        private val highlight: Boolean,
+        project: Project,
+        isHeadless: Boolean): BackgroundEvaluationStep(project, isHeadless) {
     override val name: String = "Actions interpreting"
 
     override val description: String = "Interpretation of generated actions"
@@ -37,15 +44,12 @@ class ActionsInterpretationStep(private val config: Config, private val createWo
         val task = object : Task.Backgroundable(project, name) {
             private lateinit var lastFileSessions: List<Session>
             private var sessionsWorkspace =
-                    if (createWorkspace) EvaluationWorkspace(config.outputDir) else workspace
+                    if (createWorkspace) EvaluationWorkspace(workspace.path().parent.toString()) else workspace
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
-                if (createWorkspace) ConfigFactory.save(config, sessionsWorkspace.path())
-                if (config.saveLogs) sessionsWorkspace.logsStorage.watch(statsCollectorLogsDirectory(), config.language, config.trainTestSplit)
-                sessionsWorkspace.apply {
-                    this.sessionsStorage.evaluationTitle = config.evaluationTitle
-                }
+                if (createWorkspace) Files.copy(workspace.pathToConfig(), sessionsWorkspace.pathToConfig())
+                if (config.saveLogs) sessionsWorkspace.logsStorage.watch(statsCollectorLogsDirectory(), language, config.trainTestSplit)
                 lastFileSessions = interpretActions(workspace.actionsStorage, sessionsWorkspace.sessionsStorage,
                         sessionsWorkspace.errorsStorage, config.completionType, project, getProcess(indicator))
                 if (config.saveLogs) sessionsWorkspace.logsStorage.stopWatching()

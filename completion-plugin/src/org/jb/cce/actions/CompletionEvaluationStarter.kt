@@ -17,6 +17,7 @@ import org.jb.cce.evaluation.EvaluationProcess
 import org.jb.cce.evaluation.EvaluationRootInfo
 import org.jb.cce.exceptions.ExceptionsUtil.stackTraceToString
 import org.jb.cce.util.ConfigFactory
+import org.jb.cce.util.pathToConfig
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -27,7 +28,8 @@ class CompletionEvaluationStarter : ApplicationStarter {
     override fun isHeadless(): Boolean = true
 
     override fun main(args: Array<String>) =
-            MainEvaluationCommand().subcommands(FullCommand(), CustomCommand(), MultipleEvaluations()).main(args.toList().subList(1, args.size))
+            MainEvaluationCommand().subcommands(FullCommand(), CustomCommand(), MultipleEvaluations())
+                    .main(args.toList().subList(1, args.size))
 
     abstract class EvaluationCommand(name: String, help: String): CliktCommand(name = name, help = help) {
         protected fun loadConfig(configPath: Path) = try {
@@ -74,12 +76,13 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
         override fun run() {
             val config = loadConfig(Paths.get(configPath))
-            val workspace = EvaluationWorkspace(config.outputDir)
+            val workspace = EvaluationWorkspace(config.actionsGeneration.outputDir)
+            ConfigFactory.save(config, workspace.path())
             val project = loadProject(config.projectPath)
             val process = EvaluationProcess.build({ this.apply {
                 this.shouldGenerateActions = true
-                this.shouldInterpretActions = config.interpretActions
-                this.shouldGenerateReports = config.interpretActions
+                this.shouldInterpretActions = config.actionsGeneration.interpretActions
+                this.shouldGenerateReports = config.actionsGeneration.interpretActions
             } }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
             process.start(workspace)
         }
@@ -91,8 +94,8 @@ class CompletionEvaluationStarter : ApplicationStarter {
         private val generateReport by option(names = *arrayOf("--generate-report", "-r"), help = "Generate report").flag()
 
         override fun run() {
-            val config = loadConfig(Paths.get(workspacePath, ConfigFactory.DEFAULT_CONFIG_NAME))
             val workspace = EvaluationWorkspace(workspacePath, true)
+            val config = loadConfig(workspace.pathToConfig())
             val project = loadProject(config.projectPath)
             val process = EvaluationProcess.build({ this.apply {
                 this.shouldGenerateActions = false
@@ -107,9 +110,10 @@ class CompletionEvaluationStarter : ApplicationStarter {
         private val workspaces by argument(name = "workspaces", help = "List of workspaces").multiple()
 
         override fun run() {
-            val config = loadConfig(Paths.get(workspaces.first(), ConfigFactory.DEFAULT_CONFIG_NAME))
+            val workspacePath = Paths.get(workspaces.first())
+            val config = loadConfig(workspacePath.resolve(ConfigFactory.DEFAULT_CONFIG_NAME))
             val project = loadProject(config.projectPath)
-            val workspace = EvaluationWorkspace(config.outputDir)
+            val workspace = EvaluationWorkspace(workspacePath.parent.toString())
             val process = EvaluationProcess.build({ this.apply {
                 this.shouldGenerateReports = true
             } }, BackgroundStepFactory(config, project, true, workspaces, EvaluationRootInfo(true)))

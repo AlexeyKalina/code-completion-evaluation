@@ -11,6 +11,7 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.GlobalSearchScope
 import org.apache.commons.io.input.UnixLineEndingInputStream
+import org.jb.cce.EvaluationWorkspace
 import java.io.FileNotFoundException
 import java.lang.IllegalArgumentException
 import java.nio.file.Paths
@@ -67,3 +68,5 @@ object FilesHelper {
 fun VirtualFile.text(): String {
     return UnixLineEndingInputStream(this.inputStream, false).bufferedReader().use { it.readText() }
 }
+
+fun EvaluationWorkspace.pathToConfig() = path().resolve(ConfigFactory.DEFAULT_CONFIG_NAME)

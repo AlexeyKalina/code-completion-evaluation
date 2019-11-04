@@ -12,7 +12,7 @@ import org.jb.cce.util.Config
 
 class FilterUIConfigurableFactory(private val previousState: Config, private val layout: LayoutBuilder) : ConfigurableBuilder<Row> {
     override fun build(filterId: String): UIConfigurable {
-        val previousFilterState = previousState.strategy.filters[filterId]
+        val previousFilterState = previousState.actionsGeneration.strategy.filters[filterId]
                 ?: EvaluationFilterManager.getConfigurationById(filterId)?.defaultFilter()
                 ?: throw IllegalArgumentException("Unknown filter id: $filterId")
         return when (filterId) {

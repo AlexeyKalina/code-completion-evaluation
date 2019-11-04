@@ -14,7 +14,7 @@ class ContextConfigurable(private val dispatcher: EventDispatcher<SettingsListen
     private var context: CompletionContext = CompletionContext.ALL
 
     override fun createPanel(previousState: Config): JPanel {
-        context = previousState.strategy.context
+        context = previousState.actionsGeneration.strategy.context
         return panel(title = "Context for completion:", constraints = *arrayOf(LCFlags.noGrid)) {
             buttonGroup {
                 row {

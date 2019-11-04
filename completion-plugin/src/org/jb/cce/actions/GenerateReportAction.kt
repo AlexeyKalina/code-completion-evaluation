@@ -15,8 +15,9 @@ class GenerateReportAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val dirs = getFiles(e)
-        val config = ConfigFactory.load(Paths.get(dirs.first().path, ConfigFactory.DEFAULT_CONFIG_NAME))
-        val workspace = EvaluationWorkspace(config.outputDir)
+        val workspacePath = Paths.get(dirs.first().path)
+        val config = ConfigFactory.load(workspacePath.resolve(ConfigFactory.DEFAULT_CONFIG_NAME))
+        val workspace = EvaluationWorkspace(workspacePath.parent.toString())
         val process = EvaluationProcess.build({ this.apply {
             this.shouldGenerateReports = true
         } }, BackgroundStepFactory(config, project, false, dirs.map { it.path }, EvaluationRootInfo(true)))

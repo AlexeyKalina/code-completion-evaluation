@@ -8,6 +8,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.dialog.FullSettingsDialog
 import org.jb.cce.evaluation.*
+import org.jb.cce.util.ConfigFactory
 import org.jb.cce.util.FilesHelper
 
 class EvaluateCompletionForSelectedFilesAction : AnAction() {
@@ -26,11 +27,12 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         if (!result) return
 
         val config = dialog.buildConfig()
-        val workspace = EvaluationWorkspace(config.outputDir)
+        val workspace = EvaluationWorkspace(config.actionsGeneration.outputDir)
+        ConfigFactory.save(config, workspace.path())
         val process = EvaluationProcess.build({ this.apply {
             this.shouldGenerateActions = true
-            this.shouldInterpretActions = config.interpretActions
-            this.shouldGenerateReports = config.interpretActions
+            this.shouldInterpretActions = config.actionsGeneration.interpretActions
+            this.shouldGenerateReports = config.actionsGeneration.interpretActions
         } }, BackgroundStepFactory(config, project, false, null, EvaluationRootInfo(true)))
         process.start(workspace)
     }

@@ -54,16 +54,31 @@ object ConfigFactory {
         val map = gson.fromJson<HashMap<String, Any>>(json, HashMap<String, Any>().javaClass)
         val languageName = map.getAs<String>("language")
         val builder = Config.Builder(map.getAs("projectPath"), languageName)
-        val strategyJson = map.getAs<Map<String, Any>>("strategy")
-        CompletionStrategyDeserializer().deserialize(strategyJson, languageName, builder)
-        builder.evaluationRoots = map.getAs("evaluationRoots")
-        builder.completionType = CompletionType.valueOf(map.getAs("completionType"))
-        builder.evaluationTitle = map.getAs("evaluationTitle")
+        deserializeActionsGeneration(map.getIfExists("actionsGeneration"), languageName, builder)
+        deserializeActionsInterpretation(map.getIfExists("actionsInterpretation"), builder)
+        deserializeReportGeneration(map.getIfExists("reportGeneration"), builder)
+        return builder.build()
+    }
+
+    private fun deserializeActionsGeneration(map: Map<String, Any>?, language: String, builder: Config.Builder) {
+        if (map == null) return
         builder.outputDir = map.getAs("outputDir")
+        builder.evaluationRoots = map.getAs("evaluationRoots")
+        val strategyJson = map.getAs<Map<String, Any>>("strategy")
+        CompletionStrategyDeserializer().deserialize(strategyJson, language, builder)
         builder.interpretActions = map.getAs("interpretActions")
+    }
+
+    private fun deserializeActionsInterpretation(map: Map<String, Any>?, builder: Config.Builder) {
+        if (map == null) return
+        builder.completionType = CompletionType.valueOf(map.getAs("completionType"))
         builder.saveLogs = map.getAs("saveLogs")
         builder.trainTestSplit = map.getAs<Double>("trainTestSplit").toInt()
-        return builder.build()
+    }
+
+    private fun deserializeReportGeneration(map: Map<String, Any>?, builder: Config.Builder) {
+        if (map == null) return
+        builder.evaluationTitle = map.getAs("evaluationTitle")
     }
 
     private fun serialize(config: Config): String = gson.toJson(config)
@@ -100,6 +115,13 @@ object ConfigFactory {
 
     private inline fun <reified T> Map<String, *>.getAs(key: String): T {
         check(key in this.keys) { "$key not found. Existing keys: ${keys.toList()}" }
+        val value = this.getValue(key)
+        check(value is T) { "Unexpected type in config" }
+        return value
+    }
+
+    private inline fun <reified T> Map<String, *>.getIfExists(key: String): T? {
+        if (key !in this.keys) return null
         val value = this.getValue(key)
         check(value is T) { "Unexpected type in config" }
         return value

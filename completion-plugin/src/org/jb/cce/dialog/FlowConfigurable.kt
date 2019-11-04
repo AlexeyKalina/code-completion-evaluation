@@ -17,11 +17,11 @@ class FlowConfigurable : EvaluationConfigurable {
     private lateinit var trainTestSpinner: JSpinner
 
     override fun createPanel(previousState: Config): JPanel {
-        interpretActions = previousState.interpretActions
-        saveLogs = previousState.saveLogs
-        workspaceDirTextField = JTextField(previousState.outputDir)
+        interpretActions = previousState.actionsGeneration.interpretActions
+        saveLogs = previousState.actionsInterpretation.saveLogs
+        workspaceDirTextField = JTextField(previousState.actionsGeneration.outputDir)
         val statsCollectorEnabled = PluginManager.getPlugin(PluginId.getId(statsCollectorId))?.isEnabled ?: false
-        trainTestSpinner = JSpinner(SpinnerNumberModel(previousState.trainTestSplit, 1, 99, 1)).apply {
+        trainTestSpinner = JSpinner(SpinnerNumberModel(previousState.actionsInterpretation.trainTestSplit, 1, 99, 1)).apply {
             isEnabled = saveLogs && statsCollectorEnabled
         }
 

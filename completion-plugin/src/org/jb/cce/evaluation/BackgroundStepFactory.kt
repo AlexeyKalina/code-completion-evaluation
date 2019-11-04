@@ -21,10 +21,10 @@ class BackgroundStepFactory(
 ) : StepFactory {
 
     override fun generateActionsStep(): EvaluationStep =
-            ActionsGenerationStep(config, evaluationRootInfo, project, isHeadless)
+            ActionsGenerationStep(config.actionsGeneration, config.language, evaluationRootInfo, project, isHeadless)
 
     override fun interpretActionsStep(createWorkspace: Boolean, highlightInIde: Boolean): EvaluationStep =
-            ActionsInterpretationStep(config, createWorkspace, highlightInIde, project, isHeadless)
+            ActionsInterpretationStep(config.actionsInterpretation, config.language, createWorkspace, highlightInIde, project, isHeadless)
 
     override fun generateReportStep(): EvaluationStep =
             ReportGenerationStep(inputWorkspacePaths?.map { EvaluationWorkspace(it, true) }, project, isHeadless)
