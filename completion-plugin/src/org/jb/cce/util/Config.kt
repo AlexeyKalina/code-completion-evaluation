@@ -10,6 +10,8 @@ import java.nio.file.Paths
 data class Config internal constructor(
         val projectPath: String,
         val language: String,
+        val outputDir: String,
+        val interpretActions: Boolean,
         val actions: ActionsGeneration,
         val interpret: ActionsInterpretation,
         val reports: ReportGeneration) {
@@ -23,9 +25,7 @@ data class Config internal constructor(
 
     data class ActionsGeneration internal constructor(
             val evaluationRoots: List<String>,
-            val strategy: CompletionStrategy,
-            val outputDir: String,
-            val interpretActions: Boolean)
+            val strategy: CompletionStrategy)
 
     data class ActionsInterpretation internal constructor(
             val completionType: CompletionType,
@@ -50,11 +50,11 @@ data class Config internal constructor(
         internal fun build(): Config = Config(
                 projectPath,
                 language,
+                outputDir,
+                interpretActions,
                 ActionsGeneration(
                         evaluationRoots,
-                        CompletionStrategy(prefixStrategy, contextStrategy, allTokens, filters),
-                        outputDir,
-                        interpretActions
+                        CompletionStrategy(prefixStrategy, contextStrategy, allTokens, filters)
                 ),
                 ActionsInterpretation(
                         completionType,

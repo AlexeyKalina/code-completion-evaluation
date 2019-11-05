@@ -76,13 +76,13 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
         override fun run() {
             val config = loadConfig(Paths.get(configPath))
-            val workspace = EvaluationWorkspace(config.actions.outputDir)
+            val workspace = EvaluationWorkspace(config.outputDir)
             ConfigFactory.save(config, workspace.path())
             val project = loadProject(config.projectPath)
             val process = EvaluationProcess.build({
                 shouldGenerateActions = true
-                shouldInterpretActions = config.actions.interpretActions
-                shouldGenerateReports = config.actions.interpretActions
+                shouldInterpretActions = config.interpretActions
+                shouldGenerateReports = config.interpretActions
             }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
             process.startAsync(workspace)
         }

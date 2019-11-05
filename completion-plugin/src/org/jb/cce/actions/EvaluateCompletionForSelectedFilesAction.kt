@@ -27,12 +27,12 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         if (!result) return
 
         val config = dialog.buildConfig()
-        val workspace = EvaluationWorkspace(config.actions.outputDir)
+        val workspace = EvaluationWorkspace(config.outputDir)
         ConfigFactory.save(config, workspace.path())
         val process = EvaluationProcess.build({
             shouldGenerateActions = true
-            shouldInterpretActions = config.actions.interpretActions
-            shouldGenerateReports = config.actions.interpretActions
+            shouldInterpretActions = config.interpretActions
+            shouldGenerateReports = config.interpretActions
         }, BackgroundStepFactory(config, project, false, null, EvaluationRootInfo(true)))
         process.startAsync(workspace)
     }
