@@ -13,7 +13,11 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
         }
     }
 
-    fun start(workspace: EvaluationWorkspace) = ApplicationManager.getApplication().executeOnPooledThread {
+    fun startAsync(workspace: EvaluationWorkspace) = ApplicationManager.getApplication().executeOnPooledThread {
+        start(workspace)
+    }
+
+    private fun start(workspace: EvaluationWorkspace) {
         val stats = mutableMapOf<String, Long>()
         var currentWorkspace = workspace
         var hasError = false
@@ -51,7 +55,7 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
                 steps.add(factory.generateReportStep())
             }
 
-            steps.add(factory.finishEvaluation())
+            steps.add(factory.finishEvaluationStep())
 
             return EvaluationProcess(steps)
         }

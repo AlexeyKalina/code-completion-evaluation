@@ -13,7 +13,7 @@ class CompletionTypeConfigurable : EvaluationConfigurable {
     private var completionType: CompletionType = CompletionType.BASIC
 
     override fun createPanel(previousState: Config): JPanel {
-        completionType = previousState.actionsInterpretation.completionType
+        completionType = previousState.interpret.completionType
         return panel(title = "Completion type", constraints = *arrayOf(LCFlags.noGrid)) {
             buttonGroup {
                 row {

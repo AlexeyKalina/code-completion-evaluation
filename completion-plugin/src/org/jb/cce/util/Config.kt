@@ -10,9 +10,9 @@ import java.nio.file.Paths
 data class Config internal constructor(
         val projectPath: String,
         val language: String,
-        val actionsGeneration: ActionsGeneration,
-        val actionsInterpretation: ActionsInterpretation,
-        val reportGeneration: ReportGeneration) {
+        val actions: ActionsGeneration,
+        val interpret: ActionsInterpretation,
+        val reports: ReportGeneration) {
     companion object {
         fun build(projectPath: String, language: String, init: Builder.() -> Unit): Config {
             val builder = Builder(projectPath, language)

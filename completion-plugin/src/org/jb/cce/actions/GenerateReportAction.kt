@@ -18,10 +18,10 @@ class GenerateReportAction : AnAction() {
         val workspacePath = Paths.get(dirs.first().path)
         val config = ConfigFactory.load(workspacePath.resolve(ConfigFactory.DEFAULT_CONFIG_NAME))
         val workspace = EvaluationWorkspace(workspacePath.parent.toString())
-        val process = EvaluationProcess.build({ this.apply {
-            this.shouldGenerateReports = true
-        } }, BackgroundStepFactory(config, project, false, dirs.map { it.path }, EvaluationRootInfo(true)))
-        process.start(workspace)
+        val process = EvaluationProcess.build({
+            shouldGenerateReports = true
+        }, BackgroundStepFactory(config, project, false, dirs.map { it.path }, EvaluationRootInfo(true)))
+        process.startAsync(workspace)
     }
 
     override fun update(e: AnActionEvent) {

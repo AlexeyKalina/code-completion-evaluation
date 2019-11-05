@@ -56,7 +56,7 @@ class ReportGenerationStep(
 
     private fun EvaluationWorkspace.setEvaluationTitle() {
         val config = ConfigFactory.load(pathToConfig())
-        sessionsStorage.evaluationTitle = config.reportGeneration.evaluationTitle
+        sessionsStorage.evaluationTitle = config.reports.evaluationTitle
     }
 
     data class SessionsInfo(val path: String, val sessionsPath: String, val evaluationType: String)

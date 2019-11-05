@@ -21,15 +21,15 @@ class BackgroundStepFactory(
 ) : StepFactory {
 
     override fun generateActionsStep(): EvaluationStep =
-            ActionsGenerationStep(config.actionsGeneration, config.language, evaluationRootInfo, project, isHeadless)
+            ActionsGenerationStep(config.actions, config.language, evaluationRootInfo, project, isHeadless)
 
     override fun interpretActionsStep(createWorkspace: Boolean, highlightInIde: Boolean): EvaluationStep =
-            ActionsInterpretationStep(config.actionsInterpretation, config.language, createWorkspace, highlightInIde, project, isHeadless)
+            ActionsInterpretationStep(config.interpret, config.language, createWorkspace, highlightInIde, project, isHeadless)
 
     override fun generateReportStep(): EvaluationStep =
             ReportGenerationStep(inputWorkspacePaths?.map { EvaluationWorkspace(it, true) }, project, isHeadless)
 
-    override fun finishEvaluation(): EvaluationStep {
+    override fun finishEvaluationStep(): EvaluationStep {
         return object : EvaluationStep {
             override val name: String = "Evaluation completed"
             override val description: String = "Correct termination of evaluation"

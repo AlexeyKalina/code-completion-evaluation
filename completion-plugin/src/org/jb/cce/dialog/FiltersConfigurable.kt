@@ -19,7 +19,7 @@ class FiltersConfigurable(private val dispatcher: EventDispatcher<SettingsListen
     private val configurableMap: MutableMap<String, UIConfigurable> = mutableMapOf()
 
     override fun createPanel(previousState: Config): JPanel {
-        completeAllTokens = previousState.actionsGeneration.strategy.completeAllTokens
+        completeAllTokens = previousState.actions.strategy.completeAllTokens
         val panel = panel(title = "Filters") {
             row {
                 cell {

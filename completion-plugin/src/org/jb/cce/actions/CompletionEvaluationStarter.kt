@@ -76,15 +76,15 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
         override fun run() {
             val config = loadConfig(Paths.get(configPath))
-            val workspace = EvaluationWorkspace(config.actionsGeneration.outputDir)
+            val workspace = EvaluationWorkspace(config.actions.outputDir)
             ConfigFactory.save(config, workspace.path())
             val project = loadProject(config.projectPath)
-            val process = EvaluationProcess.build({ this.apply {
-                this.shouldGenerateActions = true
-                this.shouldInterpretActions = config.actionsGeneration.interpretActions
-                this.shouldGenerateReports = config.actionsGeneration.interpretActions
-            } }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
-            process.start(workspace)
+            val process = EvaluationProcess.build({
+                shouldGenerateActions = true
+                shouldInterpretActions = config.actions.interpretActions
+                shouldGenerateReports = config.actions.interpretActions
+            }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
+            process.startAsync(workspace)
         }
     }
 
@@ -97,12 +97,12 @@ class CompletionEvaluationStarter : ApplicationStarter {
             val workspace = EvaluationWorkspace(workspacePath, true)
             val config = loadConfig(workspace.pathToConfig())
             val project = loadProject(config.projectPath)
-            val process = EvaluationProcess.build({ this.apply {
-                this.shouldGenerateActions = false
-                this.shouldInterpretActions = interpretActions
-                this.shouldGenerateReports = generateReport
-            } }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
-            process.start(workspace)
+            val process = EvaluationProcess.build({
+                shouldGenerateActions = false
+                shouldInterpretActions = interpretActions
+                shouldGenerateReports = generateReport
+            }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
+            process.startAsync(workspace)
         }
     }
 
@@ -114,10 +114,10 @@ class CompletionEvaluationStarter : ApplicationStarter {
             val config = loadConfig(workspacePath.resolve(ConfigFactory.DEFAULT_CONFIG_NAME))
             val project = loadProject(config.projectPath)
             val workspace = EvaluationWorkspace(workspacePath.parent.toString())
-            val process = EvaluationProcess.build({ this.apply {
-                this.shouldGenerateReports = true
-            } }, BackgroundStepFactory(config, project, true, workspaces, EvaluationRootInfo(true)))
-            process.start(workspace)
+            val process = EvaluationProcess.build({
+                shouldGenerateReports = true
+            }, BackgroundStepFactory(config, project, true, workspaces, EvaluationRootInfo(true)))
+            process.startAsync(workspace)
         }
     }
 }

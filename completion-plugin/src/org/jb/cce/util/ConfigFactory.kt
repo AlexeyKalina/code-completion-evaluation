@@ -54,9 +54,9 @@ object ConfigFactory {
         val map = gson.fromJson<HashMap<String, Any>>(json, HashMap<String, Any>().javaClass)
         val languageName = map.getAs<String>("language")
         val builder = Config.Builder(map.getAs("projectPath"), languageName)
-        deserializeActionsGeneration(map.getIfExists("actionsGeneration"), languageName, builder)
-        deserializeActionsInterpretation(map.getIfExists("actionsInterpretation"), builder)
-        deserializeReportGeneration(map.getIfExists("reportGeneration"), builder)
+        deserializeActionsGeneration(map.getIfExists("actions"), languageName, builder)
+        deserializeActionsInterpretation(map.getIfExists("interpret"), builder)
+        deserializeReportGeneration(map.getIfExists("reports"), builder)
         return builder.build()
     }
 

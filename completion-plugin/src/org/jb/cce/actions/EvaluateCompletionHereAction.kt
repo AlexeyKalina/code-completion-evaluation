@@ -37,15 +37,15 @@ class EvaluateCompletionHereAction : AnAction() {
         val result = settingsDialog.showAndGet()
         if (!result) return
         val config = settingsDialog.buildConfig()
-        val workspace = EvaluationWorkspace(config.actionsGeneration.outputDir)
+        val workspace = EvaluationWorkspace(config.actions.outputDir)
         ConfigFactory.save(config, workspace.path())
-        val parentPsiElement = if (config.actionsGeneration.strategy.completeAllTokens) getParentOnSameLine(psi, caret.offset, editor) else null
-        val process = EvaluationProcess.build({ this.apply {
-            this.shouldGenerateActions = true
-            this.shouldInterpretActions = true
-            this.highlightInIde = true
-        } }, BackgroundStepFactory(config, project, false, null, EvaluationRootInfo(false, caret.offset, parentPsiElement)))
-        process.start(workspace)
+        val parentPsiElement = if (config.actions.strategy.completeAllTokens) getParentOnSameLine(psi, caret.offset, editor) else null
+        val process = EvaluationProcess.build({
+            shouldGenerateActions = true
+            shouldInterpretActions = true
+            highlightInIde = true
+        }, BackgroundStepFactory(config, project, false, null, EvaluationRootInfo(false, caret.offset, parentPsiElement)))
+        process.startAsync(workspace)
     }
 
     private fun getParentOnSameLine(element: PsiElement, offset: Int, editor: Editor): PsiElement {

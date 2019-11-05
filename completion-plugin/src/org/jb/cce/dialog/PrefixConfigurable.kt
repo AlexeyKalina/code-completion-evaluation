@@ -14,7 +14,7 @@ class PrefixConfigurable : EvaluationConfigurable {
     private val emulateTypingCheckbox = JCheckBox("", prefix.emulateTyping)
 
     override fun createPanel(previousState: Config): JPanel {
-        prefix = previousState.actionsGeneration.strategy.prefix
+        prefix = previousState.actions.strategy.prefix
         val panel = panel(title = "Completion prefix", constraints = *arrayOf(LCFlags.noGrid)) { }
         val elements = listOf(
                 JRadioButton("No prefix").configureNoPrefix(),
