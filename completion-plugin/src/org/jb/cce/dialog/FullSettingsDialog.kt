@@ -75,7 +75,7 @@ class FullSettingsDialog(
             evaluationRoots = files.map { FilesHelper.getRelativeToProjectPath(project, it.path) }.toMutableList()
         }
 
-        properties.setValue(EvaluateHereSettingsDialog.configStateKey, ConfigFactory.serialize(config))
+        properties.setValue(configStateKey, ConfigFactory.serialize(config))
 
         return config
     }
