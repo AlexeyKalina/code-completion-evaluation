@@ -51,7 +51,9 @@ class BackgroundStepFactory(
                     reportPath.exists() -> ApplicationManager.getApplication().invokeAndWait {
                         if (OpenBrowserDialog().showAndGet()) BrowserUtil.browse(reportPath.toString())
                     }
-                    else -> Messages.showInfoMessage(project, "Evaluation completed", "Evaluation completed")
+                    else -> ApplicationManager.getApplication().invokeAndWait{
+                        Messages.showInfoMessage(project, "Evaluation completed", "Evaluation completed")
+                    }
                 }
                 return workspace
             }
