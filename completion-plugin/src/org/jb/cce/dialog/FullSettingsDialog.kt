@@ -1,12 +1,13 @@
 package org.jb.cce.dialog
 
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.EventDispatcher
-import org.jb.cce.util.Config
-import org.jb.cce.util.ConfigFactory
+import org.jb.cce.Config
+import org.jb.cce.ConfigFactory
 import org.jb.cce.util.FilesHelper
 import java.awt.event.ActionEvent
 import javax.swing.*
@@ -19,6 +20,7 @@ class FullSettingsDialog(
     companion object {
         const val configStateKey = "org.jb.cce.config.full"
     }
+    private val properties = PropertiesComponent.getInstance(project)
     private val dispatcher = EventDispatcher.create(SettingsListener::class.java)
     private val languageConfigurable = LanguageConfigurable(dispatcher, language2files)
 
@@ -39,8 +41,14 @@ class FullSettingsDialog(
     override fun createCenterPanel(): JComponent? {
         return JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            val defaultState = ConfigFactory.getByKey(project, configStateKey)
-            configurators.forEach { add(it.createPanel(defaultState)) }
+            val value = properties.getValue(configStateKey)
+            val previousState = try {
+                if (value == null) ConfigFactory.defaultConfig(project.basePath!!)
+                else ConfigFactory.deserialize(value)
+            } catch (e: Throwable) {
+                ConfigFactory.defaultConfig(project.basePath!!)
+            }
+            configurators.forEach { add(it.createPanel(previousState)) }
         }
     }
 
@@ -67,7 +75,7 @@ class FullSettingsDialog(
             evaluationRoots = files.map { FilesHelper.getRelativeToProjectPath(project, it.path) }.toMutableList()
         }
 
-        ConfigFactory.storeByKey(project, configStateKey, config)
+        properties.setValue(EvaluateHereSettingsDialog.configStateKey, ConfigFactory.serialize(config))
 
         return config
     }

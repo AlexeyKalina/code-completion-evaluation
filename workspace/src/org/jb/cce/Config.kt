@@ -1,4 +1,4 @@
-package org.jb.cce.util
+package org.jb.cce
 
 import org.jb.cce.actions.CompletionContext
 import org.jb.cce.actions.CompletionPrefix

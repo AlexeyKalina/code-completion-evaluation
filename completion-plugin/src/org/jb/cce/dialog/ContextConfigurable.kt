@@ -5,8 +5,8 @@ import com.intellij.ui.layout.CellBuilder
 import com.intellij.ui.layout.LCFlags
 import com.intellij.ui.layout.panel
 import com.intellij.util.EventDispatcher
+import org.jb.cce.Config
 import org.jb.cce.actions.CompletionContext
-import org.jb.cce.util.Config
 import java.awt.event.ItemEvent
 import javax.swing.JPanel
 

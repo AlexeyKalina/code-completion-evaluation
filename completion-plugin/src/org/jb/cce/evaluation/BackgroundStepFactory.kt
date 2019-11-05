@@ -9,12 +9,10 @@ import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.HtmlReportGenerator
 import org.jb.cce.dialog.OpenBrowserDialog
 import org.jb.cce.evaluation.step.*
-import org.jb.cce.util.Config
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 
 class BackgroundStepFactory(
-        private val config: Config,
         private val project: Project,
         private val isHeadless: Boolean,
         private val inputWorkspacePaths: List<String>?,
@@ -22,16 +20,16 @@ class BackgroundStepFactory(
 ) : StepFactory {
 
     override fun generateActionsStep(): EvaluationStep =
-            ActionsGenerationStep(config.actions, config.language, evaluationRootInfo, project, isHeadless)
+            ActionsGenerationStep(evaluationRootInfo, project, isHeadless)
 
     override fun interpretActionsStep(): EvaluationStep =
-            ActionsInterpretationStep(config.interpret, config.language, project, isHeadless)
+            ActionsInterpretationStep(project, isHeadless)
 
     override fun generateReportStep(): EvaluationStep =
             ReportGenerationStep(inputWorkspacePaths?.map { EvaluationWorkspace(it, true) }, project, isHeadless)
 
     override fun interpretActionsOnNewWorkspaceStep(): EvaluationStep =
-            ActionsInterpretationOnNewWorkspaceStep(config.interpret, config.language, project, isHeadless)
+            ActionsInterpretationOnNewWorkspaceStep(project, isHeadless)
 
     override fun highlightTokensInIdeStep(): EvaluationStep =
             HighlightingTokensInIdeStep(project, isHeadless)

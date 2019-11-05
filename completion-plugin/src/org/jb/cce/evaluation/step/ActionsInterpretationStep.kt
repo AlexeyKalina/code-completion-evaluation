@@ -8,6 +8,7 @@ import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.util.concurrency.FutureResult
+import org.jb.cce.Config
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.Interpreter
 import org.jb.cce.Session
@@ -27,11 +28,7 @@ import java.nio.file.Paths
 import java.util.*
 import kotlin.system.measureTimeMillis
 
-class ActionsInterpretationStep(
-        private val config: Config.ActionsInterpretation,
-        private val language: String,
-        project: Project,
-        isHeadless: Boolean): BackgroundEvaluationStep(project, isHeadless) {
+class ActionsInterpretationStep(project: Project, isHeadless: Boolean): BackgroundEvaluationStep(project, isHeadless) {
     override val name: String = "Actions interpreting"
 
     override val description: String = "Interpretation of generated actions"
@@ -42,7 +39,7 @@ class ActionsInterpretationStep(
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
-                ActionsInterpretationHandler(config, language, project).invoke(workspace, workspace, getProgress(indicator))
+                ActionsInterpretationHandler(project).invoke(workspace, workspace, getProgress(indicator))
             }
 
             override fun onSuccess() {

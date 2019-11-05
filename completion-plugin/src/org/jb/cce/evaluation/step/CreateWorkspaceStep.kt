@@ -8,8 +8,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.FutureResult
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.evaluation.TwoWorkspaceHandler
-import org.jb.cce.util.pathToConfig
-import java.nio.file.Files
 
 abstract class CreateWorkspaceStep(
         private val handler: TwoWorkspaceHandler,
@@ -22,8 +20,7 @@ abstract class CreateWorkspaceStep(
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
-                val newWorkspace = EvaluationWorkspace(workspace.path().parent.toString())
-                Files.copy(workspace.pathToConfig(), newWorkspace.pathToConfig())
+                val newWorkspace = EvaluationWorkspace(workspace.path().parent.toString(), config = workspace.config)
                 handler.invoke(workspace, newWorkspace, getProgress(indicator))
                 result.set(newWorkspace)
             }

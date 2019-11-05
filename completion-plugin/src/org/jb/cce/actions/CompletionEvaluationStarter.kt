@@ -11,13 +11,12 @@ import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import org.jb.cce.ConfigFactory
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.evaluation.BackgroundStepFactory
 import org.jb.cce.evaluation.EvaluationProcess
 import org.jb.cce.evaluation.EvaluationRootInfo
 import org.jb.cce.exceptions.ExceptionsUtil.stackTraceToString
-import org.jb.cce.util.ConfigFactory
-import org.jb.cce.util.pathToConfig
 import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -76,14 +75,13 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
         override fun run() {
             val config = loadConfig(Paths.get(configPath))
-            val workspace = EvaluationWorkspace(config.outputDir)
-            ConfigFactory.save(config, workspace.path())
+            val workspace = EvaluationWorkspace(config.outputDir, false, config)
             val project = loadProject(config.projectPath)
             val process = EvaluationProcess.build({
                 shouldGenerateActions = true
                 shouldInterpretActions = config.interpretActions
                 shouldGenerateReports = config.interpretActions
-            }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
+            }, BackgroundStepFactory(project, true, null, EvaluationRootInfo(true)))
             process.startAsync(workspace)
         }
     }
@@ -95,13 +93,12 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
         override fun run() {
             val workspace = EvaluationWorkspace(workspacePath, true)
-            val config = loadConfig(workspace.pathToConfig())
-            val project = loadProject(config.projectPath)
+            val project = loadProject(workspace.config.projectPath)
             val process = EvaluationProcess.build({
                 shouldGenerateActions = false
                 shouldInterpretActions = interpretActions
                 shouldGenerateReports = generateReport
-            }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
+            }, BackgroundStepFactory(project, true, null, EvaluationRootInfo(true)))
             process.startAsync(workspace)
         }
     }
@@ -111,13 +108,13 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
         override fun run() {
             val workspacePath = Paths.get(workspaces.first())
-            val config = loadConfig(workspacePath.resolve(ConfigFactory.DEFAULT_CONFIG_NAME))
-            val project = loadProject(config.projectPath)
-            val workspace = EvaluationWorkspace(workspacePath.parent.toString())
+            val existingWorkspace = EvaluationWorkspace(workspacePath.toString(), true)
+            val project = loadProject(existingWorkspace.config.projectPath)
+            val outputWorkspace = EvaluationWorkspace(workspacePath.parent.toString(), config = existingWorkspace.config)
             val process = EvaluationProcess.build({
                 shouldGenerateReports = true
-            }, BackgroundStepFactory(config, project, true, workspaces, EvaluationRootInfo(true)))
-            process.startAsync(workspace)
+            }, BackgroundStepFactory(project, true, workspaces, EvaluationRootInfo(true)))
+            process.startAsync(outputWorkspace)
         }
     }
 }

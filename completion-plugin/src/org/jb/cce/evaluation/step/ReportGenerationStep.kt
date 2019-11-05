@@ -12,8 +12,6 @@ import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.metrics.MetricsEvaluator
 import org.jb.cce.storages.FileErrorsStorage
 import org.jb.cce.storages.SessionsStorage
-import org.jb.cce.util.ConfigFactory
-import org.jb.cce.util.pathToConfig
 
 class ReportGenerationStep(
         private val inputWorkspaces: List<EvaluationWorkspace>?,
@@ -31,7 +29,6 @@ class ReportGenerationStep(
             override fun run(indicator: ProgressIndicator) {
                 val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
                 val workspaces = inputWorkspaces ?: listOf(workspace)
-                workspaces.forEach { it.setEvaluationTitle() }
                 reportPath = generateReport(reportGenerator, workspaces.map { it.sessionsStorage }, workspaces.map { it.errorsStorage })
             }
 
@@ -52,11 +49,6 @@ class ReportGenerationStep(
         }
         ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
         return result.get()
-    }
-
-    private fun EvaluationWorkspace.setEvaluationTitle() {
-        val config = ConfigFactory.load(pathToConfig())
-        sessionsStorage.evaluationTitle = config.reports.evaluationTitle
     }
 
     data class SessionsInfo(val path: String, val sessionsPath: String, val evaluationType: String)

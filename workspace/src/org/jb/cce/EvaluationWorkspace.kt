@@ -12,7 +12,7 @@ import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.*
 
-class EvaluationWorkspace(outputDir: String, existing: Boolean = false) {
+class EvaluationWorkspace(outputDir: String, existing: Boolean = false, config: Config? = null) {
     companion object {
         private const val statsFile = "stats.json"
         private val gson = Gson()
@@ -27,12 +27,22 @@ class EvaluationWorkspace(outputDir: String, existing: Boolean = false) {
     private val actionsDir = subdir("actions")
     private val errorsDir = subdir("errors")
     private val reportsDir = subdir("reports")
+    private val pathToConfig = path().resolve(ConfigFactory.DEFAULT_CONFIG_NAME)
+
+    init {
+        check(existing || config != null)
+        if (config != null) writeConfig(config)
+    }
 
     fun reportsDirectory(): String = reportsDir.toString()
 
     fun path(): Path = basePath
 
-    val sessionsStorage: SessionsStorage = SessionsStorage(sessionsDir.toString())
+    val config: Config = readConfig()
+
+    val sessionsStorage: SessionsStorage = SessionsStorage(sessionsDir.toString()).apply {
+        evaluationTitle = this@EvaluationWorkspace.config.reports.evaluationTitle
+    }
 
     val actionsStorage: ActionsStorage = ActionsStorage(actionsDir.toString())
 
@@ -44,6 +54,10 @@ class EvaluationWorkspace(outputDir: String, existing: Boolean = false) {
 
     fun dumpStatistics(stats: Map<String, Long>) =
             FileWriter(basePath.resolve(statsFile).toString()).use { it.write(gson.toJson(stats)) }
+
+    private fun writeConfig(config: Config) = ConfigFactory.save(config, basePath)
+
+    private fun readConfig(): Config = ConfigFactory.load(pathToConfig)
 
     private fun subdir(name: String): Path {
         val directory = basePath.resolve(name)

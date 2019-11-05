@@ -2,8 +2,8 @@ package org.jb.cce.dialog
 
 import com.intellij.ui.layout.LCFlags
 import com.intellij.ui.layout.panel
+import org.jb.cce.Config
 import org.jb.cce.actions.CompletionPrefix
-import org.jb.cce.util.Config
 import java.awt.event.ItemEvent
 import javax.swing.*
 

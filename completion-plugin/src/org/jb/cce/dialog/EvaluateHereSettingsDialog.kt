@@ -1,10 +1,11 @@
 package org.jb.cce.dialog
 
+import com.intellij.ide.util.PropertiesComponent
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.util.EventDispatcher
-import org.jb.cce.util.Config
-import org.jb.cce.util.ConfigFactory
+import org.jb.cce.Config
+import org.jb.cce.ConfigFactory
 import javax.swing.BoxLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
@@ -18,6 +19,7 @@ class EvaluateHereSettingsDialog(
         const val configStateKey = "org.jb.cce.config.evaluate_here"
     }
     private val dispatcher = EventDispatcher.create(SettingsListener::class.java)
+    private val properties = PropertiesComponent.getInstance(project)
 
     private val configurators: List<EvaluationConfigurable> = listOf(
             CompletionTypeConfigurable(),
@@ -34,7 +36,13 @@ class EvaluateHereSettingsDialog(
     override fun createCenterPanel(): JComponent? {
         return JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            val previousState = ConfigFactory.getByKey(project, configStateKey)
+            val value = properties.getValue(configStateKey)
+            val previousState = try {
+                if (value == null) ConfigFactory.defaultConfig(project.basePath!!)
+                else ConfigFactory.deserialize(value)
+            } catch (e: Throwable) {
+                ConfigFactory.defaultConfig(project.basePath!!)
+            }
             configurators.forEach { add(it.createPanel(previousState)) }
         }
     }
@@ -45,7 +53,7 @@ class EvaluateHereSettingsDialog(
             evaluationRoots = mutableListOf(path)
         }
 
-        ConfigFactory.storeByKey(project, configStateKey, config)
+        properties.setValue(configStateKey, ConfigFactory.serialize(config))
 
         return config
     }

@@ -12,7 +12,6 @@ import org.jb.cce.dialog.EvaluateHereSettingsDialog
 import org.jb.cce.evaluation.BackgroundStepFactory
 import org.jb.cce.evaluation.EvaluationProcess
 import org.jb.cce.evaluation.EvaluationRootInfo
-import org.jb.cce.util.ConfigFactory
 import org.jb.cce.util.FilesHelper
 
 class EvaluateCompletionHereAction : AnAction() {
@@ -37,14 +36,13 @@ class EvaluateCompletionHereAction : AnAction() {
         val result = settingsDialog.showAndGet()
         if (!result) return
         val config = settingsDialog.buildConfig()
-        val workspace = EvaluationWorkspace(config.outputDir)
-        ConfigFactory.save(config, workspace.path())
+        val workspace = EvaluationWorkspace(config.outputDir, config = config)
         val parentPsiElement = if (config.actions.strategy.completeAllTokens) getParentOnSameLine(psi, caret.offset, editor) else null
         val process = EvaluationProcess.build({
             shouldGenerateActions = true
             shouldInterpretActions = true
             shouldHighlightInIde = true
-        }, BackgroundStepFactory(config, project, false, null, EvaluationRootInfo(false, caret.offset, parentPsiElement)))
+        }, BackgroundStepFactory(project, false, null, EvaluationRootInfo(false, caret.offset, parentPsiElement)))
         process.startAsync(workspace)
     }
 

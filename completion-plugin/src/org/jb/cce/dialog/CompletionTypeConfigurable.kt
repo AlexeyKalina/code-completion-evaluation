@@ -4,8 +4,8 @@ import com.intellij.ui.components.JBRadioButton
 import com.intellij.ui.layout.CellBuilder
 import com.intellij.ui.layout.LCFlags
 import com.intellij.ui.layout.panel
+import org.jb.cce.Config
 import org.jb.cce.actions.CompletionType
-import org.jb.cce.util.Config
 import java.awt.event.ItemEvent
 import javax.swing.JPanel
 

@@ -3,7 +3,7 @@ package org.jb.cce.dialog
 import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.ui.layout.panel
-import org.jb.cce.util.Config
+import org.jb.cce.Config
 import java.awt.event.ItemEvent
 import javax.swing.*
 

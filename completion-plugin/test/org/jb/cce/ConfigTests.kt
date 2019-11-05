@@ -7,8 +7,6 @@ import org.jb.cce.filter.impl.PackageRegexFilter
 import org.jb.cce.filter.impl.PackageRegexFilterConfiguration
 import org.jb.cce.filter.impl.StaticFilter
 import org.jb.cce.filter.impl.StaticFilterConfiguration
-import org.jb.cce.util.Config
-import org.jb.cce.util.ConfigFactory
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows

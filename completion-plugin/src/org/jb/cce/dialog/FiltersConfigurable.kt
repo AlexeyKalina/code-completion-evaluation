@@ -3,12 +3,12 @@ package org.jb.cce.dialog
 import com.intellij.ui.layout.Row
 import com.intellij.ui.layout.panel
 import com.intellij.util.EventDispatcher
+import org.jb.cce.Config
 import org.jb.cce.dialog.configurable.FilterUIConfigurableFactory
 import org.jb.cce.dialog.configurable.UIConfigurable
 import org.jb.cce.filter.EvaluationFilterConfiguration
 import org.jb.cce.filter.EvaluationFilterManager
 import org.jb.cce.uast.Language
-import org.jb.cce.util.Config
 import java.awt.event.ItemEvent
 import javax.swing.JCheckBox
 import javax.swing.JPanel

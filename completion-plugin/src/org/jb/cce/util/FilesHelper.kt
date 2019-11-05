@@ -68,5 +68,3 @@ object FilesHelper {
 fun VirtualFile.text(): String {
     return UnixLineEndingInputStream(this.inputStream, false).bufferedReader().use { it.readText() }
 }
-
-fun EvaluationWorkspace.pathToConfig() = path().resolve(ConfigFactory.DEFAULT_CONFIG_NAME)

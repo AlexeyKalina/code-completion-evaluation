@@ -5,7 +5,6 @@ import org.jb.cce.dialog.configurable.FilterUIConfigurableFactory
 import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterConfiguration
 import org.jb.cce.filter.EvaluationFilterManager
-import org.jb.cce.util.ConfigFactory
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import kotlin.test.assertNotNull

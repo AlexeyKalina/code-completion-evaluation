@@ -4,11 +4,11 @@ import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.vfs.VirtualFile
+import org.jb.cce.ConfigFactory
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.evaluation.BackgroundStepFactory
 import org.jb.cce.evaluation.EvaluationProcess
 import org.jb.cce.evaluation.EvaluationRootInfo
-import org.jb.cce.util.ConfigFactory
 import java.nio.file.Paths
 
 class GenerateReportAction : AnAction() {
@@ -16,12 +16,12 @@ class GenerateReportAction : AnAction() {
         val project = e.project ?: return
         val dirs = getFiles(e)
         val workspacePath = Paths.get(dirs.first().path)
-        val config = ConfigFactory.load(workspacePath.resolve(ConfigFactory.DEFAULT_CONFIG_NAME))
-        val workspace = EvaluationWorkspace(workspacePath.parent.toString())
+        val existingWorkspace = EvaluationWorkspace(workspacePath.toString(), true)
+        val outputWorkspace = EvaluationWorkspace(workspacePath.parent.toString(), config = existingWorkspace.config)
         val process = EvaluationProcess.build({
             shouldGenerateReports = true
-        }, BackgroundStepFactory(config, project, false, dirs.map { it.path }, EvaluationRootInfo(true)))
-        process.startAsync(workspace)
+        }, BackgroundStepFactory(project, false, dirs.map { it.path }, EvaluationRootInfo(true)))
+        process.startAsync(outputWorkspace)
     }
 
     override fun update(e: AnActionEvent) {

@@ -8,6 +8,7 @@ dependencies {
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
     compile 'com.github.ajalt:clikt:2.2.0'
     compile project(':uast')
+    compile project(':workspace')
     compile project(':interpretator')
     compile project(':metrics-evaluator')
     compile project(':report-generators')

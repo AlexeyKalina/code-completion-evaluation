@@ -2,13 +2,13 @@ package org.jb.cce.dialog.configurable
 
 import com.intellij.ui.layout.LayoutBuilder
 import com.intellij.ui.layout.Row
+import org.jb.cce.Config
 import org.jb.cce.filter.ConfigurableBuilder
 import org.jb.cce.filter.EvaluationFilterManager
 import org.jb.cce.filter.impl.ArgumentFilterConfiguration
 import org.jb.cce.filter.impl.PackageRegexFilterConfiguration
 import org.jb.cce.filter.impl.StaticFilterConfiguration
 import org.jb.cce.filter.impl.TypeFilterConfiguration
-import org.jb.cce.util.Config
 
 class FilterUIConfigurableFactory(private val previousState: Config, private val layout: LayoutBuilder) : ConfigurableBuilder<Row> {
     override fun build(filterId: String): UIConfigurable {

@@ -1,8 +1,6 @@
-package org.jb.cce.util
+package org.jb.cce
 
 import com.google.gson.GsonBuilder
-import com.intellij.ide.util.PropertiesComponent
-import com.intellij.openapi.project.Project
 import org.jb.cce.actions.*
 import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterManager
@@ -35,22 +33,9 @@ object ConfigFactory {
         Files.write(directory.resolve(name), json.toByteArray())
     }
 
-    fun getByKey(project: Project, configStateKey: String): Config {
-        val properties = PropertiesComponent.getInstance(project)
-        val configState = properties.getValue(configStateKey) ?: return defaultConfig(project.basePath!!)
-        return try {
-            deserialize(configState)
-        } catch (e: Throwable) {
-            defaultConfig(project.basePath!!)
-        }
-    }
+    fun serialize(config: Config): String = gson.toJson(config)
 
-    fun storeByKey(project: Project, configStateKey: String, config: Config) {
-        val properties = PropertiesComponent.getInstance(project)
-        properties.setValue(configStateKey, serialize(config))
-    }
-
-    private fun deserialize(json: String): Config {
+    fun deserialize(json: String): Config {
         val map = gson.fromJson<HashMap<String, Any>>(json, HashMap<String, Any>().javaClass)
         val languageName = map.getAs<String>("language")
         val builder = Config.Builder(map.getAs("projectPath"), languageName)
@@ -80,8 +65,6 @@ object ConfigFactory {
         if (map == null) return
         builder.evaluationTitle = map.getAs("evaluationTitle")
     }
-
-    private fun serialize(config: Config): String = gson.toJson(config)
 
     private class CompletionStrategyDeserializer {
         fun deserialize(strategy: Map<String, Any>, language: String, builder: Config.Builder) {
