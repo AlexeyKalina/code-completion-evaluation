@@ -1,4 +1,4 @@
-package org.jb.cce.evaluation
+package org.jb.cce.evaluation.step
 
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
@@ -10,6 +10,8 @@ import com.intellij.util.concurrency.FutureResult
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.actions.ActionsGenerator
 import org.jb.cce.actions.CompletionStrategy
+import org.jb.cce.evaluation.EvaluationRootInfo
+import org.jb.cce.evaluation.UastBuilder
 import org.jb.cce.exceptions.ExceptionsUtil.stackTraceToString
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.util.*
@@ -34,7 +36,7 @@ class ActionsGenerationStep(
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
                 val filesForEvaluation = FilesHelper.getFilesOfLanguage(project, config.evaluationRoots, language)
-                generateActions(workspace, language, filesForEvaluation, config.strategy, evaluationRootInfo, getProcess(indicator))
+                generateActions(workspace, language, filesForEvaluation, config.strategy, evaluationRootInfo, getProgress(indicator))
             }
 
             override fun onSuccess() {

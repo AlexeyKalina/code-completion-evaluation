@@ -1,4 +1,4 @@
-package org.jb.cce.evaluation
+package org.jb.cce.evaluation.step
 
 import org.jb.cce.EvaluationWorkspace
 

@@ -1,4 +1,4 @@
-package org.jb.cce.evaluation
+package org.jb.cce.evaluation.step
 
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager

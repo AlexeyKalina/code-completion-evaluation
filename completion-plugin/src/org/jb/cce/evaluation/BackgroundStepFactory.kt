@@ -8,6 +8,7 @@ import com.intellij.util.io.exists
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.HtmlReportGenerator
 import org.jb.cce.dialog.OpenBrowserDialog
+import org.jb.cce.evaluation.step.*
 import org.jb.cce.util.Config
 import java.nio.file.Paths
 import kotlin.system.exitProcess
@@ -23,11 +24,17 @@ class BackgroundStepFactory(
     override fun generateActionsStep(): EvaluationStep =
             ActionsGenerationStep(config.actions, config.language, evaluationRootInfo, project, isHeadless)
 
-    override fun interpretActionsStep(createWorkspace: Boolean, highlightInIde: Boolean): EvaluationStep =
-            ActionsInterpretationStep(config.interpret, config.language, createWorkspace, highlightInIde, project, isHeadless)
+    override fun interpretActionsStep(): EvaluationStep =
+            ActionsInterpretationStep(config.interpret, config.language, project, isHeadless)
 
     override fun generateReportStep(): EvaluationStep =
             ReportGenerationStep(inputWorkspacePaths?.map { EvaluationWorkspace(it, true) }, project, isHeadless)
+
+    override fun interpretActionsOnNewWorkspaceStep(): EvaluationStep =
+            ActionsInterpretationOnNewWorkspaceStep(config.interpret, config.language, project, isHeadless)
+
+    override fun highlightTokensInIdeStep(): EvaluationStep =
+            HighlightingTokensInIdeStep(project, isHeadless)
 
     override fun finishEvaluationStep(): EvaluationStep {
         return object : EvaluationStep {

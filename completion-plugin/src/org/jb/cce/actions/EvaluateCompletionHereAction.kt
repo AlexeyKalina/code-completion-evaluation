@@ -43,7 +43,7 @@ class EvaluateCompletionHereAction : AnAction() {
         val process = EvaluationProcess.build({
             shouldGenerateActions = true
             shouldInterpretActions = true
-            highlightInIde = true
+            shouldHighlightInIde = true
         }, BackgroundStepFactory(config, project, false, null, EvaluationRootInfo(false, caret.offset, parentPsiElement)))
         process.startAsync(workspace)
     }

@@ -3,6 +3,7 @@ package org.jb.cce.evaluation
 import com.intellij.openapi.application.ApplicationManager
 import com.jetbrains.rd.util.measureTimeMillis
 import org.jb.cce.EvaluationWorkspace
+import org.jb.cce.evaluation.step.EvaluationStep
 
 class EvaluationProcess private constructor(private val steps: List<EvaluationStep>) {
     companion object {
@@ -38,7 +39,7 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
         var shouldGenerateActions: Boolean = false
         var shouldInterpretActions: Boolean = false
         var shouldGenerateReports: Boolean = false
-        var highlightInIde: Boolean = false
+        var shouldHighlightInIde: Boolean = false
 
         fun build(factory: StepFactory): EvaluationProcess {
             val steps = mutableListOf<EvaluationStep>()
@@ -48,7 +49,15 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
             }
 
             if (shouldInterpretActions) {
-                steps.add(factory.interpretActionsStep(!shouldGenerateActions, highlightInIde))
+                if (shouldGenerateActions) {
+                    steps.add(factory.interpretActionsStep())
+                } else {
+                    steps.add(factory.interpretActionsOnNewWorkspaceStep())
+                }
+            }
+
+            if (shouldHighlightInIde) {
+                steps.add(factory.highlightTokensInIdeStep())
             }
 
             if (shouldGenerateReports) {

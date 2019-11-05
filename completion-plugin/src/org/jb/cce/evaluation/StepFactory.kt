@@ -1,8 +1,12 @@
 package org.jb.cce.evaluation
 
+import org.jb.cce.evaluation.step.EvaluationStep
+
 interface StepFactory {
     fun generateActionsStep(): EvaluationStep
-    fun interpretActionsStep(createWorkspace: Boolean, highlightInIde: Boolean): EvaluationStep
+    fun interpretActionsStep(): EvaluationStep
+    fun interpretActionsOnNewWorkspaceStep(): EvaluationStep
+    fun highlightTokensInIdeStep(): EvaluationStep
     fun generateReportStep(): EvaluationStep
     fun finishEvaluationStep(): EvaluationStep
 }

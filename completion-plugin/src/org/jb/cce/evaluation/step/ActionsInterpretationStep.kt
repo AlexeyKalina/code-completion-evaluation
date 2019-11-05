@@ -1,4 +1,4 @@
-package org.jb.cce.evaluation
+package org.jb.cce.evaluation.step
 
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.progress.ProgressIndicator
@@ -12,8 +12,8 @@ import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.Interpreter
 import org.jb.cce.Session
 import org.jb.cce.actions.CompletionType
+import org.jb.cce.evaluation.ActionsInterpretationHandler
 import org.jb.cce.exceptions.ExceptionsUtil.stackTraceToString
-import org.jb.cce.highlighter.Highlighter
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.FileSessionsInfo
 import org.jb.cce.interpretator.CompletionInvokerImpl
@@ -23,7 +23,6 @@ import org.jb.cce.storages.ActionsStorage
 import org.jb.cce.storages.FileErrorsStorage
 import org.jb.cce.storages.SessionsStorage
 import org.jb.cce.util.*
-import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.*
 import kotlin.system.measureTimeMillis
@@ -31,8 +30,6 @@ import kotlin.system.measureTimeMillis
 class ActionsInterpretationStep(
         private val config: Config.ActionsInterpretation,
         private val language: String,
-        private val createWorkspace: Boolean,
-        private val highlight: Boolean,
         project: Project,
         isHeadless: Boolean): BackgroundEvaluationStep(project, isHeadless) {
     override val name: String = "Actions interpreting"
@@ -42,33 +39,22 @@ class ActionsInterpretationStep(
     override fun start(workspace: EvaluationWorkspace): EvaluationWorkspace? {
         val result = FutureResult<EvaluationWorkspace?>()
         val task = object : Task.Backgroundable(project, name) {
-            private lateinit var lastFileSessions: List<Session>
-            private var sessionsWorkspace =
-                    if (createWorkspace) EvaluationWorkspace(workspace.path().parent.toString()) else workspace
 
             override fun run(indicator: ProgressIndicator) {
                 indicator.text = this.title
-                if (createWorkspace) Files.copy(workspace.pathToConfig(), sessionsWorkspace.pathToConfig())
-                if (config.saveLogs) sessionsWorkspace.logsStorage.watch(statsCollectorLogsDirectory(), language, config.trainTestSplit)
-                lastFileSessions = interpretActions(workspace.actionsStorage, sessionsWorkspace.sessionsStorage,
-                        sessionsWorkspace.errorsStorage, config.completionType, project, getProcess(indicator))
-                if (config.saveLogs) sessionsWorkspace.logsStorage.stopWatching()
+                ActionsInterpretationHandler(config, language, project).invoke(workspace, workspace, getProgress(indicator))
             }
 
             override fun onSuccess() {
-                if (config.saveLogs) sessionsWorkspace.logsStorage.stopWatching()
-                if (highlight) Highlighter(project).highlight(lastFileSessions)
-                result.set(sessionsWorkspace)
+                result.set(workspace)
             }
 
             override fun onCancel() {
-                if (config.saveLogs) sessionsWorkspace.logsStorage.stopWatching()
                 evaluationAbortedHandler.onCancel(this.title)
                 result.set(null)
             }
 
             override fun onThrowable(error: Throwable) {
-                if (config.saveLogs) sessionsWorkspace.logsStorage.stopWatching()
                 evaluationAbortedHandler.onError(error, this.title)
                 result.set(null)
             }
