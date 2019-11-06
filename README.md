@@ -25,8 +25,8 @@ The plugin deals with the quality evaluation of code completion based on artific
   3. After generation and interpretation of actions tokens will be highlighted and provide information about completions by click.
 - Compare multiple evaluations.
   1. Evaluate quality on different algorithms/strategies multiple times.
-  2. Change title of evaluation (results will group by this name in HTML-report) in `<outputDir>/data/config.json`.
-  3. Select multiple `config.json` from different evaluations.
+  2. Change `evaluationTitle` in `config.json` in corresponding workspaces. Results will group by this field in HTML-report.
+  3. Select these workspaces.
   4. Right click and select `Generate Report By Selected Evaluations`.
   5. After report building you will be asked to open it in the browser.
 
