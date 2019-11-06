@@ -42,7 +42,7 @@ class EvaluateCompletionHereAction : AnAction() {
             shouldGenerateActions = true
             shouldInterpretActions = true
             shouldHighlightInIde = true
-        }, BackgroundStepFactory(project, false, null, EvaluationRootInfo(false, caret.offset, parentPsiElement)))
+        }, BackgroundStepFactory(config, project, false, null, EvaluationRootInfo(false, caret.offset, parentPsiElement)))
         process.startAsync(workspace)
     }
 

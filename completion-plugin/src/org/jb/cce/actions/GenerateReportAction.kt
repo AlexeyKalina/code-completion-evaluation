@@ -17,10 +17,11 @@ class GenerateReportAction : AnAction() {
         val dirs = getFiles(e)
         val workspacePath = Paths.get(dirs.first().path)
         val existingWorkspace = EvaluationWorkspace(workspacePath.toString(), true)
-        val outputWorkspace = EvaluationWorkspace(workspacePath.parent.toString(), config = existingWorkspace.config)
+        val config = existingWorkspace.readConfig()
+        val outputWorkspace = EvaluationWorkspace(workspacePath.parent.toString(), config = config)
         val process = EvaluationProcess.build({
             shouldGenerateReports = true
-        }, BackgroundStepFactory(project, false, dirs.map { it.path }, EvaluationRootInfo(true)))
+        }, BackgroundStepFactory(config, project, false, dirs.map { it.path }, EvaluationRootInfo(true)))
         process.startAsync(outputWorkspace)
     }
 

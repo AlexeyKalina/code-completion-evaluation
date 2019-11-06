@@ -3,6 +3,7 @@ package org.jb.cce.evaluation.step
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.FutureResult
+import org.jb.cce.Config
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.actions.ActionsGenerator
 import org.jb.cce.actions.CompletionStrategy
@@ -15,14 +16,19 @@ import org.jb.cce.visitors.DefaultEvaluationRootVisitor
 import org.jb.cce.visitors.EvaluationRootByOffsetVisitor
 import org.jb.cce.visitors.EvaluationRootByRangeVisitor
 
-class ActionsGenerationStep(private val evaluationRootInfo: EvaluationRootInfo, project: Project, isHeadless: Boolean): BackgroundEvaluationStep(project, isHeadless) {
+class ActionsGenerationStep(
+        private val config: Config.ActionsGeneration,
+        private val language: String,
+        private val evaluationRootInfo: EvaluationRootInfo,
+        project: Project,
+        isHeadless: Boolean): BackgroundEvaluationStep(project, isHeadless) {
     override val name: String = "Generating actions"
 
     override val description: String = "Generating actions by selected files"
 
     override fun evaluateStep(workspace: EvaluationWorkspace, result: FutureResult<EvaluationWorkspace?>, progress: Progress) {
-        val filesForEvaluation = FilesHelper.getFilesOfLanguage(project, workspace.config.actions.evaluationRoots, workspace.config.language)
-        generateActions(workspace, workspace.config.language, filesForEvaluation, workspace.config.actions.strategy, evaluationRootInfo, progress)
+        val filesForEvaluation = FilesHelper.getFilesOfLanguage(project, config.evaluationRoots, language)
+        generateActions(workspace, language, filesForEvaluation, config.strategy, evaluationRootInfo, progress)
         result.set(workspace)
     }
 

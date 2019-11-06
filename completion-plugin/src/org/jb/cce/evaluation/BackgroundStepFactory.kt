@@ -5,6 +5,7 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.Messages
 import com.intellij.util.io.exists
+import org.jb.cce.Config
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.HtmlReportGenerator
 import org.jb.cce.dialog.OpenBrowserDialog
@@ -13,6 +14,7 @@ import java.nio.file.Paths
 import kotlin.system.exitProcess
 
 class BackgroundStepFactory(
+        private val config: Config,
         private val project: Project,
         private val isHeadless: Boolean,
         private val inputWorkspacePaths: List<String>?,
@@ -20,16 +22,16 @@ class BackgroundStepFactory(
 ) : StepFactory {
 
     override fun generateActionsStep(): EvaluationStep =
-            ActionsGenerationStep(evaluationRootInfo, project, isHeadless)
+            ActionsGenerationStep(config.actions, config.language, evaluationRootInfo, project, isHeadless)
 
     override fun interpretActionsStep(): EvaluationStep =
-            ActionsInterpretationStep(project, isHeadless)
+            ActionsInterpretationStep(config.interpret, config.language, project, isHeadless)
 
     override fun generateReportStep(): EvaluationStep =
             ReportGenerationStep(inputWorkspacePaths?.map { EvaluationWorkspace(it, true) }, project, isHeadless)
 
     override fun interpretActionsOnNewWorkspaceStep(): EvaluationStep =
-            ActionsInterpretationOnNewWorkspaceStep(project, isHeadless)
+            ActionsInterpretationOnNewWorkspaceStep(config, project, isHeadless)
 
     override fun highlightTokensInIdeStep(): EvaluationStep =
             HighlightingTokensInIdeStep(project, isHeadless)

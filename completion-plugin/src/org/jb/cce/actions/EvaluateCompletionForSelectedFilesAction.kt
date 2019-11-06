@@ -31,7 +31,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
             shouldGenerateActions = true
             shouldInterpretActions = config.interpretActions
             shouldGenerateReports = config.interpretActions
-        }, BackgroundStepFactory(project, false, null, EvaluationRootInfo(true)))
+        }, BackgroundStepFactory(config, project, false, null, EvaluationRootInfo(true)))
         process.startAsync(workspace)
     }
 }

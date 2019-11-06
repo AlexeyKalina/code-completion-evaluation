@@ -81,7 +81,7 @@ class CompletionEvaluationStarter : ApplicationStarter {
                 shouldGenerateActions = true
                 shouldInterpretActions = config.interpretActions
                 shouldGenerateReports = config.interpretActions
-            }, BackgroundStepFactory(project, true, null, EvaluationRootInfo(true)))
+            }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
             process.startAsync(workspace)
         }
     }
@@ -93,12 +93,13 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
         override fun run() {
             val workspace = EvaluationWorkspace(workspacePath, true)
-            val project = loadProject(workspace.config.projectPath)
+            val config = workspace.readConfig()
+            val project = loadProject(config.projectPath)
             val process = EvaluationProcess.build({
                 shouldGenerateActions = false
                 shouldInterpretActions = interpretActions
                 shouldGenerateReports = generateReport
-            }, BackgroundStepFactory(project, true, null, EvaluationRootInfo(true)))
+            }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
             process.startAsync(workspace)
         }
     }
@@ -109,11 +110,12 @@ class CompletionEvaluationStarter : ApplicationStarter {
         override fun run() {
             val workspacePath = Paths.get(workspaces.first())
             val existingWorkspace = EvaluationWorkspace(workspacePath.toString(), true)
-            val project = loadProject(existingWorkspace.config.projectPath)
-            val outputWorkspace = EvaluationWorkspace(workspacePath.parent.toString(), config = existingWorkspace.config)
+            val config = existingWorkspace.readConfig()
+            val project = loadProject(config.projectPath)
+            val outputWorkspace = EvaluationWorkspace(workspacePath.parent.toString(), config = config)
             val process = EvaluationProcess.build({
                 shouldGenerateReports = true
-            }, BackgroundStepFactory(project, true, workspaces, EvaluationRootInfo(true)))
+            }, BackgroundStepFactory(config, project, true, workspaces, EvaluationRootInfo(true)))
             process.startAsync(outputWorkspace)
         }
     }
