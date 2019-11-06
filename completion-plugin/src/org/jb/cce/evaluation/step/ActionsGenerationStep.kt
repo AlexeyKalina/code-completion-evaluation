@@ -1,9 +1,5 @@
 package org.jb.cce.evaluation.step
 
-import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.progress.Task
-import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.util.concurrency.FutureResult
@@ -24,32 +20,10 @@ class ActionsGenerationStep(private val evaluationRootInfo: EvaluationRootInfo, 
 
     override val description: String = "Generating actions by selected files"
 
-    override fun start(workspace: EvaluationWorkspace): EvaluationWorkspace? {
-        val result = FutureResult<EvaluationWorkspace?>()
-        val task = object : Task.Backgroundable(project, name, true) {
-
-            override fun run(indicator: ProgressIndicator) {
-                indicator.text = this.title
-                val filesForEvaluation = FilesHelper.getFilesOfLanguage(project, workspace.config.actions.evaluationRoots, workspace.config.language)
-                generateActions(workspace, workspace.config.language, filesForEvaluation, workspace.config.actions.strategy, evaluationRootInfo, getProgress(indicator))
-            }
-
-            override fun onSuccess() {
-                result.set(workspace)
-            }
-
-            override fun onCancel() {
-                evaluationAbortedHandler.onCancel(this.title)
-                result.set(null)
-            }
-
-            override fun onThrowable(error: Throwable) {
-                evaluationAbortedHandler.onError(error, this.title)
-                result.set(null)
-            }
-        }
-        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
-        return result.get()
+    override fun evaluateStep(workspace: EvaluationWorkspace, result: FutureResult<EvaluationWorkspace?>, progress: Progress) {
+        val filesForEvaluation = FilesHelper.getFilesOfLanguage(project, workspace.config.actions.evaluationRoots, workspace.config.language)
+        generateActions(workspace, workspace.config.language, filesForEvaluation, workspace.config.actions.strategy, evaluationRootInfo, progress)
+        result.set(workspace)
     }
 
     private fun generateActions(workspace: EvaluationWorkspace, languageName: String, files: Collection<VirtualFile>,

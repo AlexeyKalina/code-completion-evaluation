@@ -1,9 +1,5 @@
 package org.jb.cce.evaluation.step
 
-import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.progress.Task
-import com.intellij.openapi.progress.impl.BackgroundableProcessIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.util.concurrency.FutureResult
 import org.jb.cce.EvaluationWorkspace
@@ -12,6 +8,7 @@ import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.metrics.MetricsEvaluator
 import org.jb.cce.storages.FileErrorsStorage
 import org.jb.cce.storages.SessionsStorage
+import org.jb.cce.util.Progress
 
 class ReportGenerationStep(
         private val inputWorkspaces: List<EvaluationWorkspace>?,
@@ -21,34 +18,11 @@ class ReportGenerationStep(
 
     override val description: String = "Generation of HTML-report"
 
-    override fun start(workspace: EvaluationWorkspace): EvaluationWorkspace? {
-        val result = FutureResult<EvaluationWorkspace?>()
-        val task = object : Task.Backgroundable(project, name) {
-            private var reportPath: String? = null
-
-            override fun run(indicator: ProgressIndicator) {
-                val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
-                val workspaces = inputWorkspaces ?: listOf(workspace)
-                reportPath = generateReport(reportGenerator, workspaces.map { it.sessionsStorage }, workspaces.map { it.errorsStorage })
-            }
-
-            override fun onSuccess() {
-                result.set(workspace)
-            }
-
-            override fun onCancel() {
-                evaluationAbortedHandler.onCancel(this.title)
-                result.set(null)
-            }
-
-            override fun onThrowable(error: Throwable) {
-                LOG.error(error)
-                evaluationAbortedHandler.onError(error, this.title)
-                result.set(null)
-            }
-        }
-        ProgressManager.getInstance().runProcessWithProgressAsynchronously(task, BackgroundableProcessIndicator(task))
-        return result.get()
+    override fun evaluateStep(workspace: EvaluationWorkspace, result: FutureResult<EvaluationWorkspace?>, progress: Progress) {
+        val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
+        val workspaces = inputWorkspaces ?: listOf(workspace)
+        generateReport(reportGenerator, workspaces.map { it.sessionsStorage }, workspaces.map { it.errorsStorage })
+        result.set(workspace)
     }
 
     data class SessionsInfo(val path: String, val sessionsPath: String, val evaluationType: String)
