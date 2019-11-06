@@ -1,8 +1,6 @@
-package org.jb.cce.util
+package org.jb.cce
 
 import com.google.gson.GsonBuilder
-import com.intellij.ide.util.PropertiesComponent
-import com.intellij.openapi.project.Project
 import org.jb.cce.actions.*
 import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterManager
@@ -10,6 +8,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 object ConfigFactory {
+    const val DEFAULT_CONFIG_NAME = "config.json"
+
     private val gson = GsonBuilder()
             .serializeNulls()
             .setPrettyPrinting()
@@ -28,42 +28,43 @@ object ConfigFactory {
         return deserialize(configFile.readText())
     }
 
-    fun save(config: Config, directory: Path, name: String = "config.json") {
+    fun save(config: Config, directory: Path, name: String = DEFAULT_CONFIG_NAME) {
         val json = serialize(config)
         Files.write(directory.resolve(name), json.toByteArray())
     }
 
-    fun getByKey(project: Project, configStateKey: String): Config {
-        val properties = PropertiesComponent.getInstance(project)
-        val configState = properties.getValue(configStateKey) ?: return defaultConfig(project.basePath!!)
-        return try {
-            deserialize(configState)
-        } catch (e: Throwable) {
-            defaultConfig(project.basePath!!)
-        }
-    }
+    fun serialize(config: Config): String = gson.toJson(config)
 
-    fun storeByKey(project: Project, configStateKey: String, config: Config) {
-        val properties = PropertiesComponent.getInstance(project)
-        properties.setValue(configStateKey, serialize(config))
-    }
-
-    private fun deserialize(json: String): Config {
+    fun deserialize(json: String): Config {
         val map = gson.fromJson<HashMap<String, Any>>(json, HashMap<String, Any>().javaClass)
         val languageName = map.getAs<String>("language")
         val builder = Config.Builder(map.getAs("projectPath"), languageName)
-        val strategyJson = map.getAs<Map<String, Any>>("strategy")
-        CompletionStrategyDeserializer().deserialize(strategyJson, languageName, builder)
-        builder.evaluationRoots = map.getAs("evaluationRoots")
-        builder.completionType = CompletionType.valueOf(map.getAs("completionType"))
-        builder.workspaceDir = map.getAs("workspaceDir")
+        builder.outputDir = map.getAs("outputDir")
         builder.interpretActions = map.getAs("interpretActions")
-        builder.saveLogs = map.getAs("saveLogs")
-        builder.trainTestSplit = map.getAs<Double>("trainTestSplit").toInt()
+        deserializeActionsGeneration(map.getIfExists("actions"), languageName, builder)
+        deserializeActionsInterpretation(map.getIfExists("interpret"), builder)
+        deserializeReportGeneration(map.getIfExists("reports"), builder)
         return builder.build()
     }
 
-    private fun serialize(config: Config): String = gson.toJson(config)
+    private fun deserializeActionsGeneration(map: Map<String, Any>?, language: String, builder: Config.Builder) {
+        if (map == null) return
+        builder.evaluationRoots = map.getAs("evaluationRoots")
+        val strategyJson = map.getAs<Map<String, Any>>("strategy")
+        CompletionStrategyDeserializer().deserialize(strategyJson, language, builder)
+    }
+
+    private fun deserializeActionsInterpretation(map: Map<String, Any>?, builder: Config.Builder) {
+        if (map == null) return
+        builder.completionType = CompletionType.valueOf(map.getAs("completionType"))
+        builder.saveLogs = map.getAs("saveLogs")
+        builder.trainTestSplit = map.getAs<Double>("trainTestSplit").toInt()
+    }
+
+    private fun deserializeReportGeneration(map: Map<String, Any>?, builder: Config.Builder) {
+        if (map == null) return
+        builder.evaluationTitle = map.getAs("evaluationTitle")
+    }
 
     private class CompletionStrategyDeserializer {
         fun deserialize(strategy: Map<String, Any>, language: String, builder: Config.Builder) {
@@ -97,6 +98,13 @@ object ConfigFactory {
 
     private inline fun <reified T> Map<String, *>.getAs(key: String): T {
         check(key in this.keys) { "$key not found. Existing keys: ${keys.toList()}" }
+        val value = this.getValue(key)
+        check(value is T) { "Unexpected type in config" }
+        return value
+    }
+
+    private inline fun <reified T> Map<String, *>.getIfExists(key: String): T? {
+        if (key !in this.keys) return null
         val value = this.getValue(key)
         check(value is T) { "Unexpected type in config" }
         return value

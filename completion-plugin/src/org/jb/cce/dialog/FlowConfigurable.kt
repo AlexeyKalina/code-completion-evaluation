@@ -3,7 +3,7 @@ package org.jb.cce.dialog
 import com.intellij.ide.plugins.PluginManager
 import com.intellij.openapi.extensions.PluginId
 import com.intellij.ui.layout.panel
-import org.jb.cce.util.Config
+import org.jb.cce.Config
 import java.awt.event.ItemEvent
 import javax.swing.*
 
@@ -18,10 +18,10 @@ class FlowConfigurable : EvaluationConfigurable {
 
     override fun createPanel(previousState: Config): JPanel {
         interpretActions = previousState.interpretActions
-        saveLogs = previousState.saveLogs
-        workspaceDirTextField = JTextField(previousState.workspaceDir)
+        saveLogs = previousState.interpret.saveLogs
+        workspaceDirTextField = JTextField(previousState.outputDir)
         val statsCollectorEnabled = PluginManager.getPlugin(PluginId.getId(statsCollectorId))?.isEnabled ?: false
-        trainTestSpinner = JSpinner(SpinnerNumberModel(previousState.trainTestSplit, 1, 99, 1)).apply {
+        trainTestSpinner = JSpinner(SpinnerNumberModel(previousState.interpret.trainTestSplit, 1, 99, 1)).apply {
             isEnabled = saveLogs && statsCollectorEnabled
         }
 
@@ -55,7 +55,7 @@ class FlowConfigurable : EvaluationConfigurable {
 
     override fun configure(builder: Config.Builder) {
         builder.interpretActions = interpretActions
-        builder.workspaceDir = workspaceDirTextField.text
+        builder.outputDir = workspaceDirTextField.text
         builder.saveLogs = saveLogs
         builder.trainTestSplit = trainTestSpinner.value as Int
     }

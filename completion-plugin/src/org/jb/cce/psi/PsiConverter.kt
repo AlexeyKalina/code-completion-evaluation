@@ -7,7 +7,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiManager
-import org.jb.cce.UastBuilder
+import org.jb.cce.evaluation.UastBuilder
 import org.jb.cce.psi.exceptions.PsiConverterException
 import org.jb.cce.uast.FileNode
 import org.jb.cce.uast.Language

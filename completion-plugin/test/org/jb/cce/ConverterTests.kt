@@ -5,6 +5,7 @@ import com.intellij.openapi.vfs.VfsUtil
 import com.intellij.openapi.vfs.newvfs.impl.VfsRootAccess
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
 import junit.framework.TestCase
+import org.jb.cce.evaluation.UastBuilder
 import org.jb.cce.uast.Language
 import org.jb.cce.uast.TextFragmentNode
 import org.jb.cce.uast.util.UastPrinter

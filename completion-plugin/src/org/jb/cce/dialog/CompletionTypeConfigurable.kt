@@ -4,8 +4,8 @@ import com.intellij.ui.components.JBRadioButton
 import com.intellij.ui.layout.CellBuilder
 import com.intellij.ui.layout.LCFlags
 import com.intellij.ui.layout.panel
+import org.jb.cce.Config
 import org.jb.cce.actions.CompletionType
-import org.jb.cce.util.Config
 import java.awt.event.ItemEvent
 import javax.swing.JPanel
 
@@ -13,7 +13,7 @@ class CompletionTypeConfigurable : EvaluationConfigurable {
     private var completionType: CompletionType = CompletionType.BASIC
 
     override fun createPanel(previousState: Config): JPanel {
-        completionType = previousState.completionType
+        completionType = previousState.interpret.completionType
         return panel(title = "Completion type", constraints = *arrayOf(LCFlags.noGrid)) {
             buttonGroup {
                 row {
@@ -27,6 +27,7 @@ class CompletionTypeConfigurable : EvaluationConfigurable {
 
     override fun configure(builder: Config.Builder) {
         builder.completionType = completionType
+        builder.evaluationTitle = completionType.name
     }
 
     private fun CellBuilder<JBRadioButton>.configure(value: CompletionType) {

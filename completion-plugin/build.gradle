@@ -6,7 +6,9 @@ plugins {
 
 dependencies {
     compile group: 'commons-io', name: 'commons-io', version: '2.6'
+    compile 'com.github.ajalt:clikt:2.2.0'
     compile project(':uast')
+    compile project(':workspace')
     compile project(':interpretator')
     compile project(':metrics-evaluator')
     compile project(':report-generators')
@@ -23,7 +25,7 @@ intellij {
 
 task runIdeHeadless (type: RunIdeTask) {
     jvmArgs '-Djava.awt.headless=true'
-    args 'evaluate-completion'
+    args 'evaluate-completion', 'full'
     ideaDirectory = { runIde.ideaDirectory }
     pluginsDirectory = { runIde.pluginsDirectory }
     configDirectory = { runIde.configDirectory }

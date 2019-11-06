@@ -5,8 +5,8 @@ import com.intellij.ui.layout.CellBuilder
 import com.intellij.ui.layout.LCFlags
 import com.intellij.ui.layout.panel
 import com.intellij.util.EventDispatcher
+import org.jb.cce.Config
 import org.jb.cce.actions.CompletionContext
-import org.jb.cce.util.Config
 import java.awt.event.ItemEvent
 import javax.swing.JPanel
 
@@ -14,7 +14,7 @@ class ContextConfigurable(private val dispatcher: EventDispatcher<SettingsListen
     private var context: CompletionContext = CompletionContext.ALL
 
     override fun createPanel(previousState: Config): JPanel {
-        context = previousState.strategy.context
+        context = previousState.actions.strategy.context
         return panel(title = "Context for completion:", constraints = *arrayOf(LCFlags.noGrid)) {
             buttonGroup {
                 row {

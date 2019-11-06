@@ -1,0 +1,59 @@
+package org.jb.cce.evaluation.step
+
+import com.intellij.openapi.project.Project
+import org.jb.cce.EvaluationWorkspace
+import org.jb.cce.HtmlReportGenerator
+import org.jb.cce.info.FileEvaluationInfo
+import org.jb.cce.metrics.MetricsEvaluator
+import org.jb.cce.storages.FileErrorsStorage
+import org.jb.cce.storages.SessionsStorage
+import org.jb.cce.util.Progress
+
+class ReportGenerationStep(
+        private val inputWorkspaces: List<EvaluationWorkspace>?,
+        project: Project,
+        isHeadless: Boolean) : BackgroundEvaluationStep(project, isHeadless) {
+    override val name: String = "Report generation"
+
+    override val description: String = "Generation of HTML-report"
+
+    override fun runInBackground(workspace: EvaluationWorkspace, progress: Progress): EvaluationWorkspace {
+        val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
+        val workspaces = inputWorkspaces ?: listOf(workspace)
+        generateReport(reportGenerator,
+                workspaces.map { it.readConfig().reports.evaluationTitle },
+                workspaces.map { it.sessionsStorage },
+                workspaces.map { it.errorsStorage })
+        return workspace
+    }
+
+    data class SessionsInfo(val path: String, val sessionsPath: String, val evaluationType: String)
+    private val sessionFiles: MutableMap<String, MutableList<SessionsInfo>> = mutableMapOf()
+
+    private fun generateReport(reportGenerator: HtmlReportGenerator, evaluationTitles: List<String>, sessionStorages: List<SessionsStorage>, errorStorages: List<FileErrorsStorage>): String {
+        val title2storage = mutableMapOf<String, SessionsStorage>()
+        val title2evaluator = mutableMapOf<String, MetricsEvaluator>()
+        for ((index, storage) in sessionStorages.withIndex()) {
+            if (title2evaluator.containsKey(evaluationTitles[index]))
+                throw IllegalStateException("Workspaces have same evaluation titles. Change evaluation title in config.json.")
+            title2storage[evaluationTitles[index]] = storage
+            title2evaluator[evaluationTitles[index]] = MetricsEvaluator.withDefaultMetrics(evaluationTitles[index])
+            for (pathsPair in storage.getSessionFiles()) {
+                val sessionFile = sessionFiles.getOrPut(pathsPair.first) { mutableListOf() }
+                sessionFile.add(SessionsInfo(pathsPair.first, pathsPair.second, evaluationTitles[index]))
+            }
+        }
+        for (sessionFile in sessionFiles) {
+            val fileEvaluations = mutableListOf<FileEvaluationInfo>()
+            for (file in sessionFile.value) {
+                val sessionsEvaluation = title2storage[file.evaluationType]!!.getSessions(file.path)
+                val metricsEvaluation = title2evaluator[file.evaluationType]!!.evaluate(sessionsEvaluation.sessions)
+                fileEvaluations.add(FileEvaluationInfo(sessionsEvaluation, metricsEvaluation, file.evaluationType))
+            }
+            reportGenerator.generateFileReport(fileEvaluations)
+        }
+        for (errorsStorage in errorStorages)
+            reportGenerator.generateErrorReports(errorsStorage.getErrors())
+        return reportGenerator.generateGlobalReport(title2evaluator.values.map { it.result() }.flatten())
+    }
+}

@@ -5,8 +5,6 @@ import com.google.gson.JsonObject
 import com.google.gson.JsonSerializationContext
 import com.google.gson.JsonSerializer
 import org.apache.commons.text.StringEscapeUtils.escapeHtml4
-import org.jb.cce.actions.CompletionStrategy
-import org.jb.cce.actions.CompletionStrategySerializer
 import org.jb.cce.info.FileSessionsInfo
 import java.lang.reflect.Type
 import java.util.*
@@ -23,7 +21,6 @@ class SessionSerializer {
                         return jsonObject
                     }
                 })
-                .registerTypeAdapter(CompletionStrategy::class.java, CompletionStrategySerializer())
                 .create()
     }
 

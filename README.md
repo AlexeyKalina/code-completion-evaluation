@@ -25,8 +25,8 @@ The plugin deals with the quality evaluation of code completion based on artific
   3. After generation and interpretation of actions tokens will be highlighted and provide information about completions by click.
 - Compare multiple evaluations.
   1. Evaluate quality on different algorithms/strategies multiple times.
-  2. Change title of evaluation (results will group by this name in HTML-report) in `<outputDir>/data/config.json`.
-  3. Select multiple `config.json` from different evaluations.
+  2. Change `evaluationTitle` in `config.json` in corresponding workspaces. Results will group by this field in HTML-report.
+  3. Select these workspaces.
   4. Right click and select `Generate Report By Selected Evaluations`.
   5. After report building you will be asked to open it in the browser.
 
@@ -68,91 +68,113 @@ For comparision of two modes, a project with about a thousand java files was use
 
 ### Usage
 
-To start the evaluation in the headless mode you should describe where the project to evaluate is placed and rules for evaluation (language, strategy, output directories, etc.). We use JSON file for such king of description. Here is an example of such file with description for possible options.
+To start the evaluation in the headless mode you should describe where the project to evaluate is placed and rules for evaluation (language, strategy, output directories, etc.). We use JSON file for such king of description. The easiest way to create config is using `Create Config` button in settings dialog in UI mode of plugin. Here is an example of such file with description for possible options.
 ```javascript
-    {
-      "projectPath": "", // string with path to idea project
-      "evaluationRoots": [ ], // list of string with paths to files/directories for evaluation
-      "language": "Java", // Java, Python, Shell Script or Another
-      "strategy": { // describes evaluation rules
-        "completeAllTokens": false, // if true - all tokens will be tried to complete one by one
-        "context": "ALL", // ALL, PREVIOUS
-        "prefix": { // policy how to complete particular token
-          "name": "SimplePrefix", // SimplePrefix (type 1 or more letters), CapitalizePrefix or NoPrefix
-          "emulateTyping": false, // type token char by char and save intermediate results
-          "n": 1 // numbers of char to type before trigger completion
-        },
-        "filters": { // set of filters that allow to filter some completion locations out
-          "statementTypes": [ // possible values: METHOD_CALL, FIELD, VARIABLE
-            "METHOD_CALL" 
-          ],
-          "isArgument": null, // null / true / false
-          "isStatic": true, // null / true / false
-          "packageRegex": ".*" // regex to check  if java package of resulting token is suitable for evaluation
-        }
+{
+  "projectPath": "", // string with path to idea project
+  "language": "Java", // Java, Python, Shell Script or Another
+  "outputDir": "", // string with path to output directory
+  "interpretActions": true, // interpret or not actions after its generation
+  "actions": { // part of config about actions generation step
+    "evaluationRoots": [ ], // list of string with paths to files/directories for evaluation
+    "strategy": { // describes evaluation rules
+      "completeAllTokens": false, // if true - all tokens will be tried to complete one by one
+      "context": "ALL", // ALL, PREVIOUS
+      "prefix": { // policy how to complete particular token
+        "name": "SimplePrefix", // SimplePrefix (type 1 or more letters), CapitalizePrefix or NoPrefix
+        "emulateTyping": false, // type token char by char and save intermediate results
+        "n": 1 // numbers of char to type before trigger completion
       },
-      "completionType": "BASIC", // BASIC, SMART, ML
-      "interpretActions": true, // interpret or not actions after its generation
-      "outputDir": "", // string with path to output directory
-      "saveLogs": false, // save completion logs or not (only if Completion-Stats-Collector plugin installed)
-      "logsTrainingPercentage": 70 // percentage for logs separation on training/validate
+      "filters": { // set of filters that allow to filter some completion locations out
+        "statementTypes": [ // possible values: METHOD_CALL, FIELD, VARIABLE
+          "METHOD_CALL" 
+        ],
+        "isArgument": null, // null / true / false
+        "isStatic": true, // null / true / false
+        "packageRegex": ".*" // regex to check  if java package of resulting token is suitable for evaluation
+      }
     }
+  },
+  "interpret": { // part of config about actions interpretation step
+    "completionType": "BASIC", // BASIC, SMART, ML
+    "saveLogs": false, // save completion logs or not (only if Completion-Stats-Collector plugin installed)
+    "logsTrainingPercentage": 70 // percentage for logs separation on training/validate
+  },
+  "reports": { // part of config about report generation step
+    "evaluationTitle": "Basic" // header name in HTML-report (use different names for report generation on multiple evaluations)
+  }
+}
 ```
 
 Example of `config.json` to evaluate code completion on several modules from intellij-community project
 ```javascript
 {
   "projectPath": "PATH_TO_COMMUNITY_PROJECT",
-  "evaluationRoots": [
-    "java/java-indexing-impl",
-    "java/java-analysis-impl",
-    "platform/analysis-impl",
-    "platform/core-impl",
-    "platform/indexing-impl",
-    "platform/vcs-impl",
-    "platform/xdebugger-impl",
-    "plugins/git4idea",
-    "plugins/java-decompiler",
-    "plugins/gradle",
-    "plugins/markdown",
-    "plugins/sh",
-    "plugins/terminal",
-    "plugins/yaml"
-  ],
   "language": "Java",
-  "strategy": {
-    "completeAllTokens": false,
-    "context": "ALL",
-    "prefix": {
-      "name": "SimplePrefix",
-      "emulateTyping": false,
-      "n": 1
-    },
-    "filters": {
-      "statementTypes": [
-        "METHOD_CALL"
-      ],
-      "isArgument": null,
-      "isStatic": null,
-      "packageRegex": ".*"
-    }
-  },
-  "completionType": "BASIC",
   "outputDir": "PATH_TO_COMMUNITY_PROJECT/completion-evaluation",
   "interpretActions": true,
-  "saveLogs": false,
-  "logsTrainingPercentage": 70
+  "actions": {
+    "evaluationRoots": [
+      "java/java-indexing-impl",
+      "java/java-analysis-impl",
+      "platform/analysis-impl",
+      "platform/core-impl",
+      "platform/indexing-impl",
+      "platform/vcs-impl",
+      "platform/xdebugger-impl",
+      "plugins/git4idea",
+      "plugins/java-decompiler",
+      "plugins/gradle",
+      "plugins/markdown",
+      "plugins/sh",
+      "plugins/terminal",
+      "plugins/yaml"
+    ],
+    "strategy": {
+      "completeAllTokens": false,
+      "context": "ALL",
+      "prefix": {
+        "name": "SimplePrefix",
+        "emulateTyping": false,
+        "n": 1
+      },
+      "filters": {
+        "statementTypes": [
+          "METHOD_CALL"
+        ],
+        "isArgument": null,
+        "isStatic": null,
+        "packageRegex": ".*"
+      }
+    }
+  },
+  "interpret": {
+    "completionType": "BASIC",
+    "saveLogs": false,
+    "trainTestSplit": 70
+  },
+  "reports": {
+    "evaluationTitle": "Basic"
+  }
 }
 ```
 
-There are many options to start the evaluation in headless mode. Some of them are listed below.
+There are three options for the plugin to work in headless mode:
+- Full. Use the config to execute the plugin on a set of files / directories. As a result of execution, HTML report will be created.
+  - Usage: `evaluate-completion full [PATH_TO_CONFIG]`
+  - If `PATH_TO_CONFIG` missing, default config will be created.
+  - If config missing, default config will be created. Fill settings in default config before restarting evaluation.
+- Custom. Allows you to interpret actions and/or generate reports on an existing workspace.
+  - Usage: `evaluate-completion custom [--interpret-actions | -i] [--generate-report | -r] PATH_TO_WORKSPACE`
+- Multiple Evaluations. Create a report based on multiple evaluations.
+  - Usage: `evaluate-completion multiple-evaluations PATH_TO_WORKSPACE...`
+
+There are many ways to start the evaluation in headless mode. Some of them are listed below.
 
 #### Run from command line:
   1. Add `-Djava.awt.headless=true` to jvm-options. [Instruction](https://www.jetbrains.com/help/idea/tuning-the-ide.html).
   2. Create command line launcher for Intellij IDEA. [Instruction](https://www.jetbrains.com/help/idea/working-with-the-ide-features-from-command-line.html).
-  3. Run command `<Intellij IDEA> evaluate-completion [PATH-TO-CONFIG]`.
-  4. If `path_to_config` missing, default config path will be used (`config.json`). 
-  5. If config missing, default config will be created. Fill settings in default config before restarting evaluation.
+  3. Run command `<Intellij IDEA> evaluate-completion OPTION OPTION_ARGS` with corresponding option.
 
 #### Run with intellij from sources:
 1. Install plugin to debuggee IDEA.
@@ -166,7 +188,7 @@ There are many options to start the evaluation in headless mode. Some of them ar
 import org.jetbrains.intellij.tasks.RunIdeTask
 task evaluateCompletion(type: RunIdeTask) {
     jvmArgs = ['-Xmx4G', '-Djava.awt.headless=true']
-    args = ['evaluate-completion' 'PATH-TO-CONFIG']
+    args = ['evaluate-completion' 'OPTION', 'OPTION_ARGS']
     ideaDirectory = { runIde.ideaDirectory }
     pluginsDirectory = { runIde.pluginsDirectory }
     configDirectory = { runIde.configDirectory }
@@ -176,5 +198,5 @@ task evaluateCompletion(type: RunIdeTask) {
 }
 ```
 2. Install the plugin inside sandbox IDE (the IDE started by executing `runIde` gradle task)
-3. Configure evaluation using `config.json` file and set `PATH-TO-CONFIG`
+3. Specify necessary arguments in the created task.
 4. Start `evaluateCompletion` task

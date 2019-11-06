@@ -3,22 +3,21 @@ package org.jb.cce.storages
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import org.jb.cce.SessionSerializer
-import org.jb.cce.info.EvaluationInfo
+import org.jb.cce.actions.CompletionType
 import org.jb.cce.info.FileSessionsInfo
 import java.io.FileWriter
 import java.nio.file.Paths
 
-class SessionsStorage(private val storageDir: String, val evaluationType: String) {
+class SessionsStorage(private val storageDir: String) {
     companion object {
         private const val pathsListFile = "files.json"
-        private const val evaluationInfoFile = "evaluation_info.json"
         private val gson = Gson()
         private val sessionSerializer = SessionSerializer()
     }
     private var filesCounter = 0
     private var sessionFiles: MutableMap<String, String> = mutableMapOf()
-    private val typeFolder = Paths.get(storageDir, evaluationType)
-    private val keyValueStorage = FileArchivesStorage(typeFolder.toString())
+    private val filesDir = Paths.get(storageDir, "files")
+    private val keyValueStorage = FileArchivesStorage(filesDir.toString())
 
     fun saveSessions(sessionsInfo: FileSessionsInfo) {
         val json = sessionSerializer.serialize(sessionsInfo)
@@ -27,10 +26,9 @@ class SessionsStorage(private val storageDir: String, val evaluationType: String
         filesCounter++
     }
 
-    fun saveEvaluationInfo(evaluationType: String) {
+    fun saveEvaluationInfo() {
         val filesJson = gson.toJson(sessionFiles)
         FileWriter(Paths.get(storageDir, pathsListFile).toString()).use { it.write(filesJson) }
-        FileWriter(Paths.get(storageDir, evaluationInfoFile).toString()).use { it.write(gson.toJson(EvaluationInfo(evaluationType))) }
     }
 
     fun getSessionFiles(): List<Pair<String, String>> {

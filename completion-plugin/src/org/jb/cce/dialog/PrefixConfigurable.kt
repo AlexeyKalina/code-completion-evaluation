@@ -2,8 +2,8 @@ package org.jb.cce.dialog
 
 import com.intellij.ui.layout.LCFlags
 import com.intellij.ui.layout.panel
+import org.jb.cce.Config
 import org.jb.cce.actions.CompletionPrefix
-import org.jb.cce.util.Config
 import java.awt.event.ItemEvent
 import javax.swing.*
 
@@ -14,7 +14,7 @@ class PrefixConfigurable : EvaluationConfigurable {
     private val emulateTypingCheckbox = JCheckBox("", prefix.emulateTyping)
 
     override fun createPanel(previousState: Config): JPanel {
-        prefix = previousState.strategy.prefix
+        prefix = previousState.actions.strategy.prefix
         val panel = panel(title = "Completion prefix", constraints = *arrayOf(LCFlags.noGrid)) { }
         val elements = listOf(
                 JRadioButton("No prefix").configureNoPrefix(),

@@ -18,6 +18,7 @@ import kotlin.collections.HashSet
 class HtmlReportGenerator(outputDir: String) {
     companion object {
         private const val globalReportName = "index.html"
+        private const val baseDirName = "html"
         private const val fileScript = "/script.js"
         private const val fileStyle = "/style.css"
         private const val tabulatorScript = "/tabulator.min.js"
@@ -26,6 +27,8 @@ class HtmlReportGenerator(outputDir: String) {
         private const val optionsStyle = "/options.css"
         private const val diffColumnTitle = "diff"
         private val sessionSerializer = SessionSerializer()
+
+        fun pathToGlobalReport(): String = Paths.get(baseDirName, globalReportName).toString()
     }
 
     private lateinit var reportTitle: String
@@ -36,7 +39,7 @@ class HtmlReportGenerator(outputDir: String) {
     private val reportReferences: MutableMap<String, ReferenceInfo> = mutableMapOf()
     private val errorReferences: MutableMap<String, Path> = mutableMapOf()
 
-    private val baseDir = Paths.get(outputDir, "html")
+    private val baseDir = Paths.get(outputDir, baseDirName)
     private val filesDir = Paths.get(baseDir.toString(), "files")
     private val resourcesDir = Paths.get(baseDir.toString(), "res")
 
