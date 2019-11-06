@@ -16,9 +16,9 @@ class GenerateReportAction : AnAction() {
         val project = e.project ?: return
         val dirs = getFiles(e)
         val workspacePath = Paths.get(dirs.first().path)
-        val existingWorkspace = EvaluationWorkspace(workspacePath.toString(), true)
+        val existingWorkspace = EvaluationWorkspace.open(workspacePath.toString())
         val config = existingWorkspace.readConfig()
-        val outputWorkspace = EvaluationWorkspace(workspacePath.parent.toString(), config = config)
+        val outputWorkspace = EvaluationWorkspace.create(config)
         val process = EvaluationProcess.build({
             shouldGenerateReports = true
         }, BackgroundStepFactory(config, project, false, dirs.map { it.path }, EvaluationRootInfo(true)))

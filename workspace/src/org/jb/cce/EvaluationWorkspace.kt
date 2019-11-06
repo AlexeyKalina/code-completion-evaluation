@@ -12,15 +12,22 @@ import java.nio.file.Paths
 import java.text.SimpleDateFormat
 import java.util.*
 
-class EvaluationWorkspace(outputDir: String, existing: Boolean = false, config: Config? = null) {
+class EvaluationWorkspace private constructor(private val basePath: Path) {
     companion object {
         private const val statsFile = "stats.json"
         private val gson = Gson()
         private val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
-    }
 
-    private val basePath: Path = Paths.get(outputDir).toAbsolutePath()
-            .let { if (existing) it else it.resolve(formatter.format(Date())) }
+        fun open(workspaceDir: String): EvaluationWorkspace {
+            return EvaluationWorkspace(Paths.get(workspaceDir).toAbsolutePath()).setEvaluationTitle()
+        }
+
+        fun create(config: Config): EvaluationWorkspace {
+            val workspace = EvaluationWorkspace(Paths.get(config.outputDir).toAbsolutePath().resolve(formatter.format(Date())))
+            workspace.writeConfig(config)
+            return workspace.setEvaluationTitle()
+        }
+    }
 
     private val sessionsDir = subdir("data")
     private val logsDir = subdir("logs")
@@ -29,14 +36,7 @@ class EvaluationWorkspace(outputDir: String, existing: Boolean = false, config: 
     private val reportsDir = subdir("reports")
     private val pathToConfig = path().resolve(ConfigFactory.DEFAULT_CONFIG_NAME)
 
-    init {
-        check(existing || config != null)
-        if (config != null) writeConfig(config)
-    }
-
-    val sessionsStorage: SessionsStorage = SessionsStorage(sessionsDir.toString()).apply {
-        evaluationTitle = readConfig().reports.evaluationTitle
-    }
+    val sessionsStorage: SessionsStorage = SessionsStorage(sessionsDir.toString())
 
     val actionsStorage: ActionsStorage = ActionsStorage(actionsDir.toString())
 
@@ -56,6 +56,11 @@ class EvaluationWorkspace(outputDir: String, existing: Boolean = false, config: 
             FileWriter(basePath.resolve(statsFile).toString()).use { it.write(gson.toJson(stats)) }
 
     private fun writeConfig(config: Config) = ConfigFactory.save(config, basePath)
+
+    private fun setEvaluationTitle(): EvaluationWorkspace {
+        sessionsStorage.evaluationTitle = readConfig().reports.evaluationTitle
+        return this
+    }
 
     private fun subdir(name: String): Path {
         val directory = basePath.resolve(name)

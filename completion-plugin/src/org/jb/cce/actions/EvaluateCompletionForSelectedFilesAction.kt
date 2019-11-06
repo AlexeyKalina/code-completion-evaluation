@@ -26,7 +26,7 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         if (!result) return
 
         val config = dialog.buildConfig()
-        val workspace = EvaluationWorkspace(config.outputDir, config = config)
+        val workspace = EvaluationWorkspace.create(config)
         val process = EvaluationProcess.build({
             shouldGenerateActions = true
             shouldInterpretActions = config.interpretActions

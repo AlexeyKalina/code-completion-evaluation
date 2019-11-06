@@ -28,7 +28,7 @@ class BackgroundStepFactory(
             ActionsInterpretationStep(config.interpret, config.language, project, isHeadless)
 
     override fun generateReportStep(): EvaluationStep =
-            ReportGenerationStep(inputWorkspacePaths?.map { EvaluationWorkspace(it, true) }, project, isHeadless)
+            ReportGenerationStep(inputWorkspacePaths?.map { EvaluationWorkspace.open(it) }, project, isHeadless)
 
     override fun interpretActionsOnNewWorkspaceStep(): EvaluationStep =
             ActionsInterpretationOnNewWorkspaceStep(config, project, isHeadless)

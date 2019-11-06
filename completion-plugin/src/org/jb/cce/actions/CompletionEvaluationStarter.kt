@@ -75,7 +75,7 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
         override fun run() {
             val config = loadConfig(Paths.get(configPath))
-            val workspace = EvaluationWorkspace(config.outputDir, false, config)
+            val workspace = EvaluationWorkspace.create(config)
             val project = loadProject(config.projectPath)
             val process = EvaluationProcess.build({
                 shouldGenerateActions = true
@@ -92,7 +92,7 @@ class CompletionEvaluationStarter : ApplicationStarter {
         private val generateReport by option(names = *arrayOf("--generate-report", "-r"), help = "Generate report").flag()
 
         override fun run() {
-            val workspace = EvaluationWorkspace(workspacePath, true)
+            val workspace = EvaluationWorkspace.open(workspacePath)
             val config = workspace.readConfig()
             val project = loadProject(config.projectPath)
             val process = EvaluationProcess.build({
@@ -109,10 +109,10 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
         override fun run() {
             val workspacePath = Paths.get(workspaces.first())
-            val existingWorkspace = EvaluationWorkspace(workspacePath.toString(), true)
+            val existingWorkspace = EvaluationWorkspace.open(workspacePath.toString())
             val config = existingWorkspace.readConfig()
             val project = loadProject(config.projectPath)
-            val outputWorkspace = EvaluationWorkspace(workspacePath.parent.toString(), config = config)
+            val outputWorkspace = EvaluationWorkspace.create(config)
             val process = EvaluationProcess.build({
                 shouldGenerateReports = true
             }, BackgroundStepFactory(config, project, true, workspaces, EvaluationRootInfo(true)))

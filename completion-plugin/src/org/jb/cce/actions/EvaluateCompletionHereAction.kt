@@ -36,7 +36,7 @@ class EvaluateCompletionHereAction : AnAction() {
         val result = settingsDialog.showAndGet()
         if (!result) return
         val config = settingsDialog.buildConfig()
-        val workspace = EvaluationWorkspace(config.outputDir, config = config)
+        val workspace = EvaluationWorkspace.create(config)
         val parentPsiElement = if (config.actions.strategy.completeAllTokens) getParentOnSameLine(psi, caret.offset, editor) else null
         val process = EvaluationProcess.build({
             shouldGenerateActions = true

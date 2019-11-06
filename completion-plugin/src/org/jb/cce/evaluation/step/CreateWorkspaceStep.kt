@@ -14,7 +14,7 @@ abstract class CreateWorkspaceStep(
         isHeadless: Boolean): BackgroundEvaluationStep(project, isHeadless) {
 
     override fun evaluateStep(workspace: EvaluationWorkspace, result: FutureResult<EvaluationWorkspace?>, progress: Progress) {
-        val newWorkspace = EvaluationWorkspace(workspace.path().parent.toString(), config = config)
+        val newWorkspace = EvaluationWorkspace.create(config)
         handler.invoke(workspace, newWorkspace, progress)
         result.set(newWorkspace)
     }
