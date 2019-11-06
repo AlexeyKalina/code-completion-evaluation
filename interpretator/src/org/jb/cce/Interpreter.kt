@@ -4,17 +4,14 @@ import org.jb.cce.FileTextUtil.computeChecksum
 import org.jb.cce.FileTextUtil.getDiff
 import org.jb.cce.actions.*
 import org.jb.cce.exception.UnexpectedActionException
-import java.io.File
-import java.io.FileReader
-import java.io.FileWriter
-import java.lang.IllegalStateException
 import java.nio.file.Paths
+import kotlin.random.Random
 
 class Interpreter(private val invoker: CompletionInvoker,
                   private val handler: InterpretationHandler,
                   private val projectPath: String?) {
 
-    fun interpret(fileActions: FileActions): List<Session> {
+    fun interpret(fileActions: FileActions, completeTokenProbability: Double): List<Session> {
         val sessions = mutableListOf<Session>()
         var isFinished = false
         var session: Session? = null
@@ -27,6 +24,7 @@ class Interpreter(private val invoker: CompletionInvoker,
             handler.onErrorOccurred(IllegalStateException("File $filePath has been modified."), fileActions.sessionsCount)
             return emptyList()
         }
+        var completeToken = Random.nextFloat() < completeTokenProbability
 
         for (action in fileActions.actions) {
             handler.onActionStarted(action)
@@ -36,20 +34,25 @@ class Interpreter(private val invoker: CompletionInvoker,
                     position = action.offset
                 }
                 is CallCompletion -> {
-                    if (session == null) session = Session(position, action.expectedText, action.nodeProperties)
-                    val lookup = invoker.callCompletion(action.expectedText, action.prefix)
-                    session.addLookup(lookup)
                     isFinished = false
+                    if (completeToken) {
+                        if (session == null) session = Session(position, action.expectedText, action.nodeProperties)
+                        val lookup = invoker.callCompletion(action.expectedText, action.prefix)
+                        session.addLookup(lookup)
+                    }
                 }
                 is FinishSession -> {
-                    if (session == null) throw UnexpectedActionException("Session canceled before created")
-                    val expectedText = session.expectedText
-                    isFinished = invoker.finishCompletion(expectedText, session.lookups.last().text)
-                    session.success = session.lookups.last().suggestions.any { it.text == expectedText }
-                    sessions.add(session)
-                    val isCanceled = handler.onSessionFinished(filePath)
-                    if (isCanceled) return sessions
-                    session = null
+                    if (completeToken) {
+                        if (session == null) throw UnexpectedActionException("Session canceled before created")
+                        val expectedText = session.expectedText
+                        isFinished = invoker.finishCompletion(expectedText, session.lookups.last().text)
+                        session.success = session.lookups.last().suggestions.any { it.text == expectedText }
+                        sessions.add(session)
+                        val isCanceled = handler.onSessionFinished(filePath)
+                        if (isCanceled) return sessions
+                        session = null
+                    }
+                    completeToken = Random.nextFloat() < completeTokenProbability
                 }
                 is PrintText -> {
                     if (!action.completable || !isFinished)

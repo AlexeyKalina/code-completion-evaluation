@@ -30,6 +30,7 @@ class FullSettingsDialog(
             ContextConfigurable(),
             PrefixConfigurable(),
             FiltersConfigurable(dispatcher, languageConfigurable.language()),
+            FilteringOnInterpretationConfigurable(),
             FlowConfigurable()
     )
 
