@@ -2,7 +2,6 @@ package org.jb.cce.evaluation.step
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.util.concurrency.FutureResult
 import org.jb.cce.Config
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.actions.ActionsGenerator
@@ -11,7 +10,9 @@ import org.jb.cce.evaluation.EvaluationRootInfo
 import org.jb.cce.evaluation.UastBuilder
 import org.jb.cce.exceptions.ExceptionsUtil.stackTraceToString
 import org.jb.cce.info.FileErrorInfo
-import org.jb.cce.util.*
+import org.jb.cce.util.FilesHelper
+import org.jb.cce.util.Progress
+import org.jb.cce.util.text
 import org.jb.cce.visitors.DefaultEvaluationRootVisitor
 import org.jb.cce.visitors.EvaluationRootByOffsetVisitor
 import org.jb.cce.visitors.EvaluationRootByRangeVisitor
@@ -26,10 +27,10 @@ class ActionsGenerationStep(
 
     override val description: String = "Generating actions by selected files"
 
-    override fun evaluateStep(workspace: EvaluationWorkspace, result: FutureResult<EvaluationWorkspace?>, progress: Progress) {
+    override fun runInBackground(workspace: EvaluationWorkspace, progress: Progress): EvaluationWorkspace {
         val filesForEvaluation = FilesHelper.getFilesOfLanguage(project, config.evaluationRoots, language)
         generateActions(workspace, language, filesForEvaluation, config.strategy, evaluationRootInfo, progress)
-        result.set(workspace)
+        return workspace
     }
 
     private fun generateActions(workspace: EvaluationWorkspace, languageName: String, files: Collection<VirtualFile>,

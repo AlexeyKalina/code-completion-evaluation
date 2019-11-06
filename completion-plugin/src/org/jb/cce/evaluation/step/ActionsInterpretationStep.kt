@@ -1,7 +1,6 @@
 package org.jb.cce.evaluation.step
 
 import com.intellij.openapi.project.Project
-import com.intellij.util.concurrency.FutureResult
 import org.jb.cce.Config
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.evaluation.ActionsInterpretationHandler
@@ -16,8 +15,8 @@ class ActionsInterpretationStep(
 
     override val description: String = "Interpretation of generated actions"
 
-    override fun evaluateStep(workspace: EvaluationWorkspace, result: FutureResult<EvaluationWorkspace?>, progress: Progress) {
+    override fun runInBackground(workspace: EvaluationWorkspace, progress: Progress): EvaluationWorkspace {
         ActionsInterpretationHandler(config, language, project).invoke(workspace, workspace, progress)
-        result.set(workspace)
+        return workspace
     }
 }

@@ -1,7 +1,6 @@
 package org.jb.cce.evaluation.step
 
 import com.intellij.openapi.project.Project
-import com.intellij.util.concurrency.FutureResult
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.HtmlReportGenerator
 import org.jb.cce.info.FileEvaluationInfo
@@ -18,27 +17,30 @@ class ReportGenerationStep(
 
     override val description: String = "Generation of HTML-report"
 
-    override fun evaluateStep(workspace: EvaluationWorkspace, result: FutureResult<EvaluationWorkspace?>, progress: Progress) {
+    override fun runInBackground(workspace: EvaluationWorkspace, progress: Progress): EvaluationWorkspace {
         val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
         val workspaces = inputWorkspaces ?: listOf(workspace)
-        generateReport(reportGenerator, workspaces.map { it.sessionsStorage }, workspaces.map { it.errorsStorage })
-        result.set(workspace)
+        generateReport(reportGenerator,
+                workspaces.map { it.readConfig().reports.evaluationTitle },
+                workspaces.map { it.sessionsStorage },
+                workspaces.map { it.errorsStorage })
+        return workspace
     }
 
     data class SessionsInfo(val path: String, val sessionsPath: String, val evaluationType: String)
     private val sessionFiles: MutableMap<String, MutableList<SessionsInfo>> = mutableMapOf()
 
-    private fun generateReport(reportGenerator: HtmlReportGenerator, sessionStorages: List<SessionsStorage>, errorStorages: List<FileErrorsStorage>): String {
+    private fun generateReport(reportGenerator: HtmlReportGenerator, evaluationTitles: List<String>, sessionStorages: List<SessionsStorage>, errorStorages: List<FileErrorsStorage>): String {
         val title2storage = mutableMapOf<String, SessionsStorage>()
         val title2evaluator = mutableMapOf<String, MetricsEvaluator>()
-        for (storage in sessionStorages) {
-            if (title2evaluator.containsKey(storage.evaluationTitle))
+        for ((index, storage) in sessionStorages.withIndex()) {
+            if (title2evaluator.containsKey(evaluationTitles[index]))
                 throw IllegalStateException("Workspaces have same evaluation titles. Change evaluation title in config.json.")
-            title2storage[storage.evaluationTitle] = storage
-            title2evaluator[storage.evaluationTitle] = MetricsEvaluator.withDefaultMetrics(storage.evaluationTitle)
+            title2storage[evaluationTitles[index]] = storage
+            title2evaluator[evaluationTitles[index]] = MetricsEvaluator.withDefaultMetrics(evaluationTitles[index])
             for (pathsPair in storage.getSessionFiles()) {
                 val sessionFile = sessionFiles.getOrPut(pathsPair.first) { mutableListOf() }
-                sessionFile.add(SessionsInfo(pathsPair.first, pathsPair.second, storage.evaluationTitle))
+                sessionFile.add(SessionsInfo(pathsPair.first, pathsPair.second, evaluationTitles[index]))
             }
         }
         for (sessionFile in sessionFiles) {

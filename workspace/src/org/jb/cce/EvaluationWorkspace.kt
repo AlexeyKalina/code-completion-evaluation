@@ -19,13 +19,13 @@ class EvaluationWorkspace private constructor(private val basePath: Path) {
         private val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
 
         fun open(workspaceDir: String): EvaluationWorkspace {
-            return EvaluationWorkspace(Paths.get(workspaceDir).toAbsolutePath()).setEvaluationTitle()
+            return EvaluationWorkspace(Paths.get(workspaceDir).toAbsolutePath())
         }
 
         fun create(config: Config): EvaluationWorkspace {
             val workspace = EvaluationWorkspace(Paths.get(config.outputDir).toAbsolutePath().resolve(formatter.format(Date())))
             workspace.writeConfig(config)
-            return workspace.setEvaluationTitle()
+            return workspace
         }
     }
 
@@ -56,11 +56,6 @@ class EvaluationWorkspace private constructor(private val basePath: Path) {
             FileWriter(basePath.resolve(statsFile).toString()).use { it.write(gson.toJson(stats)) }
 
     private fun writeConfig(config: Config) = ConfigFactory.save(config, basePath)
-
-    private fun setEvaluationTitle(): EvaluationWorkspace {
-        sessionsStorage.evaluationTitle = readConfig().reports.evaluationTitle
-        return this
-    }
 
     private fun subdir(name: String): Path {
         val directory = basePath.resolve(name)

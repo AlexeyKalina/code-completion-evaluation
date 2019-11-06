@@ -19,8 +19,6 @@ class SessionsStorage(private val storageDir: String) {
     private val filesDir = Paths.get(storageDir, "files")
     private val keyValueStorage = FileArchivesStorage(filesDir.toString())
 
-    var evaluationTitle: String = "DEFAULT"
-
     fun saveSessions(sessionsInfo: FileSessionsInfo) {
         val json = sessionSerializer.serialize(sessionsInfo)
         val archivePath = keyValueStorage.save("${Paths.get(sessionsInfo.filePath).fileName}($filesCounter).json", json)

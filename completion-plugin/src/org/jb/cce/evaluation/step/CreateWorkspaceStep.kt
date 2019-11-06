@@ -1,7 +1,6 @@
 package org.jb.cce.evaluation.step
 
 import com.intellij.openapi.project.Project
-import com.intellij.util.concurrency.FutureResult
 import org.jb.cce.Config
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.evaluation.TwoWorkspaceHandler
@@ -13,9 +12,9 @@ abstract class CreateWorkspaceStep(
         project: Project,
         isHeadless: Boolean): BackgroundEvaluationStep(project, isHeadless) {
 
-    override fun evaluateStep(workspace: EvaluationWorkspace, result: FutureResult<EvaluationWorkspace?>, progress: Progress) {
+    override fun runInBackground(workspace: EvaluationWorkspace, progress: Progress): EvaluationWorkspace {
         val newWorkspace = EvaluationWorkspace.create(config)
         handler.invoke(workspace, newWorkspace, progress)
-        result.set(newWorkspace)
+        return newWorkspace
     }
 }
