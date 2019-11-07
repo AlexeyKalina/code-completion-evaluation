@@ -1,3 +1,11 @@
 package org.jb.cce
 
-class InterpretFilter(val completeTokenProbability: Double, val completeTokenSeed: Long?)
+interface InterpretFilter {
+    companion object {
+        fun default(): InterpretFilter = object : InterpretFilter {
+            override fun shouldCompleteToken(): Boolean = true
+        }
+    }
+
+    fun shouldCompleteToken(): Boolean
+}

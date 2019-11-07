@@ -13,10 +13,10 @@ class FilteringOnInterpretationConfigurable : EvaluationConfigurable {
     private lateinit var seedTextField: JTextField
 
     override fun createPanel(previousState: Config): JPanel {
-        probabilityTextField = JTextField(previousState.interpret.filter.completeTokenProbability.toString())
-        seedTextField = JTextField(previousState.interpret.filter.completeTokenSeed?.toString() ?: "").apply {
-            isEnabled = 0 < previousState.interpret.filter.completeTokenProbability &&
-                    previousState.interpret.filter.completeTokenProbability < 1
+        probabilityTextField = JTextField(previousState.interpret.completeTokenProbability.toString())
+        seedTextField = JTextField(previousState.interpret.completeTokenSeed?.toString() ?: "").apply {
+            isEnabled = 0 < previousState.interpret.completeTokenProbability &&
+                    previousState.interpret.completeTokenProbability < 1
         }
 
         return panel(title = "Filtering tokens during interpretation") {

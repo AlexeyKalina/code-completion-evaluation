@@ -25,8 +25,7 @@ class Interpreter(private val invoker: CompletionInvoker,
             handler.onErrorOccurred(IllegalStateException("File $filePath has been modified."), fileActions.sessionsCount)
             return emptyList()
         }
-        val random = if (filter.completeTokenSeed != null) Random(filter.completeTokenSeed) else Random.Default
-        var shouldCompleteToken = random.nextFloat() < filter.completeTokenProbability
+        var shouldCompleteToken = filter.shouldCompleteToken()
 
         for (action in fileActions.actions) {
             handler.onActionStarted(action)
@@ -54,7 +53,7 @@ class Interpreter(private val invoker: CompletionInvoker,
                         if (isCanceled) return sessions
                         session = null
                     }
-                    shouldCompleteToken = random.nextFloat() < filter.completeTokenProbability
+                    shouldCompleteToken = filter.shouldCompleteToken()
                 }
                 is PrintText -> {
                     if (!action.completable || !isFinished)

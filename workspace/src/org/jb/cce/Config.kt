@@ -29,7 +29,8 @@ data class Config internal constructor(
 
     data class ActionsInterpretation internal constructor(
             val completionType: CompletionType,
-            val filter: InterpretFilter,
+            val completeTokenProbability: Double,
+            val completeTokenSeed: Long?,
             val saveLogs: Boolean,
             val trainTestSplit: Int)
 
@@ -61,7 +62,8 @@ data class Config internal constructor(
                 ),
                 ActionsInterpretation(
                         completionType,
-                        InterpretFilter(completeTokenProbability, completeTokenSeed),
+                        completeTokenProbability,
+                        completeTokenSeed,
                         saveLogs,
                         trainTestSplit
                 ),
