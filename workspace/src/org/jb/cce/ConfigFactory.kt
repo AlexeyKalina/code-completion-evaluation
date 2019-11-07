@@ -58,6 +58,7 @@ object ConfigFactory {
         if (map == null) return
         builder.completionType = CompletionType.valueOf(map.getAs("completionType"))
         builder.completeTokenProbability = map.getAs("completeTokenProbability")
+        builder.completeTokenSeed = map.getAs<Double>("completeTokenSeed").toLong()
         builder.saveLogs = map.getAs("saveLogs")
         builder.trainTestSplit = map.getAs<Double>("trainTestSplit").toInt()
     }

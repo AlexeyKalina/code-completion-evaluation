@@ -47,7 +47,7 @@ class ActionsInterpretationHandler(
         for (file in files) {
             val fileActions = workspace1.actionsStorage.getActions(file)
             try {
-                val sessions = interpreter.interpret(fileActions, config.completeTokenProbability)
+                val sessions = interpreter.interpret(fileActions, config.completeTokenProbability, config.completeTokenSeed)
                 val fileText = FilesHelper.getFile(project, fileActions.path).text()
                 workspace2.sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, fileText, sessions))
             } catch (e: Throwable) {
