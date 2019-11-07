@@ -25,7 +25,8 @@ class EvaluateHereSettingsDialog(
             CompletionTypeConfigurable(),
             ContextConfigurable(dispatcher),
             PrefixConfigurable(),
-            FiltersConfigurable(dispatcher, language)
+            FiltersConfigurable(dispatcher, language),
+            FilteringOnInterpretationConfigurable()
     )
 
     init {

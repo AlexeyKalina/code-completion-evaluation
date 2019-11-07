@@ -17,14 +17,16 @@ class FiltersConfigurable(private val dispatcher: EventDispatcher<SettingsListen
     private var completeAllTokens = false
     private var completeAllTokensPrev = false
     private val configurableMap: MutableMap<String, UIConfigurable> = mutableMapOf()
+    private val completeAllTokensCheckBox = JCheckBox()
 
     override fun createPanel(previousState: Config): JPanel {
         completeAllTokens = previousState.actions.strategy.completeAllTokens
+        completeAllTokensPrev = completeAllTokens
         val panel = panel(title = "Filters") {
             row {
                 cell {
                     label("Complete all tokens:")
-                    checkBox("", completeAllTokens).configure()
+                    completeAllTokensCheckBox()
                 }
             }
             val provider = FilterUIConfigurableFactory(previousState, this)
@@ -32,6 +34,7 @@ class FiltersConfigurable(private val dispatcher: EventDispatcher<SettingsListen
                 getFilterView(filter, provider)
             }
         }
+        completeAllTokensCheckBox.configure()
         setFiltersByLanguage(initLanguage)
         return panel
     }
@@ -52,7 +55,9 @@ class FiltersConfigurable(private val dispatcher: EventDispatcher<SettingsListen
         }
     }
 
-    private fun JCheckBox.configure(): JCheckBox {
+    private fun JCheckBox.configure() {
+        isSelected = completeAllTokens
+        if (completeAllTokens) setFilterViewsEnabled(false)
         updateData(Language.resolve(initLanguage), this)
         dispatcher.multicaster.allTokensChanged(completeAllTokens)
         addItemListener {
@@ -63,7 +68,6 @@ class FiltersConfigurable(private val dispatcher: EventDispatcher<SettingsListen
         dispatcher.addListener(object : SettingsListener {
             override fun languageChanged(language: Language) = updateData(language, this@configure)
         })
-        return this
     }
 
     private fun updateData(language: Language, checkBox: JCheckBox) {

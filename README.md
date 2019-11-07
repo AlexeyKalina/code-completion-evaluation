@@ -97,6 +97,8 @@ To start the evaluation in the headless mode you should describe where the proje
   },
   "interpret": { // part of config about actions interpretation step
     "completionType": "BASIC", // BASIC, SMART, ML
+    "completeTokenProbability": 1.0, // probability that token will be completed
+    "completeTokenSeed": null, // seed for random (for previous option)
     "saveLogs": false, // save completion logs or not (only if Completion-Stats-Collector plugin installed)
     "logsTrainingPercentage": 70 // percentage for logs separation on training/validate
   },
@@ -150,6 +152,8 @@ Example of `config.json` to evaluate code completion on several modules from int
   },
   "interpret": {
     "completionType": "BASIC",
+    "completeTokenProbability": 1.0,
+    "completeTokenSeed": null,
     "saveLogs": false,
     "trainTestSplit": 70
   },

@@ -6,6 +6,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
 import org.jb.cce.Config
 import org.jb.cce.EvaluationWorkspace
+import org.jb.cce.InterpretFilter
 import org.jb.cce.Interpreter
 import org.jb.cce.actions.CompletionType
 import org.jb.cce.exceptions.ExceptionsUtil
@@ -37,7 +38,10 @@ class ActionsInterpretationHandler(
         }
         LOG.info("Computing of sessions count took $computingTime ms")
         val handler = InterpretationHandlerImpl(indicator, sessionsCount)
-        val interpreter = Interpreter(completionInvoker, handler, project.basePath)
+        val filter =
+                if (config.completeTokenProbability < 1) RandomInterpretFilter(config.completeTokenProbability, config.completeTokenSeed)
+                else InterpretFilter.default()
+        val interpreter = Interpreter(completionInvoker, handler, filter, project.basePath)
         val mlCompletionFlag = isMLCompletionEnabled()
         LOG.info("Start interpreting actions")
         setMLCompletion(config.completionType == CompletionType.ML)

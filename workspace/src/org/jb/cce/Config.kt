@@ -29,6 +29,8 @@ data class Config internal constructor(
 
     data class ActionsInterpretation internal constructor(
             val completionType: CompletionType,
+            val completeTokenProbability: Double,
+            val completeTokenSeed: Long?,
             val saveLogs: Boolean,
             val trainTestSplit: Int)
 
@@ -46,6 +48,8 @@ data class Config internal constructor(
         var prefixStrategy: CompletionPrefix = CompletionPrefix.NoPrefix
         var contextStrategy: CompletionContext = CompletionContext.ALL
         var allTokens: Boolean = false
+        var completeTokenProbability: Double = 1.0
+        var completeTokenSeed: Long? = null
 
         internal fun build(): Config = Config(
                 projectPath,
@@ -58,6 +62,8 @@ data class Config internal constructor(
                 ),
                 ActionsInterpretation(
                         completionType,
+                        completeTokenProbability,
+                        completeTokenSeed,
                         saveLogs,
                         trainTestSplit
                 ),
