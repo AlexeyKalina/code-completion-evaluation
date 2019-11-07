@@ -11,7 +11,7 @@ class Interpreter(private val invoker: CompletionInvoker,
                   private val handler: InterpretationHandler,
                   private val projectPath: String?) {
 
-    fun interpret(fileActions: FileActions, completeTokenProbability: Double, completeTokenSeed: Long): List<Session> {
+    fun interpret(fileActions: FileActions, completeTokenProbability: Double, completeTokenSeed: Long?): List<Session> {
         val sessions = mutableListOf<Session>()
         var isFinished = false
         var session: Session? = null
@@ -24,7 +24,7 @@ class Interpreter(private val invoker: CompletionInvoker,
             handler.onErrorOccurred(IllegalStateException("File $filePath has been modified."), fileActions.sessionsCount)
             return emptyList()
         }
-        val random = Random(completeTokenSeed)
+        val random = if (completeTokenSeed != null) Random(completeTokenSeed) else Random.Default
         var completeToken = random.nextFloat() < completeTokenProbability
 
         for (action in fileActions.actions) {
