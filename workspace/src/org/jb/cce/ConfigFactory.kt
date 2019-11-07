@@ -57,8 +57,9 @@ object ConfigFactory {
     private fun deserializeActionsInterpretation(map: Map<String, Any>?, builder: Config.Builder) {
         if (map == null) return
         builder.completionType = CompletionType.valueOf(map.getAs("completionType"))
-        builder.completeTokenProbability = map.getAs("completeTokenProbability")
-        builder.completeTokenSeed = map.getAs<Double?>("completeTokenSeed")?.toLong()
+        val interpretFilter = map.getAs<Map<String, Any>>("filter")
+        builder.completeTokenProbability = interpretFilter.getAs("completeTokenProbability")
+        builder.completeTokenSeed = interpretFilter.getAs<Double?>("completeTokenSeed")?.toLong()
         builder.saveLogs = map.getAs("saveLogs")
         builder.trainTestSplit = map.getAs<Double>("trainTestSplit").toInt()
     }

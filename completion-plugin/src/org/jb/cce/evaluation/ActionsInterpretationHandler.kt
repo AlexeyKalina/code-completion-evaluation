@@ -37,7 +37,7 @@ class ActionsInterpretationHandler(
         }
         LOG.info("Computing of sessions count took $computingTime ms")
         val handler = InterpretationHandlerImpl(indicator, sessionsCount)
-        val interpreter = Interpreter(completionInvoker, handler, project.basePath)
+        val interpreter = Interpreter(completionInvoker, handler, config.filter, project.basePath)
         val mlCompletionFlag = isMLCompletionEnabled()
         LOG.info("Start interpreting actions")
         setMLCompletion(config.completionType == CompletionType.ML)
@@ -47,7 +47,7 @@ class ActionsInterpretationHandler(
         for (file in files) {
             val fileActions = workspace1.actionsStorage.getActions(file)
             try {
-                val sessions = interpreter.interpret(fileActions, config.completeTokenProbability, config.completeTokenSeed)
+                val sessions = interpreter.interpret(fileActions)
                 val fileText = FilesHelper.getFile(project, fileActions.path).text()
                 workspace2.sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, fileText, sessions))
             } catch (e: Throwable) {

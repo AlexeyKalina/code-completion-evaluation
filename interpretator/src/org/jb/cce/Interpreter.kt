@@ -9,9 +9,10 @@ import kotlin.random.Random
 
 class Interpreter(private val invoker: CompletionInvoker,
                   private val handler: InterpretationHandler,
+                  private val filter: InterpretFilter,
                   private val projectPath: String?) {
 
-    fun interpret(fileActions: FileActions, completeTokenProbability: Double, completeTokenSeed: Long?): List<Session> {
+    fun interpret(fileActions: FileActions): List<Session> {
         val sessions = mutableListOf<Session>()
         var isFinished = false
         var session: Session? = null
@@ -24,8 +25,8 @@ class Interpreter(private val invoker: CompletionInvoker,
             handler.onErrorOccurred(IllegalStateException("File $filePath has been modified."), fileActions.sessionsCount)
             return emptyList()
         }
-        val random = if (completeTokenSeed != null) Random(completeTokenSeed) else Random.Default
-        var completeToken = random.nextFloat() < completeTokenProbability
+        val random = if (filter.completeTokenSeed != null) Random(filter.completeTokenSeed) else Random.Default
+        var shouldCompleteToken = random.nextFloat() < filter.completeTokenProbability
 
         for (action in fileActions.actions) {
             handler.onActionStarted(action)
@@ -36,14 +37,14 @@ class Interpreter(private val invoker: CompletionInvoker,
                 }
                 is CallCompletion -> {
                     isFinished = false
-                    if (completeToken) {
+                    if (shouldCompleteToken) {
                         if (session == null) session = Session(position, action.expectedText, action.nodeProperties)
                         val lookup = invoker.callCompletion(action.expectedText, action.prefix)
                         session.addLookup(lookup)
                     }
                 }
                 is FinishSession -> {
-                    if (completeToken) {
+                    if (shouldCompleteToken) {
                         if (session == null) throw UnexpectedActionException("Session canceled before created")
                         val expectedText = session.expectedText
                         isFinished = invoker.finishCompletion(expectedText, session.lookups.last().text)
@@ -53,7 +54,7 @@ class Interpreter(private val invoker: CompletionInvoker,
                         if (isCanceled) return sessions
                         session = null
                     }
-                    completeToken = random.nextFloat() < completeTokenProbability
+                    shouldCompleteToken = random.nextFloat() < filter.completeTokenProbability
                 }
                 is PrintText -> {
                     if (!action.completable || !isFinished)
