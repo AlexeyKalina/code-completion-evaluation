@@ -22,7 +22,13 @@ class ReportGenerationStep(
 
     override fun runInBackground(workspace: EvaluationWorkspace, progress: Progress): EvaluationWorkspace {
         val workspaces = inputWorkspaces ?: listOf(workspace)
-        for (filter in sessionsFilters) {
+        for ((i, filter) in sessionsFilters.withIndex()) {
+            if (progress.isCanceled()) {
+                LOG.info("Generating reports is canceled by user. Done: $i/${sessionsFilters.size}.")
+                break
+            }
+            LOG.info("Start generating report for filter ${filter.name}. Done: $i/${sessionsFilters.size}.")
+            progress.setProgress(filter.name, "${filter.name} filter ($i/${sessionsFilters.size})", (i.toDouble() + 1) / sessionsFilters.size)
             val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory(), filter.name)
             generateReport(reportGenerator,
                     workspaces.map { it.readConfig().reports.evaluationTitle },
