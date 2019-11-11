@@ -9,15 +9,12 @@ import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.evaluation.BackgroundStepFactory
 import org.jb.cce.evaluation.EvaluationProcess
 import org.jb.cce.evaluation.EvaluationRootInfo
-import java.nio.file.Paths
 
 class GenerateReportAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val dirs = getFiles(e)
-        val workspacePath = Paths.get(dirs.first().path)
-        val existingWorkspace = EvaluationWorkspace.open(workspacePath.toString())
-        val config = existingWorkspace.readConfig()
+        val config = dirs.map { it.path }.buildMultipleEvaluationsConfig()
         val outputWorkspace = EvaluationWorkspace.create(config)
         val process = EvaluationProcess.build({
             shouldGenerateReports = true

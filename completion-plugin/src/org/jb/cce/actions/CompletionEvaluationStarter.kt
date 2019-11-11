@@ -111,11 +111,9 @@ class CompletionEvaluationStarter : ApplicationStarter {
         private val workspaces by argument(name = "workspaces", help = "List of workspaces").multiple()
 
         override fun run() {
-            val workspacePath = Paths.get(workspaces.first())
-            val existingWorkspace = EvaluationWorkspace.open(workspacePath.toString())
-            val config = existingWorkspace.readConfig()
-            val project = loadProject(config.projectPath)
+            val config = workspaces.buildMultipleEvaluationsConfig()
             val outputWorkspace = EvaluationWorkspace.create(config)
+            val project = loadProject(config.projectPath)
             val process = EvaluationProcess.build({
                 shouldGenerateReports = true
             }, BackgroundStepFactory(config, project, true, workspaces, EvaluationRootInfo(true)))

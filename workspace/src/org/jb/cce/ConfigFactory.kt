@@ -75,7 +75,7 @@ object ConfigFactory {
         val filtersList = map.getAs<List<Map<String, Any>>>("sessionsFilters")
         filtersList.forEach {
             val name = it.getAs<String>("name")
-            if (!builder.sessionsFilters.any { it.name == name })
+            if (builder.sessionsFilters.all { it.name != name })
                 builder.sessionsFilters.add(SessionsFilter(name, readFilters(it, language)))
         }
     }
