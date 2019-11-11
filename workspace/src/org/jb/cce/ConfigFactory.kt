@@ -2,9 +2,13 @@ package org.jb.cce
 
 import com.google.gson.GsonBuilder
 import org.apache.commons.text.StringSubstitutor
+import com.google.gson.JsonObject
+import com.google.gson.JsonSerializationContext
+import com.google.gson.JsonSerializer
 import org.jb.cce.actions.*
 import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterManager
+import java.lang.reflect.Type
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -15,6 +19,7 @@ object ConfigFactory {
             .serializeNulls()
             .setPrettyPrinting()
             .registerTypeAdapter(CompletionStrategy::class.java, CompletionStrategySerializer())
+            .registerTypeAdapter(SessionsFilter::class.java, SessionFiltersSerializer())
             .create()
 
     fun defaultConfig(projectPath: String = "", language: String = "Java"): Config = Config.build(projectPath, language) {}
@@ -44,7 +49,7 @@ object ConfigFactory {
             interpretActions = map.getAs("interpretActions")
             deserializeActionsGeneration(map.getIfExists("actions"), languageName, this)
             deserializeActionsInterpretation(map.getIfExists("interpret"), this)
-            deserializeReportGeneration(map.getIfExists("reports"), this)
+            deserializeReportGeneration(map.getIfExists("reports"), languageName, this)
         }
     }
 
@@ -64,9 +69,15 @@ object ConfigFactory {
         builder.trainTestSplit = map.getAs<Double>("trainTestSplit").toInt()
     }
 
-    private fun deserializeReportGeneration(map: Map<String, Any>?, builder: Config.Builder) {
+    private fun deserializeReportGeneration(map: Map<String, Any>?, language: String, builder: Config.Builder) {
         if (map == null) return
         builder.evaluationTitle = map.handleEnv("evaluationTitle")
+        val filtersList = map.getAs<List<Map<String, Any>>>("sessionsFilters")
+        filtersList.forEach {
+            val name = it.getAs<String>("name")
+            if (!builder.sessionsFilters.any { it.name == name })
+                builder.sessionsFilters.add(SessionsFilter(name, readFilters(it, language)))
+        }
     }
 
     private class CompletionStrategyDeserializer {
@@ -74,15 +85,7 @@ object ConfigFactory {
             val completeAllTokens = strategy.getAs<Boolean>("completeAllTokens")
             builder.allTokens = completeAllTokens
             if (!completeAllTokens) {
-                val evaluationFilters = mutableMapOf<String, EvaluationFilter>()
-                val filters = strategy.getAs<Map<String, Any>>("filters")
-                for ((id, description) in filters) {
-                    val configuration = EvaluationFilterManager.getConfigurationById(id)
-                            ?: throw IllegalStateException("Unknown filter: $id")
-                    assert(configuration.isLanguageSupported(language)) { "filter $id is not supported for this language" }
-                    evaluationFilters[id] = configuration.buildFromJson(description)
-                }
-                builder.filters = evaluationFilters
+                builder.filters.putAll(readFilters(strategy, language))
             }
             builder.prefixStrategy = getPrefix(strategy)
             builder.contextStrategy = CompletionContext.valueOf(strategy.getAs("context"))
@@ -100,6 +103,29 @@ object ConfigFactory {
     }
 
     private fun Map<String, *>.handleEnv(key: String): String = StringSubstitutor.replaceSystemProperties(getAs(key))
+
+    private fun readFilters(map: Map<String, Any>, language: String): MutableMap<String, EvaluationFilter> {
+        val evaluationFilters = mutableMapOf<String, EvaluationFilter>()
+        val filters = map.getAs<Map<String, Any>>("filters")
+        for ((id, description) in filters) {
+            val configuration = EvaluationFilterManager.getConfigurationById(id)
+                    ?: throw IllegalStateException("Unknown filter: $id")
+            assert(configuration.isLanguageSupported(language)) { "filter $id is not supported for this language" }
+            evaluationFilters[id] = configuration.buildFromJson(description)
+        }
+        return evaluationFilters
+    }
+
+    private class SessionFiltersSerializer : JsonSerializer<SessionsFilter> {
+        override fun serialize(src: SessionsFilter, typeOfSrc: Type, context: JsonSerializationContext): JsonObject {
+            val jsonObject = JsonObject()
+            jsonObject.addProperty("name", src.name)
+            val filtersObject = JsonObject()
+            src.filters.forEach { id, filter -> filtersObject.add(id, filter.toJson()) }
+            jsonObject.add("filters", filtersObject)
+            return jsonObject
+        }
+    }
 
     private inline fun <reified T> Map<String, *>.getAs(key: String): T {
         check(key in this.keys) { "$key not found. Existing keys: ${keys.toList()}" }

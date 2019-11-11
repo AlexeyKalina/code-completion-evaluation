@@ -5,6 +5,7 @@ import org.jb.cce.actions.CompletionPrefix
 import org.jb.cce.actions.CompletionStrategy
 import org.jb.cce.actions.CompletionType
 import org.jb.cce.filter.EvaluationFilter
+import org.jb.cce.filter.EvaluationFilterManager
 import java.nio.file.Paths
 
 data class Config internal constructor(
@@ -35,7 +36,8 @@ data class Config internal constructor(
             val trainTestSplit: Int)
 
     data class ReportGeneration internal constructor(
-            val evaluationTitle: String)
+            val evaluationTitle: String,
+            val sessionsFilters: List<SessionsFilter>)
 
     class Builder internal constructor(private val projectPath: String, private val language: String) {
         var evaluationRoots = mutableListOf<String>()
@@ -50,8 +52,12 @@ data class Config internal constructor(
         var allTokens: Boolean = false
         var completeTokenProbability: Double = 1.0
         var completeTokenSeed: Long? = null
+        var filters: MutableMap<String, EvaluationFilter> = mutableMapOf()
+        var sessionsFilters: MutableList<SessionsFilter> = mutableListOf(
+                SessionsFilter("All", EvaluationFilterManager.getAllFilters().associateBy({it.id}, {EvaluationFilter.ACCEPT_ALL}).toMutableMap())
+        )
 
-        internal fun build(): Config = Config(
+        fun build(): Config = Config(
                 projectPath,
                 language,
                 outputDir,
@@ -67,9 +73,10 @@ data class Config internal constructor(
                         saveLogs,
                         trainTestSplit
                 ),
-                ReportGeneration(evaluationTitle)
+                ReportGeneration(
+                        evaluationTitle,
+                        sessionsFilters
+                )
         )
-
-        var filters: MutableMap<String, EvaluationFilter> = mutableMapOf()
     }
 }

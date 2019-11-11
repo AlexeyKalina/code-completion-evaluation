@@ -3,6 +3,8 @@ package org.jb.cce.evaluation.step
 import com.intellij.openapi.project.Project
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.HtmlReportGenerator
+import org.jb.cce.SessionsFilter
+import org.jb.cce.evaluation.FilteredSessionsStorage
 import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.metrics.MetricsEvaluator
 import org.jb.cce.storages.FileErrorsStorage
@@ -11,6 +13,7 @@ import org.jb.cce.util.Progress
 
 class ReportGenerationStep(
         private val inputWorkspaces: List<EvaluationWorkspace>?,
+        private val sessionsFilters: List<SessionsFilter>,
         project: Project,
         isHeadless: Boolean) : BackgroundEvaluationStep(project, isHeadless) {
     override val name: String = "Report generation"
@@ -18,19 +21,21 @@ class ReportGenerationStep(
     override val description: String = "Generation of HTML-report"
 
     override fun runInBackground(workspace: EvaluationWorkspace, progress: Progress): EvaluationWorkspace {
-        val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory())
         val workspaces = inputWorkspaces ?: listOf(workspace)
-        generateReport(reportGenerator,
-                workspaces.map { it.readConfig().reports.evaluationTitle },
-                workspaces.map { it.sessionsStorage },
-                workspaces.map { it.errorsStorage })
+        for (filter in sessionsFilters) {
+            val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory(), filter.name)
+            generateReport(reportGenerator,
+                    workspaces.map { it.readConfig().reports.evaluationTitle },
+                    workspaces.map { FilteredSessionsStorage(filter, it.sessionsStorage) },
+                    workspaces.map { it.errorsStorage })
+        }
         return workspace
     }
 
     data class SessionsInfo(val path: String, val sessionsPath: String, val evaluationType: String)
-    private val sessionFiles: MutableMap<String, MutableList<SessionsInfo>> = mutableMapOf()
 
     private fun generateReport(reportGenerator: HtmlReportGenerator, evaluationTitles: List<String>, sessionStorages: List<SessionsStorage>, errorStorages: List<FileErrorsStorage>): String {
+        val sessionFiles: MutableMap<String, MutableList<SessionsInfo>> = mutableMapOf()
         val title2storage = mutableMapOf<String, SessionsStorage>()
         val title2evaluator = mutableMapOf<String, MetricsEvaluator>()
         for ((index, storage) in sessionStorages.withIndex()) {

@@ -19,7 +19,8 @@ class NodeProperties {
     val properties: Map<String, Any> = _properties
 
     var tokenType: TypeProperty?
-        get() = _properties[tokenTypePropertyId] as? TypeProperty
+        get() = _properties[tokenTypePropertyId] as? TypeProperty ?:
+            if (_properties[tokenTypePropertyId] is String) TypeProperty.valueOf(_properties[tokenTypePropertyId] as String) else null
         set(value) = setProperty(tokenTypePropertyId, value)
 
     var isArgument: Boolean?
