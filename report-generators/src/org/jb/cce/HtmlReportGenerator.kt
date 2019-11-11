@@ -247,7 +247,7 @@ class HtmlReportGenerator(outputDir: String) {
         fun getReportMetrics(repRef: ReferenceInfo) = globalMetrics.map { metric ->
             MetricInfo(
                     metric.name,
-                    repRef.metrics.find { it.label == metric.label }?.value ?: Double.NaN,
+                    repRef.metrics.find { it.name == metric.name && it.evaluationType == metric.evaluationType }?.value ?: Double.NaN,
                     metric.evaluationType,
                     metric.valueType
             )
@@ -259,7 +259,7 @@ class HtmlReportGenerator(outputDir: String) {
                         .mapValues { with(it.value) { Pair(first().first - last().first, first().second) } }
                         .map { MetricInfo(it.key, it.value.first, diffColumnTitle, it.value.second) }).flatten()
                 else metrics
-                ).joinToString(",") { "${it.label}:'${formatMetricValue(it.value, it.valueType)}'" }
+                ).joinToString(",") { "${it.name}${it.evaluationType}:'${formatMetricValue(it.value, it.valueType)}'" }
 
         fun getErrorRow(errRef: Map.Entry<String, Path>): String =
                 "{id:${rowId++},file:${getErrorLink(errRef)},${formatMetrics(errorMetrics)}}"
