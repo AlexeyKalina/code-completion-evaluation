@@ -37,8 +37,11 @@ class CompletionEvaluationStarter : ApplicationStarter {
             fatalError("Error for loading config: $configPath, $e. StackTrace: ${stackTraceToString(e)}")
         }
 
-        protected fun loadProject(projectPath: String) = try {
-            openProjectHeadless(projectPath)
+        protected fun loadProject(projectPath: String): Project = try {
+            println("Open and load project $projectPath. Operation may take few minutes.")
+            val project = openProjectHeadless(projectPath)
+            println("Project loaded!")
+            project
         } catch (e: Throwable) {
             fatalError("Project could not be loaded: $e")
         }
