@@ -52,10 +52,19 @@ data class Config internal constructor(
         var allTokens: Boolean = false
         var completeTokenProbability: Double = 1.0
         var completeTokenSeed: Long? = null
-        var filters: MutableMap<String, EvaluationFilter> = mutableMapOf()
-        var sessionsFilters: MutableList<SessionsFilter> = mutableListOf(
+        val filters: MutableMap<String, EvaluationFilter> = mutableMapOf()
+        private val sessionsFilters: MutableList<SessionsFilter> = mutableListOf(
                 SessionsFilter("All", EvaluationFilterManager.getAllFilters().associateBy({it.id}, {EvaluationFilter.ACCEPT_ALL}).toMutableMap())
         )
+
+        fun mergeFilters(filters: List<SessionsFilter>) {
+            for (filter in filters) {
+                if (sessionsFilters.all { it.name != filter.name })
+                    sessionsFilters.add(filter)
+                else
+                    println("More than one filter has name ${filter.name}")
+            }
+        }
 
         fun build(): Config = Config(
                 projectPath,

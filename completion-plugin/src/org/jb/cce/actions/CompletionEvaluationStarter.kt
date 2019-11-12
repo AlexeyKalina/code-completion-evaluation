@@ -111,7 +111,7 @@ class CompletionEvaluationStarter : ApplicationStarter {
         private val workspaces by argument(name = "workspaces", help = "List of workspaces").multiple()
 
         override fun run() {
-            val config = workspaces.buildMultipleEvaluationsConfig()
+            val config = workspaces.map { EvaluationWorkspace.open(it) }.buildMultipleEvaluationsConfig()
             val outputWorkspace = EvaluationWorkspace.create(config)
             val project = loadProject(config.projectPath)
             val process = EvaluationProcess.build({

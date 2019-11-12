@@ -73,11 +73,12 @@ object ConfigFactory {
         if (map == null) return
         builder.evaluationTitle = map.handleEnv("evaluationTitle")
         val filtersList = map.getAs<List<Map<String, Any>>>("sessionsFilters")
+        val filters = mutableListOf<SessionsFilter>()
         filtersList.forEach {
             val name = it.getAs<String>("name")
-            if (builder.sessionsFilters.all { it.name != name })
-                builder.sessionsFilters.add(SessionsFilter(name, readFilters(it, language)))
+            filters.add(SessionsFilter(name, readFilters(it, language)))
         }
+        builder.mergeFilters(filters)
     }
 
     private class CompletionStrategyDeserializer {

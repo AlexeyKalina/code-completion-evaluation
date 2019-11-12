@@ -14,7 +14,7 @@ class GenerateReportAction : AnAction() {
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
         val dirs = getFiles(e)
-        val config = dirs.map { it.path }.buildMultipleEvaluationsConfig()
+        val config = dirs.map { EvaluationWorkspace.open(it.path) }.buildMultipleEvaluationsConfig()
         val outputWorkspace = EvaluationWorkspace.create(config)
         val process = EvaluationProcess.build({
             shouldGenerateReports = true
