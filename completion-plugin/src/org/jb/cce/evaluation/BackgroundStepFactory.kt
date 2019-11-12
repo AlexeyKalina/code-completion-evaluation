@@ -10,6 +10,7 @@ import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.HtmlReportGenerator
 import org.jb.cce.dialog.OpenBrowserDialog
 import org.jb.cce.evaluation.step.*
+import org.jb.cce.uast.Language
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 
@@ -37,8 +38,8 @@ class BackgroundStepFactory(
             HighlightingTokensInIdeStep(project, isHeadless)
 
     override fun setupSdkStep(): EvaluationStep? {
-        return when {
-            "Java".equals(config.language, ignoreCase = true) -> SetupJDKStep(project)
+        return when (Language.resolve(config.language)) {
+            Language.JAVA -> SetupJDKStep(project)
             else -> null
         }
     }
