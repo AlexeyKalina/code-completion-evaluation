@@ -8,7 +8,9 @@ enum class Language(val displayName: String, private val extension: String) {
     UNSUPPORTED("Unsupported", ""); // TODO: There are no unsupported languages
 
     companion object {
-        fun resolve(displayName: String): Language = values().find { it.displayName == displayName } ?: ANOTHER
+        fun resolve(displayName: String): Language = values()
+                .find { it.displayName.equals(displayName, ignoreCase = true) } ?: ANOTHER
+
         fun resolveByExtension(extension: String): Language = values().find { it.extension == extension } ?: ANOTHER
     }
 }

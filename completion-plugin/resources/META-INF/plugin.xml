@@ -16,6 +16,9 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <appStarter implementation="org.jb.cce.actions.CompletionEvaluationStarter"/>
+
+        <registryKey key="evaluation.plugin.disable.sdk.check" defaultValue="false"
+                     description="Disables check that project sdk configured properly" restartRequired="false"/>
     </extensions>
 
     <actions>

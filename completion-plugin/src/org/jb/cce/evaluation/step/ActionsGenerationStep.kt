@@ -39,6 +39,7 @@ class ActionsGenerationStep(
         val uastBuilder = UastBuilder.create(project, languageName, strategy.completeAllTokens)
 
         val errors = mutableListOf<FileErrorInfo>()
+        var totalSessions = 0
         for ((i, file) in files.withIndex()) {
             if (indicator.isCanceled()) {
                 LOG.info("Generating actions is canceled by user. Done: $i/${files.size}. With error: ${errors.size}")
@@ -47,7 +48,6 @@ class ActionsGenerationStep(
             LOG.info("Start generating actions for file ${file.path}. Done: $i/${files.size}. With error: ${errors.size}")
             val filename = file.name
             val progress = (i + 1).toDouble() / files.size
-            var totalSessions = 0
             try {
                 val rootVisitor = when {
                     evaluationRootInfo.useDefault -> DefaultEvaluationRootVisitor()
@@ -61,7 +61,7 @@ class ActionsGenerationStep(
                 val fileActions = actionsGenerator.generate(uast)
                 workspace.actionsStorage.saveActions(fileActions)
                 totalSessions += fileActions.sessionsCount
-                indicator.setProgress(filename, "${totalSessions.toString().padStart(3)} sessions | $filename", progress)
+                indicator.setProgress(filename, "${totalSessions.toString().padStart(4)} sessions | $filename", progress)
             } catch (e: Throwable) {
                 indicator.setProgress(filename, "error: ${e.message} | $filename", progress)
                 workspace.errorsStorage.saveError(FileErrorInfo(FilesHelper.getRelativeToProjectPath(project, file.path), e.message
