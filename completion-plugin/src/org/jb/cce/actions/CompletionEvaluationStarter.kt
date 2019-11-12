@@ -112,41 +112,43 @@ class CompletionEvaluationStarter : ApplicationStarter {
     }
 
     abstract class MultipleEvaluationsBase(name: String, help: String) : EvaluationCommand(name, help) {
-        abstract val workspaces: List<String>
+        abstract fun getWorkspaces(): List<String>
 
         override fun run() {
-            val config = workspaces.map { EvaluationWorkspace.open(it) }.buildMultipleEvaluationsConfig()
+            val workspacesToCompare = getWorkspaces()
+            val config = workspacesToCompare.map { EvaluationWorkspace.open(it) }.buildMultipleEvaluationsConfig()
             val outputWorkspace = EvaluationWorkspace.create(config)
             val project = loadProject(config.projectPath)
             val process = EvaluationProcess.build({
                 shouldGenerateReports = true
-            }, BackgroundStepFactory(config, project, true, workspaces, EvaluationRootInfo(true)))
+            }, BackgroundStepFactory(config, project, true, workspacesToCompare, EvaluationRootInfo(true)))
             process.startAsync(outputWorkspace)
         }
     }
 
     class MultipleEvaluations : MultipleEvaluationsBase(name = "multiple-evaluations", help = "Generate report by multiple evaluations") {
-        override val workspaces by argument(name = "workspaces", help = "List of workspaces").multiple()
+        private val workspacesArg by argument(name = "workspaces", help = "List of workspaces").multiple()
+
+        override fun getWorkspaces(): List<String> = workspacesArg
     }
 
     class CompareEvaluationsInDirectory : MultipleEvaluationsBase(name = "compare-in", help = "Generate report for all evaluation workspaces in a directory") {
         private val root by argument(name = "directory", help = "Root directory for evaluation workspaces")
 
-        override val workspaces: List<String>
-            get() {
-                val outputDirectory = Paths.get(root)
-                if (!outputDirectory.exists() || !outputDirectory.isDirectory()) {
-                    throw BadParameterValue("Directory \"$root\" not found.")
-                }
-
-                val nestedFiles = outputDirectory.toFile().listFiles() ?: emptyArray()
-
-                val result = nestedFiles.filter { it.isDirectory }.map { it.absolutePath }
-                if (result.isEmpty()) {
-                    throw BadParameterValue("Directory \"$root\" should not be empty")
-                }
-
-                return result
+        override fun getWorkspaces(): List<String> {
+            val outputDirectory = Paths.get(root)
+            if (!outputDirectory.exists() || !outputDirectory.isDirectory()) {
+                throw BadParameterValue("Directory \"$root\" not found.")
             }
+
+            val nestedFiles = outputDirectory.toFile().listFiles() ?: emptyArray()
+
+            val result = nestedFiles.filter { it.isDirectory }.map { it.absolutePath }
+            if (result.isEmpty()) {
+                throw BadParameterValue("Directory \"$root\" should not be empty")
+            }
+
+            return result
+        }
     }
 }
