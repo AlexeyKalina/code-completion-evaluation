@@ -83,7 +83,7 @@ class ConfigTests {
             val before = factory("foo/\${$key}/bar")
             ConfigFactory.save(before, tempDir, FILENAME)
             val after = ConfigFactory.load(tempDir.resolve(FILENAME))
-            assertEquals("foo/MY_TEST_VALUE/bar", accessor(after))
+            assertEquals("foo/$value/bar", accessor(after))
         } finally {
             System.clearProperty(key)
         }
