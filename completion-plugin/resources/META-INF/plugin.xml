@@ -19,10 +19,6 @@
 
         <registryKey key="evaluation.plugin.disable.sdk.check" defaultValue="false"
                      description="Disables check that project sdk configured properly" restartRequired="false"/>
-
-        <registryKey key="evaluation.plugin.verbose.dumb.mode" defaultValue="true"
-                     description="Enables additional logging when dumb mode idea enter/exit dumb mode"
-                     restartRequired="false"/>
     </extensions>
 
     <actions>
