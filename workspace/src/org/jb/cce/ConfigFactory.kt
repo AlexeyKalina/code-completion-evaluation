@@ -38,13 +38,13 @@ object ConfigFactory {
     fun deserialize(json: String): Config {
         val map = gson.fromJson<HashMap<String, Any>>(json, HashMap<String, Any>().javaClass)
         val languageName = map.getAs<String>("language")
-        val builder = Config.Builder(map.getAs("projectPath"), languageName)
-        builder.outputDir = map.getAs("outputDir")
-        builder.interpretActions = map.getAs("interpretActions")
-        deserializeActionsGeneration(map.getIfExists("actions"), languageName, builder)
-        deserializeActionsInterpretation(map.getIfExists("interpret"), builder)
-        deserializeReportGeneration(map.getIfExists("reports"), builder)
-        return builder.build()
+        return Config.build(map.getAs("projectPath"), languageName) {
+            outputDir = map.getAs("outputDir")
+            interpretActions = map.getAs("interpretActions")
+            deserializeActionsGeneration(map.getIfExists("actions"), languageName, this)
+            deserializeActionsInterpretation(map.getIfExists("interpret"), this)
+            deserializeReportGeneration(map.getIfExists("reports"), this)
+        }
     }
 
     private fun deserializeActionsGeneration(map: Map<String, Any>?, language: String, builder: Config.Builder) {

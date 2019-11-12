@@ -37,7 +37,7 @@ data class Config internal constructor(
     data class ReportGeneration internal constructor(
             val evaluationTitle: String)
 
-    class Builder(private val projectPath: String, private val language: String) {
+    class Builder internal constructor(private val projectPath: String, private val language: String) {
         var evaluationRoots = mutableListOf<String>()
         var outputDir: String = Paths.get(projectPath, "completion-evaluation").toAbsolutePath().toString()
         var interpretActions: Boolean = true
