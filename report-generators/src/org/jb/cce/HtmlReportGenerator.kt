@@ -15,7 +15,7 @@ import java.nio.file.Paths
 import java.util.*
 import kotlin.collections.HashSet
 
-class HtmlReportGenerator(outputDir: String) {
+class HtmlReportGenerator(outputDir: String, private val filterName: String) {
     companion object {
         private const val globalReportName = "index.html"
         private const val baseDirName = "html"
@@ -28,10 +28,11 @@ class HtmlReportGenerator(outputDir: String) {
         private const val diffColumnTitle = "diff"
         private val sessionSerializer = SessionSerializer()
 
-        fun pathToGlobalReport(): String = Paths.get(baseDirName, globalReportName).toString()
+        fun resultReports(outputDir: String): Map<String, Path> =
+                Paths.get(outputDir, baseDirName).toFile().listFiles {
+                    file -> file.isDirectory && file.resolve(globalReportName).exists()
+                }.associateBy({ it.name }, { it.resolve(globalReportName).toPath() })
     }
-
-    private lateinit var reportTitle: String
 
     private data class ResultPaths(val resourcePath: Path, val reportPath: Path)
     private data class ReferenceInfo(val pathToReport: Path, val metrics: List<MetricInfo>)
@@ -39,9 +40,9 @@ class HtmlReportGenerator(outputDir: String) {
     private val reportReferences: MutableMap<String, ReferenceInfo> = mutableMapOf()
     private val errorReferences: MutableMap<String, Path> = mutableMapOf()
 
-    private val baseDir = Paths.get(outputDir, baseDirName)
-    private val filesDir = Paths.get(baseDir.toString(), "files")
-    private val resourcesDir = Paths.get(baseDir.toString(), "res")
+    private val filterDir = Paths.get(outputDir, baseDirName, filterName)
+    private val filesDir = Paths.get(filterDir.toString(), "files")
+    private val resourcesDir = Paths.get(filterDir.toString(), "res")
 
     private fun copyResources(resource: String) {
         Files.copy(
@@ -50,7 +51,7 @@ class HtmlReportGenerator(outputDir: String) {
     }
 
     init {
-        listOf(baseDir, filesDir, resourcesDir).map { Files.createDirectories(it) }
+        listOf(filterDir, filesDir, resourcesDir).map { Files.createDirectories(it) }
         listOf(fileScript, fileStyle, tabulatorScript, tabulatorStyle, errorScript, optionsStyle).map { copyResources(it) }
     }
 
@@ -73,7 +74,7 @@ class HtmlReportGenerator(outputDir: String) {
         for (fileError in errors) {
             val filePath = Paths.get(fileError.path)
             val reportPath = getPaths(filePath.fileName.toString()).reportPath
-            reportTitle = "Error on actions generation for file ${filePath.fileName}"
+            val reportTitle = "Error on actions generation for file ${filePath.fileName} ($filterName filter)"
             createHTML().html {
                 head {
                     title(reportTitle)
@@ -103,8 +104,8 @@ class HtmlReportGenerator(outputDir: String) {
     }
 
     fun generateGlobalReport(globalMetrics: List<MetricInfo>): String {
-        val reportPath = Paths.get(baseDir.toString(), globalReportName).toString()
-        reportTitle = "Code Completion Report"
+        val reportPath = Paths.get(filterDir.toString(), globalReportName).toString()
+        val reportTitle = "Code Completion Report for filter \"$filterName\""
         createHTML().html {
             head {
                 title(reportTitle)
@@ -154,7 +155,7 @@ class HtmlReportGenerator(outputDir: String) {
     }
 
     private fun getHtml(sessions: List<List<Session>>, fileName: String, resourcePath: String, text: String): String {
-        reportTitle = "Code Completion Report for file $fileName"
+        val reportTitle = "Code Completion Report for file $fileName ($filterName filter)"
         val maxPrefixLength = sessions.flatMap { it.map { it.lookups.size - 1 } }.max() ?: 0
         return createHTML().html {
             head {
@@ -291,10 +292,10 @@ class HtmlReportGenerator(outputDir: String) {
     }
 
     private fun getErrorLink(errRef: Map.Entry<String, Path>): String =
-            "\"<a href='${getHtmlRelativePath(baseDir, errRef.value)}' class='errRef' target='_blank'>${Paths.get(errRef.key).fileName}</a>\""
+            "\"<a href='${getHtmlRelativePath(filterDir, errRef.value)}' class='errRef' target='_blank'>${Paths.get(errRef.key).fileName}</a>\""
 
     private fun getReportLink(repRef: Map.Entry<String, ReferenceInfo>): String =
-            "\"<a href='${getHtmlRelativePath(baseDir, repRef.value.pathToReport)}' target='_blank'>${File(repRef.key).name}</a>\""
+            "\"<a href='${getHtmlRelativePath(filterDir, repRef.value.pathToReport)}' target='_blank'>${File(repRef.key).name}</a>\""
 
     private fun getHtmlRelativePath(base: Path, path: Path): String {
         return base.relativize(path).toString().replace(File.separatorChar, '/')

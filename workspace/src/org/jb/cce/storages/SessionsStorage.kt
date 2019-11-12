@@ -3,12 +3,11 @@ package org.jb.cce.storages
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import org.jb.cce.SessionSerializer
-import org.jb.cce.actions.CompletionType
 import org.jb.cce.info.FileSessionsInfo
 import java.io.FileWriter
 import java.nio.file.Paths
 
-class SessionsStorage(private val storageDir: String) {
+open class SessionsStorage(val storageDir: String) {
     companion object {
         private const val pathsListFile = "files.json"
         private val gson = Gson()
@@ -39,7 +38,7 @@ class SessionsStorage(private val storageDir: String) {
         return sessionFiles.entries.map { it.toPair() }
     }
 
-    fun getSessions(path: String): FileSessionsInfo {
+    open fun getSessions(path: String): FileSessionsInfo {
         val sessionsPath = sessionFiles[path] ?: throw NoSuchElementException()
         return sessionSerializer.deserialize(keyValueStorage.get(sessionsPath))
     }
