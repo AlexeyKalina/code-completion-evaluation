@@ -66,7 +66,7 @@ object ConfigFactory {
 
     private fun deserializeReportGeneration(map: Map<String, Any>?, builder: Config.Builder) {
         if (map == null) return
-        builder.evaluationTitle = map.getAs("evaluationTitle")
+        builder.evaluationTitle = map.handleEnv("evaluationTitle")
     }
 
     private class CompletionStrategyDeserializer {
