@@ -12,6 +12,7 @@ import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 @DisplayName("Check config serialized and deserialized correctly")
 class ConfigTests {
@@ -73,6 +74,12 @@ class ConfigTests {
                 outputDir = parametrized
             }
         }, Config::outputDir)
+    }
+
+    @Test
+    fun `default session filters should be empty`() {
+        val default = ConfigFactory.defaultConfig("project", "Kotlin")
+        assertTrue { default.reports.sessionsFilters.isEmpty() }
     }
 
     private fun doTestPropertiesInConfig(factory: (String) -> Config, accessor: (Config) -> String) {

@@ -13,12 +13,14 @@ import org.jb.cce.util.Progress
 
 class ReportGenerationStep(
         private val inputWorkspaces: List<EvaluationWorkspace>?,
-        private val sessionsFilters: List<SessionsFilter>,
+        filters: List<SessionsFilter>,
         project: Project,
         isHeadless: Boolean) : BackgroundEvaluationStep(project, isHeadless) {
     override val name: String = "Report generation"
 
     override val description: String = "Generation of HTML-report"
+
+    private val sessionsFilters: List<SessionsFilter> = listOf(SessionsFilter.ACCEPT_ALL, *filters.toTypedArray())
 
     override fun runInBackground(workspace: EvaluationWorkspace, progress: Progress): EvaluationWorkspace {
         val workspaces = inputWorkspaces ?: listOf(workspace)

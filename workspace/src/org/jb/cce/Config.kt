@@ -53,9 +53,7 @@ data class Config internal constructor(
         var completeTokenProbability: Double = 1.0
         var completeTokenSeed: Long? = null
         val filters: MutableMap<String, EvaluationFilter> = mutableMapOf()
-        private val sessionsFilters: MutableList<SessionsFilter> = mutableListOf(
-                SessionsFilter("All", EvaluationFilterManager.getAllFilters().associateBy({it.id}, {EvaluationFilter.ACCEPT_ALL}).toMutableMap())
-        )
+        private val sessionsFilters: MutableList<SessionsFilter> = mutableListOf()
 
         fun mergeFilters(filters: List<SessionsFilter>) {
             for (filter in filters) {
