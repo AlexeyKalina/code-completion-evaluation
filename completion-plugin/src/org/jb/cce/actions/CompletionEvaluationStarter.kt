@@ -31,7 +31,7 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
     override fun main(args: Array<String>) =
             MainEvaluationCommand()
-                    .subcommands(FullCommand(), CustomCommand(), MultipleEvaluations(), CompareEvaluations())
+                    .subcommands(FullCommand(), CustomCommand(), MultipleEvaluations(), CompareEvaluationsInDirectory())
                     .main(args.toList().subList(1, args.size))
 
     abstract class EvaluationCommand(name: String, help: String): CliktCommand(name = name, help = help) {
@@ -131,7 +131,7 @@ class CompletionEvaluationStarter : ApplicationStarter {
         override val workspaces by argument(name = "workspaces", help = "List of workspaces").multiple()
     }
 
-    class CompareEvaluations : MultipleEvaluationsBase(name = "compare-in", help = "Generate report for all evaluation workspaces in a directory") {
+    class CompareEvaluationsInDirectory : MultipleEvaluationsBase(name = "compare-in", help = "Generate report for all evaluation workspaces in a directory") {
         private val root by argument(name = "directory", help = "Root directory for evaluation workspaces")
 
         override val workspaces: List<String>
