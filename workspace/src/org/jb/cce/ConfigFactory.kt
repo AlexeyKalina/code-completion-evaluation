@@ -1,6 +1,7 @@
 package org.jb.cce
 
 import com.google.gson.GsonBuilder
+import org.apache.commons.text.StringSubstitutor
 import org.jb.cce.actions.*
 import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.EvaluationFilterManager
@@ -38,13 +39,13 @@ object ConfigFactory {
     fun deserialize(json: String): Config {
         val map = gson.fromJson<HashMap<String, Any>>(json, HashMap<String, Any>().javaClass)
         val languageName = map.getAs<String>("language")
-        val builder = Config.Builder(map.getAs("projectPath"), languageName)
-        builder.outputDir = map.getAs("outputDir")
-        builder.interpretActions = map.getAs("interpretActions")
-        deserializeActionsGeneration(map.getIfExists("actions"), languageName, builder)
-        deserializeActionsInterpretation(map.getIfExists("interpret"), builder)
-        deserializeReportGeneration(map.getIfExists("reports"), builder)
-        return builder.build()
+        return Config.build(map.handleEnv("projectPath"), languageName) {
+            outputDir = map.handleEnv("outputDir")
+            interpretActions = map.getAs("interpretActions")
+            deserializeActionsGeneration(map.getIfExists("actions"), languageName, this)
+            deserializeActionsInterpretation(map.getIfExists("interpret"), this)
+            deserializeReportGeneration(map.getIfExists("reports"), this)
+        }
     }
 
     private fun deserializeActionsGeneration(map: Map<String, Any>?, language: String, builder: Config.Builder) {
@@ -65,7 +66,7 @@ object ConfigFactory {
 
     private fun deserializeReportGeneration(map: Map<String, Any>?, builder: Config.Builder) {
         if (map == null) return
-        builder.evaluationTitle = map.getAs("evaluationTitle")
+        builder.evaluationTitle = map.handleEnv("evaluationTitle")
     }
 
     private class CompletionStrategyDeserializer {
@@ -97,6 +98,8 @@ object ConfigFactory {
             }
         }
     }
+
+    private fun Map<String, *>.handleEnv(key: String): String = StringSubstitutor.replaceSystemProperties(getAs(key))
 
     private inline fun <reified T> Map<String, *>.getAs(key: String): T {
         check(key in this.keys) { "$key not found. Existing keys: ${keys.toList()}" }
