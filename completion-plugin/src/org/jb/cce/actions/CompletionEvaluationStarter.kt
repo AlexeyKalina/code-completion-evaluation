@@ -1,5 +1,6 @@
 package org.jb.cce.actions
 
+import com.github.ajalt.clikt.core.BadParameterValue
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.parameters.arguments.argument
@@ -11,6 +12,8 @@ import com.intellij.ide.impl.ProjectUtil
 import com.intellij.openapi.application.ApplicationStarter
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
+import com.intellij.util.io.exists
+import com.intellij.util.io.isDirectory
 import org.jb.cce.ConfigFactory
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.evaluation.BackgroundStepFactory
@@ -27,7 +30,8 @@ class CompletionEvaluationStarter : ApplicationStarter {
     override fun isHeadless(): Boolean = true
 
     override fun main(args: Array<String>) =
-            MainEvaluationCommand().subcommands(FullCommand(), CustomCommand(), MultipleEvaluations())
+            MainEvaluationCommand()
+                    .subcommands(FullCommand(), CustomCommand(), MultipleEvaluations(), CompareEvaluationsInDirectory())
                     .main(args.toList().subList(1, args.size))
 
     abstract class EvaluationCommand(name: String, help: String): CliktCommand(name = name, help = help) {
@@ -107,8 +111,8 @@ class CompletionEvaluationStarter : ApplicationStarter {
         }
     }
 
-    class MultipleEvaluations: EvaluationCommand(name = "multiple-evaluations", help = "Generate report by multiple evaluations") {
-        private val workspaces by argument(name = "workspaces", help = "List of workspaces").multiple()
+    abstract class MultipleEvaluationsBase(name: String, help: String) : EvaluationCommand(name, help) {
+        abstract val workspaces: List<String>
 
         override fun run() {
             val workspacePath = Paths.get(workspaces.first())
@@ -121,5 +125,30 @@ class CompletionEvaluationStarter : ApplicationStarter {
             }, BackgroundStepFactory(config, project, true, workspaces, EvaluationRootInfo(true)))
             process.startAsync(outputWorkspace)
         }
+    }
+
+    class MultipleEvaluations : MultipleEvaluationsBase(name = "multiple-evaluations", help = "Generate report by multiple evaluations") {
+        override val workspaces by argument(name = "workspaces", help = "List of workspaces").multiple()
+    }
+
+    class CompareEvaluationsInDirectory : MultipleEvaluationsBase(name = "compare-in", help = "Generate report for all evaluation workspaces in a directory") {
+        private val root by argument(name = "directory", help = "Root directory for evaluation workspaces")
+
+        override val workspaces: List<String>
+            get() {
+                val outputDirectory = Paths.get(root)
+                if (!outputDirectory.exists() || !outputDirectory.isDirectory()) {
+                    throw BadParameterValue("Directory \"$root\" not found.")
+                }
+
+                val nestedFiles = outputDirectory.toFile().listFiles() ?: emptyArray()
+
+                val result = nestedFiles.filter { it.isDirectory }.map { it.absolutePath }
+                if (result.isEmpty()) {
+                    throw BadParameterValue("Directory \"$root\" should not be empty")
+                }
+
+                return result
+            }
     }
 }
