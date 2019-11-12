@@ -1,6 +1,7 @@
 package org.jb.cce.evaluation
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.registry.Registry
 import com.jetbrains.rd.util.measureTimeMillis
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.evaluation.step.EvaluationStep
@@ -43,6 +44,17 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
 
         fun build(factory: StepFactory): EvaluationProcess {
             val steps = mutableListOf<EvaluationStep>()
+
+            if (shouldGenerateActions || shouldInterpretActions) {
+                val setupSdkStep = factory.setupSdkStep()
+                if (setupSdkStep != null) {
+                    steps.add(setupSdkStep)
+                }
+
+                if (!Registry.`is`("evaluation.plugin.disable.sdk.check")) {
+                    steps.add(factory.checkSdkConfiguredStep())
+                }
+            }
 
             if (shouldGenerateActions) {
                 steps.add(factory.generateActionsStep())

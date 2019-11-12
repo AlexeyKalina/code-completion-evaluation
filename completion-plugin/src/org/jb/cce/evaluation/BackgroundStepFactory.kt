@@ -36,6 +36,15 @@ class BackgroundStepFactory(
     override fun highlightTokensInIdeStep(): EvaluationStep =
             HighlightingTokensInIdeStep(project, isHeadless)
 
+    override fun setupSdkStep(): EvaluationStep? {
+        return when {
+            "Java".equals(config.language, ignoreCase = true) -> SetupJDKStep(project)
+            else -> null
+        }
+    }
+
+    override fun checkSdkConfiguredStep(): EvaluationStep = CheckProjectSdkStep(project)
+
     override fun finishEvaluationStep(): EvaluationStep {
         return object : EvaluationStep {
             override val name: String = "Evaluation completed"
