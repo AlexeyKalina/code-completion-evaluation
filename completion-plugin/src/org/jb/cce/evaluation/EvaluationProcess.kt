@@ -19,7 +19,7 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
         start(workspace)
     }
 
-    private fun start(workspace: EvaluationWorkspace) {
+    fun start(workspace: EvaluationWorkspace) {
         val stats = mutableMapOf<String, Long>()
         var currentWorkspace = workspace
         var hasError = false
@@ -41,11 +41,12 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
         var shouldInterpretActions: Boolean = false
         var shouldGenerateReports: Boolean = false
         var shouldHighlightInIde: Boolean = false
+        var isTestingEnvironment: Boolean = false
 
         fun build(factory: StepFactory): EvaluationProcess {
             val steps = mutableListOf<EvaluationStep>()
 
-            if (shouldGenerateActions || shouldInterpretActions) {
+            if (!isTestingEnvironment && (shouldGenerateActions || shouldInterpretActions)) {
                 val setupSdkStep = factory.setupSdkStep()
                 if (setupSdkStep != null) {
                     steps.add(setupSdkStep)
@@ -76,7 +77,9 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
                 steps.add(factory.generateReportStep())
             }
 
-            steps.add(factory.finishEvaluationStep())
+            if (!isTestingEnvironment) {
+                steps.add(factory.finishEvaluationStep())
+            }
 
             return EvaluationProcess(steps)
         }
