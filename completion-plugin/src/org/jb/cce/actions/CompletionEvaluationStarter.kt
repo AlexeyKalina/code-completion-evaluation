@@ -78,37 +78,37 @@ class CompletionEvaluationStarter : ApplicationStarter {
         override fun run() = Unit
     }
 
-    class GenerateActionsCommand : EvaluationCommand("actions", "Generate actions without interpreting") {
+    abstract class EvaluationCommandBase(name: String, help: String) : EvaluationCommand(name, help) {
         private val configPath by argument(name = "config-path", help = "Path to config").default(ConfigFactory.DEFAULT_CONFIG_NAME)
 
         override fun run() {
             val config = loadConfig(Paths.get(configPath))
-            val workspace = EvaluationWorkspace.create(config)
             val project = loadProject(config.projectPath)
-            val process = EvaluationProcess.build({
-                shouldGenerateActions = true
-            }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
-            process.startAsync(workspace)
+            val workspace = EvaluationWorkspace.create(config)
+            val stepFactory = BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true))
+            EvaluationProcess.build({ customize() }, stepFactory).startAsync(workspace)
+        }
+
+        protected abstract fun EvaluationProcess.Builder.customize()
+    }
+
+    class GenerateActionsCommand
+        : EvaluationCommandBase("actions", "Generate actions without interpreting") {
+        override fun EvaluationProcess.Builder.customize() {
+            shouldGenerateActions = true
         }
     }
 
-    class FullCommand : EvaluationCommand(name = "full", help = "Start process from actions generation (set up by config)") {
-        private val configPath by argument(name = "config-path", help = "Path to config").default(ConfigFactory.DEFAULT_CONFIG_NAME)
-
-        override fun run() {
-            val config = loadConfig(Paths.get(configPath))
-            val workspace = EvaluationWorkspace.create(config)
-            val project = loadProject(config.projectPath)
-            val process = EvaluationProcess.build({
-                shouldGenerateActions = true
-                shouldInterpretActions = true
-                shouldGenerateReports = true
-            }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
-            process.startAsync(workspace)
+    class FullCommand
+        : EvaluationCommandBase("full", "Start process from actions generation (set up by config)") {
+        override fun EvaluationProcess.Builder.customize() {
+            shouldGenerateActions = true
+            shouldInterpretActions = true
+            shouldGenerateReports = true
         }
     }
 
-    class CustomCommand: EvaluationCommand(name = "custom", help = "Start process from actions interpretation or report generation") {
+    class CustomCommand : EvaluationCommand(name = "custom", help = "Start process from actions interpretation or report generation") {
         private val workspacePath by argument(name = "workspace", help = "Path to workspace")
         private val interpretActions by option(names = *arrayOf("--interpret-actions", "-i"), help = "Interpret actions").flag()
         private val generateReport by option(names = *arrayOf("--generate-report", "-r"), help = "Generate report").flag()
