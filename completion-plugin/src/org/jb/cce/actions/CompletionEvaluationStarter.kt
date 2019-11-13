@@ -31,7 +31,8 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
     override fun main(args: Array<String>) =
             MainEvaluationCommand()
-                    .subcommands(FullCommand(), CustomCommand(), MultipleEvaluations(), CompareEvaluationsInDirectory())
+                    .subcommands(FullCommand(), GenerateActionsCommand(), CustomCommand(),
+                            MultipleEvaluations(), CompareEvaluationsInDirectory())
                     .main(args.toList().subList(1, args.size))
 
     abstract class EvaluationCommand(name: String, help: String): CliktCommand(name = name, help = help) {
@@ -73,27 +74,41 @@ class CompletionEvaluationStarter : ApplicationStarter {
         }
     }
 
-    inner class MainEvaluationCommand: EvaluationCommand(commandName, "Evaluate code completion quality in headless mode") {
+    inner class MainEvaluationCommand : EvaluationCommand(commandName, "Evaluate code completion quality in headless mode") {
         override fun run() = Unit
     }
 
-    class FullCommand: EvaluationCommand(name = "full", help = "Start process from actions generation (set up by config)") {
+    abstract class EvaluationCommandBase(name: String, help: String) : EvaluationCommand(name, help) {
         private val configPath by argument(name = "config-path", help = "Path to config").default(ConfigFactory.DEFAULT_CONFIG_NAME)
 
         override fun run() {
             val config = loadConfig(Paths.get(configPath))
-            val workspace = EvaluationWorkspace.create(config)
             val project = loadProject(config.projectPath)
-            val process = EvaluationProcess.build({
-                shouldGenerateActions = true
-                shouldInterpretActions = config.interpretActions
-                shouldGenerateReports = config.interpretActions
-            }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
-            process.startAsync(workspace)
+            val workspace = EvaluationWorkspace.create(config)
+            val stepFactory = BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true))
+            EvaluationProcess.build({ customize() }, stepFactory).startAsync(workspace)
+        }
+
+        protected abstract fun EvaluationProcess.Builder.customize()
+    }
+
+    class GenerateActionsCommand
+        : EvaluationCommandBase("actions", "Generate actions without interpreting") {
+        override fun EvaluationProcess.Builder.customize() {
+            shouldGenerateActions = true
         }
     }
 
-    class CustomCommand: EvaluationCommand(name = "custom", help = "Start process from actions interpretation or report generation") {
+    class FullCommand
+        : EvaluationCommandBase("full", "Start process from actions generation (set up by config)") {
+        override fun EvaluationProcess.Builder.customize() {
+            shouldGenerateActions = true
+            shouldInterpretActions = true
+            shouldGenerateReports = true
+        }
+    }
+
+    class CustomCommand : EvaluationCommand(name = "custom", help = "Start process from actions interpretation or report generation") {
         private val workspacePath by argument(name = "workspace", help = "Path to workspace")
         private val interpretActions by option(names = *arrayOf("--interpret-actions", "-i"), help = "Interpret actions").flag()
         private val generateReport by option(names = *arrayOf("--generate-report", "-r"), help = "Generate report").flag()
@@ -112,41 +127,43 @@ class CompletionEvaluationStarter : ApplicationStarter {
     }
 
     abstract class MultipleEvaluationsBase(name: String, help: String) : EvaluationCommand(name, help) {
-        abstract val workspaces: List<String>
+        abstract fun getWorkspaces(): List<String>
 
         override fun run() {
-            val config = workspaces.map { EvaluationWorkspace.open(it) }.buildMultipleEvaluationsConfig()
+            val workspacesToCompare = getWorkspaces()
+            val config = workspacesToCompare.map { EvaluationWorkspace.open(it) }.buildMultipleEvaluationsConfig()
             val outputWorkspace = EvaluationWorkspace.create(config)
             val project = loadProject(config.projectPath)
             val process = EvaluationProcess.build({
                 shouldGenerateReports = true
-            }, BackgroundStepFactory(config, project, true, workspaces, EvaluationRootInfo(true)))
+            }, BackgroundStepFactory(config, project, true, workspacesToCompare, EvaluationRootInfo(true)))
             process.startAsync(outputWorkspace)
         }
     }
 
     class MultipleEvaluations : MultipleEvaluationsBase(name = "multiple-evaluations", help = "Generate report by multiple evaluations") {
-        override val workspaces by argument(name = "workspaces", help = "List of workspaces").multiple()
+        private val workspacesArg by argument(name = "workspaces", help = "List of workspaces").multiple()
+
+        override fun getWorkspaces(): List<String> = workspacesArg
     }
 
     class CompareEvaluationsInDirectory : MultipleEvaluationsBase(name = "compare-in", help = "Generate report for all evaluation workspaces in a directory") {
         private val root by argument(name = "directory", help = "Root directory for evaluation workspaces")
 
-        override val workspaces: List<String>
-            get() {
-                val outputDirectory = Paths.get(root)
-                if (!outputDirectory.exists() || !outputDirectory.isDirectory()) {
-                    throw BadParameterValue("Directory \"$root\" not found.")
-                }
-
-                val nestedFiles = outputDirectory.toFile().listFiles() ?: emptyArray()
-
-                val result = nestedFiles.filter { it.isDirectory }.map { it.absolutePath }
-                if (result.isEmpty()) {
-                    throw BadParameterValue("Directory \"$root\" should not be empty")
-                }
-
-                return result
+        override fun getWorkspaces(): List<String> {
+            val outputDirectory = Paths.get(root)
+            if (!outputDirectory.exists() || !outputDirectory.isDirectory()) {
+                throw BadParameterValue("Directory \"$root\" not found.")
             }
+
+            val nestedFiles = outputDirectory.toFile().listFiles() ?: emptyArray()
+
+            val result = nestedFiles.filter { it.isDirectory }.map { it.absolutePath }
+            if (result.isEmpty()) {
+                throw BadParameterValue("Directory \"$root\" should not be empty")
+            }
+
+            return result
+        }
     }
 }

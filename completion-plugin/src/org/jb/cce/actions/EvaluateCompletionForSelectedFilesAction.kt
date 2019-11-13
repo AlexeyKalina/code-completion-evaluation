@@ -29,8 +29,8 @@ class EvaluateCompletionForSelectedFilesAction : AnAction() {
         val workspace = EvaluationWorkspace.create(config)
         val process = EvaluationProcess.build({
             shouldGenerateActions = true
-            shouldInterpretActions = config.interpretActions
-            shouldGenerateReports = config.interpretActions
+            shouldInterpretActions = true
+            shouldGenerateReports = true
         }, BackgroundStepFactory(config, project, false, null, EvaluationRootInfo(true)))
         process.startAsync(workspace)
     }
