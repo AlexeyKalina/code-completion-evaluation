@@ -180,6 +180,9 @@ There are several options for the plugin to work in headless mode:
   - Usage: `evaluate-completion full [PATH_TO_CONFIG]`
   - If `PATH_TO_CONFIG` missing, default config will be created.
   - If config missing, default config will be created. Fill settings in default config before restarting evaluation.
+- Generating actions. Allow only to find suitable locations to complete without evaluation. 
+Generated actions can be reused later in `custom` mode.
+  - Usage: `evaluate-completion actions [PATH_TO_CONFIG]`
 - Custom. Allows you to interpret actions and/or generate reports on an existing workspace.
   - Usage: `evaluate-completion custom [--interpret-actions | -i] [--generate-report | -r] PATH_TO_WORKSPACE`
 - Multiple Evaluations. Create a report based on multiple evaluations.

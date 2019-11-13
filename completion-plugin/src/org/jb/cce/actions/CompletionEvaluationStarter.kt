@@ -31,7 +31,8 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
     override fun main(args: Array<String>) =
             MainEvaluationCommand()
-                    .subcommands(FullCommand(), CustomCommand(), MultipleEvaluations(), CompareEvaluationsInDirectory())
+                    .subcommands(FullCommand(), GenerateActionsCommand(), CustomCommand(),
+                            MultipleEvaluations(), CompareEvaluationsInDirectory())
                     .main(args.toList().subList(1, args.size))
 
     abstract class EvaluationCommand(name: String, help: String): CliktCommand(name = name, help = help) {
@@ -73,11 +74,25 @@ class CompletionEvaluationStarter : ApplicationStarter {
         }
     }
 
-    inner class MainEvaluationCommand: EvaluationCommand(commandName, "Evaluate code completion quality in headless mode") {
+    inner class MainEvaluationCommand : EvaluationCommand(commandName, "Evaluate code completion quality in headless mode") {
         override fun run() = Unit
     }
 
-    class FullCommand: EvaluationCommand(name = "full", help = "Start process from actions generation (set up by config)") {
+    class GenerateActionsCommand : EvaluationCommand("actions", "Generate actions without interpreting") {
+        private val configPath by argument(name = "config-path", help = "Path to config").default(ConfigFactory.DEFAULT_CONFIG_NAME)
+
+        override fun run() {
+            val config = loadConfig(Paths.get(configPath))
+            val workspace = EvaluationWorkspace.create(config)
+            val project = loadProject(config.projectPath)
+            val process = EvaluationProcess.build({
+                shouldGenerateActions = true
+            }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
+            process.startAsync(workspace)
+        }
+    }
+
+    class FullCommand : EvaluationCommand(name = "full", help = "Start process from actions generation (set up by config)") {
         private val configPath by argument(name = "config-path", help = "Path to config").default(ConfigFactory.DEFAULT_CONFIG_NAME)
 
         override fun run() {
