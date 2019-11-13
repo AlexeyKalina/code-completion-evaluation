@@ -70,6 +70,17 @@ class EvaluationTests : ExecutionTestCase()  {
         )
     }
 
+    @Test
+    fun `evaluate on random locations`() = doTest {
+        completeTokenProbability = 0.5
+    }
+
+    @Test
+    fun `evaluate on random locations with seed`() = doTest {
+        completeTokenProbability = 0.5
+        completeTokenSeed = 0
+    }
+
     private fun doTest(init: Config.Builder.() -> Unit) {
         val config = Config.build(tempDir.toString(), Language.JAVA.displayName) {
             evaluationRoots = project.modules.flatMap { it.rootManager.sourceRoots.map { it.path } }.toMutableList()
