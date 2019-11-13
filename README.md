@@ -103,7 +103,20 @@ To start the evaluation in the headless mode you should describe where the proje
     "logsTrainingPercentage": 70 // percentage for logs separation on training/validate
   },
   "reports": { // part of config about report generation step
-    "evaluationTitle": "Basic" // header name in HTML-report (use different names for report generation on multiple evaluations)
+    "evaluationTitle": "Basic", // header name in HTML-report (use different names for report generation on multiple evaluations)
+    "sessionsFilters": [ // create multiple reports corresponding to these sessions filters (filter "All" creates by default)
+      {
+        "name": "Static method calls only",
+        "filters": {
+          "statementTypes": [
+            "METHOD_CALL"
+          ],
+          "isArgument": null,
+          "isStatic": true,
+          "packageRegex": ".*"
+        }
+      }
+    ]
   }
 }
 ```
@@ -158,12 +171,13 @@ Example of `config.json` to evaluate code completion on several modules from int
     "trainTestSplit": 70
   },
   "reports": {
-    "evaluationTitle": "Basic"
+    "evaluationTitle": "Basic",
+    "sessionsFilters": []
   }
 }
 ```
 
-There are three options for the plugin to work in headless mode:
+There are several options for the plugin to work in headless mode:
 - Full. Use the config to execute the plugin on a set of files / directories. As a result of execution, HTML report will be created.
   - Usage: `evaluate-completion full [PATH_TO_CONFIG]`
   - If `PATH_TO_CONFIG` missing, default config will be created.
@@ -172,6 +186,8 @@ There are three options for the plugin to work in headless mode:
   - Usage: `evaluate-completion custom [--interpret-actions | -i] [--generate-report | -r] PATH_TO_WORKSPACE`
 - Multiple Evaluations. Create a report based on multiple evaluations.
   - Usage: `evaluate-completion multiple-evaluations PATH_TO_WORKSPACE...`
+- Multiple Evaluations in Directory. Works as the previous option to all workspaces in the directory.
+  - Usage: `evaluate-completion compare-in PATH_TO_DIRECTORY`
 
 There are many ways to start the evaluation in headless mode. Some of them are listed below.
 
