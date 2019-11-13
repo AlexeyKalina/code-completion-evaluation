@@ -28,10 +28,13 @@ class HtmlReportGenerator(outputDir: String, private val filterName: String) {
         private const val diffColumnTitle = "diff"
         private val sessionSerializer = SessionSerializer()
 
-        fun resultReports(outputDir: String): Map<String, Path> =
-                Paths.get(outputDir, baseDirName).toFile().listFiles {
-                    file -> file.isDirectory && file.resolve(globalReportName).exists()
-                }.associateBy({ it.name }, { it.resolve(globalReportName).toPath() })
+        fun resultReports(outputDir: String): Map<String, Path> {
+            val baseDir = Paths.get(outputDir, baseDirName).toFile()
+            if (!baseDir.exists()) return emptyMap()
+            return Paths.get(outputDir, baseDirName).toFile().listFiles { file ->
+                file.isDirectory && file.resolve(globalReportName).exists()
+            }.associateBy({ it.name }, { it.resolve(globalReportName).toPath() })
+        }
     }
 
     private data class ResultPaths(val resourcePath: Path, val reportPath: Path)
