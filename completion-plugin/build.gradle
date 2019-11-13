@@ -44,6 +44,15 @@ patchPluginXml {
     untilBuild '201.*'
 
     changeNotes """
+        0.0.10 <br>
+        <ul>
+            <li>Improve progress reporting</li>
+            <li>Decouple evaluation stages</li>
+            <li>Rework config format and CLI options</li>
+            <li>Allow to invoke completion in random locations</li>
+            <li>Try to configure SDK automatically</li>
+            <li>Allow to use java properties in config.json</li>
+        </ul>
         0.0.9 <br>
         <ul>
             <li>Line numbers in files reports</li>
