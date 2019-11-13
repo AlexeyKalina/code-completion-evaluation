@@ -9,7 +9,10 @@ import org.jb.cce.actions.CompletionPrefix
 import org.jb.cce.evaluation.BackgroundStepFactory
 import org.jb.cce.evaluation.EvaluationProcess
 import org.jb.cce.evaluation.EvaluationRootInfo
+import org.jb.cce.filter.impl.TypeFilter
+import org.jb.cce.filter.impl.TypeFilterConfiguration
 import org.jb.cce.uast.Language
+import org.jb.cce.uast.TypeProperty
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -59,6 +62,14 @@ class EvaluationTests : ExecutionTestCase()  {
         allTokens = true
     }
 
+    @Test
+    fun `evaluate with sessions filter`() = doTest {
+        mergeFilters(listOf(SessionsFilter(
+                "Only methods",
+                mapOf(Pair(TypeFilterConfiguration.id, TypeFilter(listOf(TypeProperty.METHOD_CALL))))))
+        )
+    }
+
     private fun doTest(init: Config.Builder.() -> Unit) {
         val config = Config.build(tempDir.toString(), Language.JAVA.displayName) {
             evaluationRoots = project.modules.flatMap { it.rootManager.sourceRoots.map { it.path } }.toMutableList()
@@ -75,9 +86,11 @@ class EvaluationTests : ExecutionTestCase()  {
 
         process.start(workspace)
 
-        assert(workspace.actionsStorage.getActionFiles().size == SOURCE_FILES_COUNT) { "Actions files count doesn't match source files count" }
-        assert(workspace.sessionsStorage.getSessionFiles().size == SOURCE_FILES_COUNT) { "Sessions files count doesn't match source files count" }
-        assert(HtmlReportGenerator.resultReports(workspace.reportsDirectory()).isNotEmpty()) { "Report wasn't generated" }
+        assert(workspace.actionsStorage.getActionFiles().size == SOURCE_FILES_COUNT) { "Actions files count don't match source files count" }
+        assert(workspace.sessionsStorage.getSessionFiles().size == SOURCE_FILES_COUNT) { "Sessions files count don't match source files count" }
+        val reports = HtmlReportGenerator.resultReports(workspace.reportsDirectory())
+        assert(reports.isNotEmpty()) { "Report wasn't generated" }
+        assert(reports.keys == (config.reports.sessionsFilters + listOf(SessionsFilter.ACCEPT_ALL)).map { it.name }.toSet()) { "Reports don't match sessions filters" }
     }
 
     @BeforeEach
