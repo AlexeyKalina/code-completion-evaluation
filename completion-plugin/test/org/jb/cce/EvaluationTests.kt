@@ -6,6 +6,7 @@ import com.intellij.openapi.project.rootManager
 import com.jetbrains.python.statistics.modules
 import org.jb.cce.actions.CompletionContext
 import org.jb.cce.actions.CompletionPrefix
+import org.jb.cce.actions.CompletionType
 import org.jb.cce.evaluation.BackgroundStepFactory
 import org.jb.cce.evaluation.EvaluationProcess
 import org.jb.cce.evaluation.EvaluationRootInfo
@@ -40,6 +41,11 @@ class EvaluationTests : ExecutionTestCase()  {
 
     @Test
     fun `evaluate on default config`() = doTest {}
+
+    @Test
+    fun `evaluate with smart completion`() = doTest {
+        completionType = CompletionType.SMART
+    }
 
     @Test
     fun `evaluate with previous context`() = doTest {
