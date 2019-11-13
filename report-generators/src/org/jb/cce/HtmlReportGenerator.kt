@@ -15,10 +15,10 @@ import java.nio.file.Paths
 import java.util.*
 import kotlin.collections.HashSet
 
-class HtmlReportGenerator(outputDir: String, private val filterName: String) {
+class HtmlReportGenerator(outputDir: String, private val filterName: String): ReportGenerator {
     companion object {
         private const val globalReportName = "index.html"
-        private const val baseDirName = "html"
+        private const val reportType = "html"
         private const val fileScript = "/script.js"
         private const val fileStyle = "/style.css"
         private const val tabulatorScript = "/tabulator.min.js"
@@ -27,14 +27,6 @@ class HtmlReportGenerator(outputDir: String, private val filterName: String) {
         private const val optionsStyle = "/options.css"
         private const val diffColumnTitle = "diff"
         private val sessionSerializer = SessionSerializer()
-
-        fun resultReports(outputDir: String): Map<String, Path> {
-            val baseDir = Paths.get(outputDir, baseDirName).toFile()
-            if (!baseDir.exists()) return emptyMap()
-            return Paths.get(outputDir, baseDirName).toFile().listFiles { file ->
-                file.isDirectory && file.resolve(globalReportName).exists()
-            }.associateBy({ it.name }, { it.resolve(globalReportName).toPath() })
-        }
     }
 
     private data class ResultPaths(val resourcePath: Path, val reportPath: Path)
@@ -43,7 +35,7 @@ class HtmlReportGenerator(outputDir: String, private val filterName: String) {
     private val reportReferences: MutableMap<String, ReferenceInfo> = mutableMapOf()
     private val errorReferences: MutableMap<String, Path> = mutableMapOf()
 
-    private val filterDir = Paths.get(outputDir, baseDirName, filterName)
+    private val filterDir = Paths.get(outputDir, reportType, filterName)
     private val filesDir = Paths.get(filterDir.toString(), "files")
     private val resourcesDir = Paths.get(filterDir.toString(), "res")
 
@@ -58,7 +50,7 @@ class HtmlReportGenerator(outputDir: String, private val filterName: String) {
         listOf(fileScript, fileStyle, tabulatorScript, tabulatorStyle, errorScript, optionsStyle).map { copyResources(it) }
     }
 
-    fun generateFileReport(sessions: List<FileEvaluationInfo>) {
+    override fun generateFileReport(sessions: List<FileEvaluationInfo>) {
         val json = sessionSerializer.serialize(sessions.map { it.sessionsInfo.sessions }.flatten())
         val fileInfo = sessions.first()
         val fileName = File(fileInfo.sessionsInfo.filePath).name
@@ -73,7 +65,7 @@ class HtmlReportGenerator(outputDir: String, private val filterName: String) {
         reportReferences[fileInfo.sessionsInfo.filePath] = ReferenceInfo(reportPath, sessions.map { it.metrics }.flatten())
     }
 
-    fun generateErrorReports(errors: List<FileErrorInfo>) {
+    override fun generateErrorReports(errors: List<FileErrorInfo>) {
         for (fileError in errors) {
             val filePath = Paths.get(fileError.path)
             val reportPath = getPaths(filePath.fileName.toString()).reportPath
@@ -106,8 +98,8 @@ class HtmlReportGenerator(outputDir: String, private val filterName: String) {
         }
     }
 
-    fun generateGlobalReport(globalMetrics: List<MetricInfo>): String {
-        val reportPath = Paths.get(filterDir.toString(), globalReportName).toString()
+    override fun generateGlobalReport(globalMetrics: List<MetricInfo>): Path {
+        val reportPath = Paths.get(filterDir.toString(), globalReportName)
         val reportTitle = "Code Completion Report for filter \"$filterName\""
         createHTML().html {
             head {
@@ -131,7 +123,7 @@ class HtmlReportGenerator(outputDir: String, private val filterName: String) {
                 div { id = "metricsTable" }
                 script { unsafe { raw(getMetricsTable(globalMetrics)) } }
             }
-        }.also { html -> FileWriter(reportPath).use { it.write(html) } }
+        }.also { html -> FileWriter(reportPath.toString()).use { it.write(html) } }
         return reportPath
     }
 

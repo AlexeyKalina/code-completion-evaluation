@@ -41,10 +41,10 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
         var shouldInterpretActions: Boolean = false
         var shouldGenerateReports: Boolean = false
         var shouldHighlightInIde: Boolean = false
-        var isTestingEnvironment: Boolean = false
 
         fun build(factory: StepFactory): EvaluationProcess {
             val steps = mutableListOf<EvaluationStep>()
+            val isTestingEnvironment = ApplicationManager.getApplication().isUnitTestMode
 
             if (!isTestingEnvironment && (shouldGenerateActions || shouldInterpretActions)) {
                 val setupSdkStep = factory.setupSdkStep()

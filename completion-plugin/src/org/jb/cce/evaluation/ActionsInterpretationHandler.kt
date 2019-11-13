@@ -1,5 +1,6 @@
 package org.jb.cce.evaluation
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
@@ -15,6 +16,7 @@ import org.jb.cce.info.FileSessionsInfo
 import org.jb.cce.interpretator.CompletionInvokerImpl
 import org.jb.cce.interpretator.DelegationCompletionInvoker
 import org.jb.cce.interpretator.InterpretationHandlerImpl
+import org.jb.cce.interpretator.TestingCompletionInvoker
 import org.jb.cce.util.FilesHelper
 import org.jb.cce.util.Progress
 import org.jb.cce.util.text
@@ -31,7 +33,10 @@ class ActionsInterpretationHandler(
     }
 
     override fun invoke(workspace1: EvaluationWorkspace, workspace2: EvaluationWorkspace, indicator: Progress) {
-        val completionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, config.completionType), project)
+        val delegationInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, config.completionType), project)
+        val completionInvoker =
+                if (ApplicationManager.getApplication().isUnitTestMode) TestingCompletionInvoker(delegationInvoker)
+                else delegationInvoker
         var sessionsCount = 0
         val computingTime = measureTimeMillis {
             sessionsCount = workspace1.actionsStorage.computeSessionsCount()

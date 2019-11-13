@@ -35,6 +35,10 @@ class EvaluationWorkspace private constructor(private val basePath: Path) {
     private val errorsDir = subdir("errors")
     private val reportsDir = subdir("reports")
     private val pathToConfig = path().resolve(ConfigFactory.DEFAULT_CONFIG_NAME)
+    private val _reports: MutableMap<String, Path> = mutableMapOf()
+
+    val reports: Map<String, Path>
+        get() = _reports.toMap()
 
     val sessionsStorage: SessionsStorage = SessionsStorage(sessionsDir.toString())
 
@@ -54,6 +58,10 @@ class EvaluationWorkspace private constructor(private val basePath: Path) {
 
     fun dumpStatistics(stats: Map<String, Long>) =
             FileWriter(basePath.resolve(statsFile).toString()).use { it.write(gson.toJson(stats)) }
+
+    fun addReport(filterName: String, reportPath: Path) {
+        _reports[filterName] = reportPath
+    }
 
     private fun writeConfig(config: Config) = ConfigFactory.save(config, basePath)
 

@@ -1,15 +1,15 @@
 package org.jb.cce.evaluation.step
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import org.jb.cce.EvaluationWorkspace
-import org.jb.cce.HtmlReportGenerator
-import org.jb.cce.SessionsFilter
+import org.jb.cce.*
 import org.jb.cce.evaluation.FilteredSessionsStorage
 import org.jb.cce.info.FileEvaluationInfo
 import org.jb.cce.metrics.MetricsEvaluator
 import org.jb.cce.storages.FileErrorsStorage
 import org.jb.cce.storages.SessionsStorage
 import org.jb.cce.util.Progress
+import java.nio.file.Path
 
 class ReportGenerationStep(
         private val inputWorkspaces: List<EvaluationWorkspace>?,
@@ -31,18 +31,23 @@ class ReportGenerationStep(
             }
             LOG.info("Start generating report for filter ${filter.name}. Done: $i/${sessionsFilters.size}.")
             progress.setProgress(filter.name, "${filter.name} filter ($i/${sessionsFilters.size})", (i.toDouble() + 1) / sessionsFilters.size)
-            val reportGenerator = HtmlReportGenerator(workspace.reportsDirectory(), filter.name)
-            generateReport(reportGenerator,
-                    workspaces.map { it.readConfig().reports.evaluationTitle },
-                    workspaces.map { FilteredSessionsStorage(filter, it.sessionsStorage) },
-                    workspaces.map { it.errorsStorage })
+            val reportGenerator =
+                    if (ApplicationManager.getApplication().isUnitTestMode) PlainTextReportGenerator(workspace.reportsDirectory(), filter.name)
+                    else HtmlReportGenerator(workspace.reportsDirectory(), filter.name)
+            workspace.addReport(
+                    filter.name,
+                    generateReport(reportGenerator,
+                        workspaces.map { it.readConfig().reports.evaluationTitle },
+                        workspaces.map { FilteredSessionsStorage(filter, it.sessionsStorage) },
+                        workspaces.map { it.errorsStorage })
+            )
         }
         return workspace
     }
 
     data class SessionsInfo(val path: String, val sessionsPath: String, val evaluationType: String)
 
-    private fun generateReport(reportGenerator: HtmlReportGenerator, evaluationTitles: List<String>, sessionStorages: List<SessionsStorage>, errorStorages: List<FileErrorsStorage>): String {
+    private fun generateReport(reportGenerator: ReportGenerator, evaluationTitles: List<String>, sessionStorages: List<SessionsStorage>, errorStorages: List<FileErrorsStorage>): Path {
         val sessionFiles: MutableMap<String, MutableList<SessionsInfo>> = mutableMapOf()
         val title2storage = mutableMapOf<String, SessionsStorage>()
         val title2evaluator = mutableMapOf<String, MetricsEvaluator>()

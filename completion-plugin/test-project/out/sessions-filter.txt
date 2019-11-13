@@ -1,0 +1,8 @@
+BASIC Found1: 1.0
+BASIC Found5: 1.0
+BASIC Recall: 1.0
+BASIC eSaved: 1.0
+BASIC MeanLatency: 0.0
+BASIC MaxLatency: 0.0
+BASIC MeanRank: 0.0
+BASIC Sessions: 3.0
