@@ -7,6 +7,7 @@ import java.io.FileWriter
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.util.*
 
 class PlainTextReportGenerator(outputDir: String, filterName: String): ReportGenerator {
     companion object {
@@ -26,7 +27,7 @@ class PlainTextReportGenerator(outputDir: String, filterName: String): ReportGen
     override fun generateGlobalReport(globalMetrics: List<MetricInfo>): Path {
         val reportPath = Paths.get(filterDir.toString(), globalReportName)
         FileWriter(reportPath.toString()).use {
-            it.write(globalMetrics.joinToString("\n") { "${it.evaluationType} ${it.name}: ${it.value}" })
+            it.write(globalMetrics.joinToString("\n") { "${it.evaluationType} ${it.name}: ${"%.3f".format(Locale.US, it.value)}" })
         }
         return reportPath
     }
