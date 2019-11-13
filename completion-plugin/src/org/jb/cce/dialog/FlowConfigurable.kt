@@ -11,13 +11,11 @@ class FlowConfigurable : EvaluationConfigurable {
     companion object {
         private const val statsCollectorId = "com.intellij.stats.completion"
     }
-    private var interpretActions = false
     private var saveLogs = true
     private lateinit var workspaceDirTextField: JTextField
     private lateinit var trainTestSpinner: JSpinner
 
     override fun createPanel(previousState: Config): JPanel {
-        interpretActions = previousState.interpretActions
         saveLogs = previousState.interpret.saveLogs
         workspaceDirTextField = JTextField(previousState.outputDir)
         val statsCollectorEnabled = PluginManager.getPlugin(PluginId.getId(statsCollectorId))?.isEnabled ?: false
@@ -26,12 +24,6 @@ class FlowConfigurable : EvaluationConfigurable {
         }
 
         return panel(title = "Flow Control") {
-            row {
-                cell {
-                    label("Interpret actions after generation:")
-                    checkBox("", interpretActions).configureInterpretActions()
-                }
-            }
             row {
                 cell {
                     label("Results workspace directory:")
@@ -54,17 +46,9 @@ class FlowConfigurable : EvaluationConfigurable {
     }
 
     override fun configure(builder: Config.Builder) {
-        builder.interpretActions = interpretActions
         builder.outputDir = workspaceDirTextField.text
         builder.saveLogs = saveLogs
         builder.trainTestSplit = trainTestSpinner.value as Int
-    }
-
-    private fun JCheckBox.configureInterpretActions(): JCheckBox {
-        addItemListener { event ->
-            interpretActions = event.stateChange == ItemEvent.SELECTED
-        }
-        return this
     }
 
     private fun JCheckBox.configureSaveLogs(statsCollectorEnabled: Boolean): JCheckBox {

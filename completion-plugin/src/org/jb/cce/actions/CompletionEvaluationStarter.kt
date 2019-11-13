@@ -31,7 +31,7 @@ class CompletionEvaluationStarter : ApplicationStarter {
 
     override fun main(args: Array<String>) =
             MainEvaluationCommand()
-                    .subcommands(FullCommand(), CustomCommand(), MultipleEvaluations(), CompareEvaluationsInDirectory())
+                    .subcommands(FullCommand(), GenerateActionsCommand(), CustomCommand(), MultipleEvaluations(), CompareEvaluationsInDirectory())
                     .main(args.toList().subList(1, args.size))
 
     abstract class EvaluationCommand(name: String, help: String): CliktCommand(name = name, help = help) {
@@ -77,8 +77,10 @@ class CompletionEvaluationStarter : ApplicationStarter {
         override fun run() = Unit
     }
 
-    class FullCommand: EvaluationCommand(name = "full", help = "Start process from actions generation (set up by config)") {
+    abstract class EvaluationByConfigCommand(name: String, help: String) : EvaluationCommand(name, help) {
         private val configPath by argument(name = "config-path", help = "Path to config").default(ConfigFactory.DEFAULT_CONFIG_NAME)
+
+        abstract val evaluateAfterActionsGeneration: Boolean
 
         override fun run() {
             val config = loadConfig(Paths.get(configPath))
@@ -86,14 +88,22 @@ class CompletionEvaluationStarter : ApplicationStarter {
             val project = loadProject(config.projectPath)
             val process = EvaluationProcess.build({
                 shouldGenerateActions = true
-                shouldInterpretActions = config.interpretActions
-                shouldGenerateReports = config.interpretActions
+                shouldInterpretActions = evaluateAfterActionsGeneration
+                shouldGenerateReports = evaluateAfterActionsGeneration
             }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
             process.startAsync(workspace)
         }
     }
 
-    class CustomCommand: EvaluationCommand(name = "custom", help = "Start process from actions interpretation or report generation") {
+    class FullCommand: EvaluationByConfigCommand(name = "full", help = "Run the whole completion evaluation process (set up by config)") {
+        override val evaluateAfterActionsGeneration: Boolean = true
+    }
+
+    class GenerateActionsCommand: EvaluationByConfigCommand(name = "generate-actions", help = "Generate actions only (set up by config)") {
+        override val evaluateAfterActionsGeneration: Boolean = false
+    }
+
+    class CustomCommand: EvaluationCommand(name = "custom", help = "Evaluate actions interpretation and/or report generation on existing workspace") {
         private val workspacePath by argument(name = "workspace", help = "Path to workspace")
         private val interpretActions by option(names = *arrayOf("--interpret-actions", "-i"), help = "Interpret actions").flag()
         private val generateReport by option(names = *arrayOf("--generate-report", "-r"), help = "Generate report").flag()
