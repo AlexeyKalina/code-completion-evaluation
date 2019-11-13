@@ -17,7 +17,10 @@ class SessionSerializer {
                     override fun serialize(src: Suggestion, typeOfSrc: Type, context: JsonSerializationContext): JsonObject {
                         val jsonObject = JsonObject()
                         jsonObject.addProperty("text", src.text)
-                        jsonObject.addProperty("presentationText", escapeHtml4(src.presentationText))
+                        jsonObject.addProperty("presentationText",
+                                escapeHtml4(src.presentationText)
+                                        .replace("&lt;", "<")
+                                        .replace("&gt;", ">"))
                         return jsonObject
                     }
                 })
