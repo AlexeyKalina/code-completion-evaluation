@@ -5,14 +5,12 @@ import org.jb.cce.actions.CompletionPrefix
 import org.jb.cce.actions.CompletionStrategy
 import org.jb.cce.actions.CompletionType
 import org.jb.cce.filter.EvaluationFilter
-import org.jb.cce.filter.EvaluationFilterManager
 import java.nio.file.Paths
 
 data class Config internal constructor(
         val projectPath: String,
         val language: String,
         val outputDir: String,
-        val interpretActions: Boolean,
         val actions: ActionsGeneration,
         val interpret: ActionsInterpretation,
         val reports: ReportGeneration) {
@@ -42,7 +40,6 @@ data class Config internal constructor(
     class Builder internal constructor(private val projectPath: String, private val language: String) {
         var evaluationRoots = mutableListOf<String>()
         var outputDir: String = Paths.get(projectPath, "completion-evaluation").toAbsolutePath().toString()
-        var interpretActions: Boolean = true
         var saveLogs = false
         var trainTestSplit: Int = 70
         var completionType: CompletionType = CompletionType.BASIC
@@ -68,7 +65,6 @@ data class Config internal constructor(
                 projectPath,
                 language,
                 outputDir,
-                interpretActions,
                 ActionsGeneration(
                         evaluationRoots,
                         CompletionStrategy(prefixStrategy, contextStrategy, allTokens, filters)

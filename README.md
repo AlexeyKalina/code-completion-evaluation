@@ -74,7 +74,6 @@ To start the evaluation in the headless mode you should describe where the proje
   "projectPath": "", // string with path to idea project
   "language": "Java", // Java, Python, Shell Script or Another
   "outputDir": "", // string with path to output directory
-  "interpretActions": true, // interpret or not actions after its generation
   "actions": { // part of config about actions generation step
     "evaluationRoots": [ ], // list of string with paths to files/directories for evaluation
     "strategy": { // describes evaluation rules
@@ -127,7 +126,6 @@ Example of `config.json` to evaluate code completion on several modules from int
   "projectPath": "PATH_TO_COMMUNITY_PROJECT",
   "language": "Java",
   "outputDir": "PATH_TO_COMMUNITY_PROJECT/completion-evaluation",
-  "interpretActions": true,
   "actions": {
     "evaluationRoots": [
       "java/java-indexing-impl",
