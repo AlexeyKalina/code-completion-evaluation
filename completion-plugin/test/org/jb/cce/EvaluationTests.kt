@@ -11,20 +11,17 @@ import org.jb.cce.actions.CompletionType
 import org.jb.cce.evaluation.BackgroundStepFactory
 import org.jb.cce.evaluation.EvaluationProcess
 import org.jb.cce.evaluation.EvaluationRootInfo
-import org.jb.cce.filter.impl.TypeFilter
-import org.jb.cce.filter.impl.TypeFilterConfiguration
+import org.jb.cce.filter.impl.*
 import org.jb.cce.uast.Language
 import org.jb.cce.uast.TypeProperty
-import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.*
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.io.FileReader
 import java.nio.file.Path
 import java.nio.file.Paths
 
-
+@DisplayName("Test evaluation process with different configurations")
 class EvaluationTests : ExecutionTestCase()  {
     companion object {
         private const val PROJECT_NAME = "test-project"
@@ -51,8 +48,24 @@ class EvaluationTests : ExecutionTestCase()  {
     }
 
     @Test
+    fun `evaluate with ML completion`() = doTest("ml-completion.txt") {
+        completionType = CompletionType.ML
+        evaluationTitle = CompletionType.ML.name
+    }
+
+    @Test
     fun `evaluate with previous context`() = doTest("previous-context.txt") {
         contextStrategy = CompletionContext.PREVIOUS
+    }
+
+    @Test
+    fun `evaluate with simple prefix`() = doTest("simple-prefix.txt") {
+        prefixStrategy = CompletionPrefix.SimplePrefix(false, 2)
+    }
+
+    @Test
+    fun `evaluate with capitalize prefix`() = doTest("capitalize-prefix.txt") {
+        prefixStrategy = CompletionPrefix.CapitalizePrefix(false)
     }
 
     @Test
@@ -63,6 +76,14 @@ class EvaluationTests : ExecutionTestCase()  {
     @Test
     fun `evaluate with all tokens completion`() = doTest("all-tokens.txt") {
         allTokens = true
+    }
+
+    @Test
+    fun `evaluate with token filters`() = doTest("token-filters.txt") {
+        filters[TypeFilterConfiguration.id] = TypeFilter(listOf(TypeProperty.METHOD_CALL))
+        filters[StaticFilterConfiguration.id] = StaticFilter(false)
+        filters[ArgumentFilterConfiguration.id] = ArgumentFilter(false)
+        filters[PackageRegexFilterConfiguration.id] = PackageRegexFilter(".*")
     }
 
     @Test
