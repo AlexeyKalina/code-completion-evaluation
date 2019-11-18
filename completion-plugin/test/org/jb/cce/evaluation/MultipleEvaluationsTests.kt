@@ -56,7 +56,7 @@ class MultipleEvaluationsTests : EvaluationTests() {
             shouldInterpretActions = true
         }, factory)
         process.start(workspace)
-        Thread.sleep(1_000)
+        waitAfterWorkspaceCreated()
         return workspace
     }
 

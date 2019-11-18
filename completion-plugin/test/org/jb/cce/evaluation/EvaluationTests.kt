@@ -47,6 +47,8 @@ open class EvaluationTests : ExecutionTestCase()  {
     protected fun sourceFilesCount() =
             FilesHelper.getFiles(project, project.modules[0].rootManager.sourceRoots.toList()).getValue(Language.JAVA.displayName).size
 
+    protected fun waitAfterWorkspaceCreated() = Thread.sleep(1_000)
+
     protected fun checkReport(workspace: EvaluationWorkspace, config: Config, reportName: String, filterName: String = SessionsFilter.ACCEPT_ALL.name) {
         TestCase.assertTrue(
                 "Report wasn't generated",

@@ -114,6 +114,6 @@ class CustomEvaluationTests : EvaluationTests() {
         }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
 
         process.start(workspace)
-        Thread.sleep(1_000)
+        waitAfterWorkspaceCreated()
     }
 }
