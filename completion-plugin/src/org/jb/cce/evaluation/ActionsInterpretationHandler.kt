@@ -1,22 +1,15 @@
 package org.jb.cce.evaluation
 
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
-import org.jb.cce.Config
-import org.jb.cce.EvaluationWorkspace
-import org.jb.cce.InterpretFilter
-import org.jb.cce.Interpreter
+import org.jb.cce.*
 import org.jb.cce.actions.CompletionType
 import org.jb.cce.exceptions.ExceptionsUtil
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.FileSessionsInfo
-import org.jb.cce.interpretator.CompletionInvokerImpl
-import org.jb.cce.interpretator.DelegationCompletionInvoker
 import org.jb.cce.interpretator.InterpretationHandlerImpl
-import org.jb.cce.interpretator.TestingCompletionInvoker
 import org.jb.cce.util.FilesHelper
 import org.jb.cce.util.Progress
 import org.jb.cce.util.text
@@ -27,16 +20,13 @@ import kotlin.system.measureTimeMillis
 class ActionsInterpretationHandler(
         private val config: Config.ActionsInterpretation,
         private val language: String,
+        private val completionInvoker: CompletionInvoker,
         private val project: Project) : TwoWorkspaceHandler {
     companion object {
         val LOG = Logger.getInstance(ActionsInterpretationHandler::class.java)
     }
 
     override fun invoke(workspace1: EvaluationWorkspace, workspace2: EvaluationWorkspace, indicator: Progress) {
-        val delegationInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, config.completionType), project)
-        val completionInvoker =
-                if (ApplicationManager.getApplication().isUnitTestMode) TestingCompletionInvoker(delegationInvoker)
-                else delegationInvoker
         var sessionsCount = 0
         val computingTime = measureTimeMillis {
             sessionsCount = workspace1.actionsStorage.computeSessionsCount()
@@ -61,7 +51,7 @@ class ActionsInterpretationHandler(
                 workspace2.sessionsStorage.saveSessions(FileSessionsInfo(fileActions.path, fileText, sessions))
             } catch (e: Throwable) {
                 workspace2.errorsStorage.saveError(FileErrorInfo(fileActions.path, e.message ?: "No Message", ExceptionsUtil.stackTraceToString(e)))
-                LOG.error("Actions interpretation error for file $file.", e)
+                handler.onErrorOccurred(e, 0)
             }
             if (handler.isCancelled()) break
         }

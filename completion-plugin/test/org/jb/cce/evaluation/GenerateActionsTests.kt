@@ -1,11 +1,10 @@
-package org.jb.cce
+package org.jb.cce.evaluation
 
 import com.intellij.openapi.project.rootManager
 import com.jetbrains.python.statistics.modules
 import junit.framework.TestCase
-import org.jb.cce.evaluation.BackgroundStepFactory
-import org.jb.cce.evaluation.EvaluationProcess
-import org.jb.cce.evaluation.EvaluationRootInfo
+import org.jb.cce.Config
+import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.uast.Language
 import org.junit.jupiter.api.Test
 

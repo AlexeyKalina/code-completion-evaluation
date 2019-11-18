@@ -1,9 +1,12 @@
 package org.jb.cce.evaluation
 
 import com.intellij.openapi.project.Project
+import org.jb.cce.CompletionInvoker
 import org.jb.cce.Config
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.evaluation.step.*
+import org.jb.cce.interpretator.CompletionInvokerImpl
+import org.jb.cce.interpretator.DelegationCompletionInvoker
 import org.jb.cce.uast.Language
 
 class BackgroundStepFactory(
@@ -14,17 +17,19 @@ class BackgroundStepFactory(
         private val evaluationRootInfo: EvaluationRootInfo
 ) : StepFactory {
 
+    var completionInvoker: CompletionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, config.interpret.completionType), project)
+
     override fun generateActionsStep(): EvaluationStep =
             ActionsGenerationStep(config.actions, config.language, evaluationRootInfo, project, isHeadless)
 
     override fun interpretActionsStep(): EvaluationStep =
-            ActionsInterpretationStep(config.interpret, config.language, project, isHeadless)
+            ActionsInterpretationStep(config.interpret, config.language, completionInvoker, project, isHeadless)
 
     override fun generateReportStep(): EvaluationStep =
             ReportGenerationStep(inputWorkspacePaths?.map { EvaluationWorkspace.open(it) }, config.reports.sessionsFilters, project, isHeadless)
 
     override fun interpretActionsOnNewWorkspaceStep(): EvaluationStep =
-            ActionsInterpretationOnNewWorkspaceStep(config, project, isHeadless)
+            ActionsInterpretationOnNewWorkspaceStep(config, completionInvoker, project, isHeadless)
 
     override fun highlightTokensInIdeStep(): EvaluationStep =
             HighlightingTokensInIdeStep(project, isHeadless)

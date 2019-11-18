@@ -1,19 +1,18 @@
-package org.jb.cce
+package org.jb.cce.evaluation
 
 import com.intellij.openapi.project.rootManager
 import com.jetbrains.python.statistics.modules
 import junit.framework.TestCase
+import org.jb.cce.Config
+import org.jb.cce.EvaluationWorkspace
+import org.jb.cce.SessionsFilter
 import org.jb.cce.actions.CompletionType
-import org.jb.cce.evaluation.BackgroundStepFactory
-import org.jb.cce.evaluation.EvaluationProcess
-import org.jb.cce.evaluation.EvaluationRootInfo
-import org.jb.cce.filter.impl.*
+import org.jb.cce.filter.impl.TypeFilter
+import org.jb.cce.filter.impl.TypeFilterConfiguration
 import org.jb.cce.uast.Language
 import org.jb.cce.uast.TypeProperty
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.io.FileReader
-import java.nio.file.Paths
 
 class CustomEvaluationTests : EvaluationTests() {
     private lateinit var workspace: EvaluationWorkspace
@@ -54,16 +53,41 @@ class CustomEvaluationTests : EvaluationTests() {
         completeTokenProbability = 1.0
     }
 
+    @Test
+    fun `generate file error on interpretation fail`() {
+        val config = Config.build(tempDir.toString(), Language.JAVA.displayName) {
+            evaluationRoots = project.modules.flatMap { it.rootManager.sourceRoots.map { it.path } }.toMutableList()
+        }
+        val factory = BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true))
+        factory.completionInvoker = ExceptionThrowingCompletionInvoker(factory.completionInvoker)
+        val process = EvaluationProcess.build({
+            shouldInterpretActions = true
+            shouldGenerateReports = true
+        }, factory)
+        val resultWorkspace = process.start(workspace)
+
+        TestCase.assertTrue(
+                "Sessions files were generated",
+                resultWorkspace.sessionsStorage.getSessionFiles().isEmpty())
+        TestCase.assertEquals(
+                "Error files count don't match source files count",
+                resultWorkspace.errorsStorage.getErrors().size,
+                SOURCE_FILES_COUNT)
+        checkReport(resultWorkspace, config, "zero-sessions.txt")
+    }
+
     private fun doTest(reportName: String, filterName: String = SessionsFilter.ACCEPT_ALL.name, init: Config.Builder.() -> Unit) {
         val config = Config.build(tempDir.toString(), Language.JAVA.displayName) {
             evaluationRoots = project.modules.flatMap { it.rootManager.sourceRoots.map { it.path } }.toMutableList()
             init()
         }
 
+        val factory = BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true))
+        factory.completionInvoker = FirstSuggestionCompletionInvoker(factory.completionInvoker)
         val process = EvaluationProcess.build({
             shouldInterpretActions = true
             shouldGenerateReports = true
-        }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
+        }, factory)
 
         val resultWorkspace = process.start(workspace)
 
@@ -74,27 +98,7 @@ class CustomEvaluationTests : EvaluationTests() {
                 "Sessions files count don't match source files count",
                 resultWorkspace.sessionsStorage.getSessionFiles().size,
                 SOURCE_FILES_COUNT)
-        TestCase.assertTrue(
-                "Report wasn't generated",
-                resultWorkspace.reports.isNotEmpty())
-        TestCase.assertEquals(
-                "Reports don't match sessions filters",
-                resultWorkspace.reports.keys,
-                (config.reports.sessionsFilters + listOf(SessionsFilter.ACCEPT_ALL)).map { it.name }.toSet())
-
-        val reportPath = resultWorkspace.reports[filterName]
-        val reportText = FileReader(reportPath.toString()).use { it.readText() }
-        val testOutput = Paths.get(projectPath, "out", reportName).toFile()
-        if (testOutput.exists()) {
-            val testOutputText = FileReader(testOutput).use { it.readText() }
-            TestCase.assertEquals(
-                    "Expected and actual reports mismatched",
-                    reportText,
-                    testOutputText)
-        } else {
-            testOutput.writeText(reportText)
-            fail("No expected output found. Do not forget to add the output into VCS")
-        }
+        checkReport(resultWorkspace, config, reportName, filterName)
     }
 
     @BeforeEach

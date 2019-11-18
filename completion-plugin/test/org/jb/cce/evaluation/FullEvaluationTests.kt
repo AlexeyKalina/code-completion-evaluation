@@ -1,20 +1,18 @@
-package org.jb.cce
+package org.jb.cce.evaluation
 
 import com.intellij.openapi.project.rootManager
 import com.jetbrains.python.statistics.modules
 import junit.framework.TestCase
+import org.jb.cce.Config
+import org.jb.cce.EvaluationWorkspace
+import org.jb.cce.SessionsFilter
 import org.jb.cce.actions.CompletionContext
 import org.jb.cce.actions.CompletionPrefix
 import org.jb.cce.actions.CompletionType
-import org.jb.cce.evaluation.BackgroundStepFactory
-import org.jb.cce.evaluation.EvaluationProcess
-import org.jb.cce.evaluation.EvaluationRootInfo
 import org.jb.cce.filter.impl.*
 import org.jb.cce.uast.Language
 import org.jb.cce.uast.TypeProperty
 import org.junit.jupiter.api.Test
-import java.io.FileReader
-import java.nio.file.Paths
 
 class FullEvaluationTests : EvaluationTests() {
     @Test
@@ -96,11 +94,13 @@ class FullEvaluationTests : EvaluationTests() {
         }
         val workspace = EvaluationWorkspace.create(config)
 
+        val factory = BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true))
+        factory.completionInvoker = FirstSuggestionCompletionInvoker(factory.completionInvoker)
         val process = EvaluationProcess.build({
             shouldGenerateActions = true
             shouldInterpretActions = true
             shouldGenerateReports = true
-        }, BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true)))
+        }, factory)
 
         process.start(workspace)
 
@@ -112,27 +112,6 @@ class FullEvaluationTests : EvaluationTests() {
                 "Sessions files count don't match source files count",
                 workspace.sessionsStorage.getSessionFiles().size,
                 SOURCE_FILES_COUNT)
-        TestCase.assertTrue(
-                "Report wasn't generated",
-                workspace.reports.isNotEmpty())
-        TestCase.assertEquals(
-                "Reports don't match sessions filters",
-                workspace.reports.keys,
-                (config.reports.sessionsFilters + listOf(SessionsFilter.ACCEPT_ALL)).map { it.name }.toSet())
-
-        val reportPath = workspace.reports[filterName]
-        val reportText = FileReader(reportPath.toString()).use { it.readText() }
-        val testOutput = Paths.get(projectPath, "out", reportName).toFile()
-        if (testOutput.exists()) {
-            val testOutputText = FileReader(testOutput).use { it.readText() }
-            TestCase.assertEquals(
-                    "Expected and actual reports mismatched",
-                    reportText,
-                    testOutputText)
-        } else {
-            testOutput.writeText(reportText)
-            fail("No expected output found. Do not forget to add the output into VCS")
-        }
-
+        checkReport(workspace, config, reportName, filterName)
     }
 }
