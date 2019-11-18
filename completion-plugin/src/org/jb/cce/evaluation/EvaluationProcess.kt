@@ -19,7 +19,7 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
         start(workspace)
     }
 
-    fun start(workspace: EvaluationWorkspace) {
+    fun start(workspace: EvaluationWorkspace): EvaluationWorkspace {
         val stats = mutableMapOf<String, Long>()
         var currentWorkspace = workspace
         var hasError = false
@@ -34,6 +34,7 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
             if (hasError) break
         }
         currentWorkspace.dumpStatistics(stats)
+        return currentWorkspace
     }
 
     class Builder {
