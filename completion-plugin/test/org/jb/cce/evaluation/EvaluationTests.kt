@@ -3,6 +3,7 @@ package org.jb.cce.evaluation
 import com.intellij.debugger.impl.OutputChecker
 import com.intellij.execution.ExecutionTestCase
 import com.intellij.openapi.project.rootManager
+import com.intellij.openapi.vfs.VfsUtil
 import com.jetbrains.python.statistics.modules
 import junit.framework.TestCase
 import org.jb.cce.Config
@@ -10,6 +11,7 @@ import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.SessionsFilter
 import org.jb.cce.uast.Language
 import org.jb.cce.util.FilesHelper
+import org.jb.cce.util.text
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
@@ -58,7 +60,7 @@ open class EvaluationTests : ExecutionTestCase()  {
         val reportText = FileReader(reportPath.toString()).use { it.readText() }
         val testOutput = Paths.get(projectPath, "out", reportName).toFile()
         if (testOutput.exists()) {
-            val testOutputText = FileReader(testOutput).use { it.readText() }
+            val testOutputText = VfsUtil.findFileByIoFile(testOutput, false)!!.text()
             TestCase.assertEquals(
                     "Expected and actual reports mismatched",
                     reportText,
