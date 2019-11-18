@@ -2,10 +2,14 @@ package org.jb.cce.evaluation
 
 import com.intellij.debugger.impl.OutputChecker
 import com.intellij.execution.ExecutionTestCase
+import com.intellij.openapi.project.rootManager
+import com.jetbrains.python.statistics.modules
 import junit.framework.TestCase
 import org.jb.cce.Config
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.SessionsFilter
+import org.jb.cce.uast.Language
+import org.jb.cce.util.FilesHelper
 import org.junit.jupiter.api.*
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
@@ -18,8 +22,7 @@ open class EvaluationTests : ExecutionTestCase()  {
     companion object {
         private const val PROJECT_NAME = "test-project"
     }
-    protected val SOURCE_FILES_COUNT = 2
-    protected val projectPath = Paths.get(PROJECT_NAME).toAbsolutePath().toString()
+    private val projectPath = Paths.get(PROJECT_NAME).toAbsolutePath().toString()
 
     @TempDir
     lateinit var tempDir: Path
@@ -38,6 +41,9 @@ open class EvaluationTests : ExecutionTestCase()  {
 
     @AfterEach
     override fun tearDown() = super.tearDown()
+
+    protected fun sourceFilesCount() =
+            FilesHelper.getFiles(project, project.modules[0].rootManager.sourceRoots.toList()).getValue(Language.JAVA.displayName).size
 
     protected fun checkReport(workspace: EvaluationWorkspace, config: Config, reportName: String, filterName: String = SessionsFilter.ACCEPT_ALL.name) {
         TestCase.assertTrue(

@@ -28,7 +28,7 @@ class GenerateActionsTests : EvaluationTests() {
         TestCase.assertEquals(
                 "Actions files count don't match source files count",
                 workspace.actionsStorage.getActionFiles().size,
-                SOURCE_FILES_COUNT)
+                sourceFilesCount())
         TestCase.assertTrue(
                 "Sessions files were generated",
                 workspace.sessionsStorage.getSessionFiles().isEmpty())

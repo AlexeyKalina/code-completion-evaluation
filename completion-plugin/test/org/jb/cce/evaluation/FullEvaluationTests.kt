@@ -107,11 +107,11 @@ class FullEvaluationTests : EvaluationTests() {
         TestCase.assertEquals(
                 "Actions files count don't match source files count",
                 workspace.actionsStorage.getActionFiles().size,
-                SOURCE_FILES_COUNT)
+                sourceFilesCount())
         TestCase.assertEquals(
                 "Sessions files count don't match source files count",
                 workspace.sessionsStorage.getSessionFiles().size,
-                SOURCE_FILES_COUNT)
+                sourceFilesCount())
         checkReport(workspace, config, reportName, filterName)
     }
 }

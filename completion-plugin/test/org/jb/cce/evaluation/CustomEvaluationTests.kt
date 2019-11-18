@@ -72,7 +72,7 @@ class CustomEvaluationTests : EvaluationTests() {
         TestCase.assertEquals(
                 "Error files count don't match source files count",
                 resultWorkspace.errorsStorage.getErrors().size,
-                SOURCE_FILES_COUNT)
+                sourceFilesCount())
         checkReport(resultWorkspace, config, "zero-sessions.txt")
     }
 
@@ -97,7 +97,7 @@ class CustomEvaluationTests : EvaluationTests() {
         TestCase.assertEquals(
                 "Sessions files count don't match source files count",
                 resultWorkspace.sessionsStorage.getSessionFiles().size,
-                SOURCE_FILES_COUNT)
+                sourceFilesCount())
         checkReport(resultWorkspace, config, reportName, filterName)
     }
 
