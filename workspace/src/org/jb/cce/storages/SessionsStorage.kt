@@ -4,6 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import org.jb.cce.SessionSerializer
 import org.jb.cce.info.FileSessionsInfo
+import java.io.FileReader
 import java.io.FileWriter
 import java.nio.file.Paths
 
@@ -31,7 +32,9 @@ open class SessionsStorage(val storageDir: String) {
     }
 
     fun getSessionFiles(): List<Pair<String, String>> {
-        val json = Paths.get(storageDir, pathsListFile).toFile().readText()
+        val sessionsListFile = Paths.get(storageDir, pathsListFile).toFile()
+        if (!sessionsListFile.exists()) return emptyList()
+        val json = FileReader(sessionsListFile).use { it.readText() }
         val type = object : TypeToken<MutableMap<String, String>>() {}.type
         sessionFiles = gson.fromJson(json, type)
         for (path in sessionFiles.keys) sessionFiles[path] = Paths.get(storageDir).resolve(sessionFiles[path]!!).toString()
