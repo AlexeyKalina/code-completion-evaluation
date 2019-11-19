@@ -20,7 +20,7 @@ dependencies {
 
 intellij {
     version '193.4778.7-EAP-SNAPSHOT'
-    plugins "PythonCore:193.4778.7", "sh", 'java'
+    plugins "PythonCore:193.4778.7", "sh", 'java', 'stats-collector'
 }
 
 task runIdeHeadless (type: RunIdeTask) {
