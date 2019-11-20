@@ -112,6 +112,6 @@ class FullEvaluationTests : EvaluationTests() {
                 "Sessions files count don't match source files count",
                 workspace.sessionsStorage.getSessionFiles().size,
                 sourceFilesCount())
-        checkReport(workspace, config, reportName, filterName)
+        checkReports(workspace, config, reportName, filterName)
     }
 }

@@ -23,6 +23,8 @@ import java.nio.file.Paths
 open class EvaluationTests : ExecutionTestCase()  {
     companion object {
         private const val PROJECT_NAME = "test-project"
+        private const val TEST_REPORT_TYPE = "plain"
+        private const val DEFAULT_REPORT_TYPE = "html"
     }
     private val projectPath = Paths.get(PROJECT_NAME).toAbsolutePath().toString()
 
@@ -49,16 +51,20 @@ open class EvaluationTests : ExecutionTestCase()  {
 
     protected fun waitAfterWorkspaceCreated() = Thread.sleep(1_000)
 
-    protected fun checkReport(workspace: EvaluationWorkspace, config: Config, reportName: String, filterName: String = SessionsFilter.ACCEPT_ALL.name) {
-        TestCase.assertTrue(
-                "Report wasn't generated",
-                workspace.reports.isNotEmpty())
-        TestCase.assertEquals(
-                "Reports don't match sessions filters",
-                workspace.reports.keys,
-                (config.reports.sessionsFilters + listOf(SessionsFilter.ACCEPT_ALL)).map { it.name }.toSet())
-
-        val reportPath = workspace.reports[filterName]
+    protected fun checkReports(workspace: EvaluationWorkspace, config: Config, reportName: String, filterName: String = SessionsFilter.ACCEPT_ALL.name) {
+        val check = fun(reportType: String) {
+            val reports = workspace.getReports(reportType)
+            TestCase.assertTrue(
+                    "Report wasn't generated ($reportType)",
+                    reports.isNotEmpty())
+            TestCase.assertEquals(
+                    "Reports don't match sessions filters ($reportType)",
+                    reports.keys,
+                    (config.reports.sessionsFilters + listOf(SessionsFilter.ACCEPT_ALL)).map { it.name }.toSet())
+        }
+        check(TEST_REPORT_TYPE)
+        check(DEFAULT_REPORT_TYPE)
+        val reportPath = workspace.getReports(TEST_REPORT_TYPE)[filterName]
         val reportText = FileReader(reportPath.toString()).use { it.readText() }
         val testOutput = Paths.get(projectPath, "out", reportName).toFile()
         if (testOutput.exists()) {

@@ -18,7 +18,6 @@ import kotlin.collections.HashSet
 class HtmlReportGenerator(outputDir: String, private val filterName: String): ReportGenerator {
     companion object {
         private const val globalReportName = "index.html"
-        private const val reportType = "html"
         private const val fileScript = "/script.js"
         private const val fileStyle = "/style.css"
         private const val tabulatorScript = "/tabulator.min.js"
@@ -29,13 +28,15 @@ class HtmlReportGenerator(outputDir: String, private val filterName: String): Re
         private val sessionSerializer = SessionSerializer()
     }
 
+    override val type: String = "html"
+
     private data class ResultPaths(val resourcePath: Path, val reportPath: Path)
     private data class ReferenceInfo(val pathToReport: Path, val metrics: List<MetricInfo>)
 
     private val reportReferences: MutableMap<String, ReferenceInfo> = mutableMapOf()
     private val errorReferences: MutableMap<String, Path> = mutableMapOf()
 
-    private val filterDir = Paths.get(outputDir, reportType, filterName)
+    private val filterDir = Paths.get(outputDir, type, filterName)
     private val filesDir = Paths.get(filterDir.toString(), "files")
     private val resourcesDir = Paths.get(filterDir.toString(), "res")
 

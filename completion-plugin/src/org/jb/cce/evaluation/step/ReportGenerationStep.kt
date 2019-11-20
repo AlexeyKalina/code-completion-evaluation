@@ -31,23 +31,23 @@ class ReportGenerationStep(
             }
             LOG.info("Start generating report for filter ${filter.name}. Done: $i/${sessionsFilters.size}.")
             progress.setProgress(filter.name, "${filter.name} filter ($i/${sessionsFilters.size})", (i.toDouble() + 1) / sessionsFilters.size)
-            val reportGenerator =
-                    if (ApplicationManager.getApplication().isUnitTestMode) PlainTextReportGenerator(workspace.reportsDirectory(), filter.name)
-                    else HtmlReportGenerator(workspace.reportsDirectory(), filter.name)
-            workspace.addReport(
-                    filter.name,
-                    generateReport(reportGenerator,
-                        workspaces.map { it.readConfig().reports.evaluationTitle },
-                        workspaces.map { FilteredSessionsStorage(filter, it.sessionsStorage) },
-                        workspaces.map { it.errorsStorage })
-            )
+            val reportGenerators = mutableListOf<ReportGenerator>(HtmlReportGenerator(workspace.reportsDirectory(), filter.name))
+            if (ApplicationManager.getApplication().isUnitTestMode) reportGenerators.add(PlainTextReportGenerator(workspace.reportsDirectory(), filter.name))
+            val reports = generateReport(reportGenerators,
+                    workspaces.map { it.readConfig().reports.evaluationTitle },
+                    workspaces.map { FilteredSessionsStorage(filter, it.sessionsStorage) },
+                    workspaces.map { it.errorsStorage })
+            for (report in reports) {
+                workspace.addReport(report.type, filter.name, report.path)
+            }
         }
         return workspace
     }
 
     data class SessionsInfo(val path: String, val sessionsPath: String, val evaluationType: String)
+    data class ReportInfo(val type: String, val path: Path)
 
-    private fun generateReport(reportGenerator: ReportGenerator, evaluationTitles: List<String>, sessionStorages: List<SessionsStorage>, errorStorages: List<FileErrorsStorage>): Path {
+    private fun generateReport(reportGenerators: List<ReportGenerator>, evaluationTitles: List<String>, sessionStorages: List<SessionsStorage>, errorStorages: List<FileErrorsStorage>): List<ReportInfo> {
         val sessionFiles: MutableMap<String, MutableList<SessionsInfo>> = mutableMapOf()
         val title2storage = mutableMapOf<String, SessionsStorage>()
         val title2evaluator = mutableMapOf<String, MetricsEvaluator>()
@@ -68,10 +68,10 @@ class ReportGenerationStep(
                 val metricsEvaluation = title2evaluator[file.evaluationType]!!.evaluate(sessionsEvaluation.sessions)
                 fileEvaluations.add(FileEvaluationInfo(sessionsEvaluation, metricsEvaluation, file.evaluationType))
             }
-            reportGenerator.generateFileReport(fileEvaluations)
+            reportGenerators.forEach { it.generateFileReport(fileEvaluations) }
         }
         for (errorsStorage in errorStorages)
-            reportGenerator.generateErrorReports(errorsStorage.getErrors())
-        return reportGenerator.generateGlobalReport(title2evaluator.values.map { it.result() }.flatten())
+            reportGenerators.forEach { it.generateErrorReports(errorsStorage.getErrors()) }
+        return reportGenerators.map { ReportInfo(it.type, it.generateGlobalReport(title2evaluator.values.map { it.result() }.flatten())) }
     }
 }

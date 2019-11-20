@@ -73,7 +73,7 @@ class CustomEvaluationTests : EvaluationTests() {
                 "Error files count don't match source files count",
                 resultWorkspace.errorsStorage.getErrors().size,
                 sourceFilesCount())
-        checkReport(resultWorkspace, config, "zero-sessions.txt")
+        checkReports(resultWorkspace, config, "zero-sessions.txt")
     }
 
     private fun doTest(reportName: String, filterName: String = SessionsFilter.ACCEPT_ALL.name, init: Config.Builder.() -> Unit) {
@@ -98,7 +98,7 @@ class CustomEvaluationTests : EvaluationTests() {
                 "Sessions files count don't match source files count",
                 resultWorkspace.sessionsStorage.getSessionFiles().size,
                 sourceFilesCount())
-        checkReport(resultWorkspace, config, reportName, filterName)
+        checkReports(resultWorkspace, config, reportName, filterName)
     }
 
     @BeforeEach

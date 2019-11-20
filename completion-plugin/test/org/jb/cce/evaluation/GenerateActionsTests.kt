@@ -34,6 +34,6 @@ class GenerateActionsTests : EvaluationTests() {
                 workspace.sessionsStorage.getSessionFiles().isEmpty())
         TestCase.assertTrue(
                 "Report was generated",
-                workspace.reports.isEmpty())
+                workspace.getReports().isEmpty())
     }
 }

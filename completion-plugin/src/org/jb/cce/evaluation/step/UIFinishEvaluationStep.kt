@@ -9,11 +9,11 @@ import org.jb.cce.dialog.OpenBrowserDialog
 
 class UIFinishEvaluationStep(private val project: Project) : FinishEvaluationStep() {
     override fun start(workspace: EvaluationWorkspace): EvaluationWorkspace? {
-        if (workspace.reports.isNotEmpty()) ApplicationManager.getApplication().invokeAndWait {
-            val dialog = OpenBrowserDialog(workspace.reports.map { it.key })
+        if (workspace.getReports().isNotEmpty()) ApplicationManager.getApplication().invokeAndWait {
+            val dialog = OpenBrowserDialog(workspace.getReports().map { it.key })
             if (dialog.showAndGet()) {
                 dialog.reportNamesForOpening.forEach {
-                    BrowserUtil.browse(workspace.reports[it].toString())
+                    BrowserUtil.browse(workspace.getReports()[it].toString())
                 }
             }
         } else ApplicationManager.getApplication().invokeAndWait{

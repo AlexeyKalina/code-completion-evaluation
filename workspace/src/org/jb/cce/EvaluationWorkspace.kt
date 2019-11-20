@@ -14,7 +14,8 @@ import java.util.*
 
 class EvaluationWorkspace private constructor(private val basePath: Path) {
     companion object {
-        private const val statsFile = "stats.json"
+        private const val STATS_FILE_NAME = "stats.json"
+        private const val DEFAULT_REPORT_TYPE = "html"
         private val gson = Gson()
         private val formatter = SimpleDateFormat("yyyy-MM-dd_HH-mm-ss")
 
@@ -35,10 +36,7 @@ class EvaluationWorkspace private constructor(private val basePath: Path) {
     private val errorsDir = subdir("errors")
     private val reportsDir = subdir("reports")
     private val pathToConfig = path().resolve(ConfigFactory.DEFAULT_CONFIG_NAME)
-    private val _reports: MutableMap<String, Path> = mutableMapOf()
-
-    val reports: Map<String, Path>
-        get() = _reports.toMap()
+    private val _reports: MutableMap<String, MutableMap<String, Path>> = mutableMapOf()
 
     val sessionsStorage: SessionsStorage = SessionsStorage(sessionsDir.toString())
 
@@ -57,11 +55,13 @@ class EvaluationWorkspace private constructor(private val basePath: Path) {
     fun readConfig(): Config = ConfigFactory.load(pathToConfig)
 
     fun dumpStatistics(stats: Map<String, Long>) =
-            FileWriter(basePath.resolve(statsFile).toString()).use { it.write(gson.toJson(stats)) }
+            FileWriter(basePath.resolve(STATS_FILE_NAME).toString()).use { it.write(gson.toJson(stats)) }
 
-    fun addReport(filterName: String, reportPath: Path) {
-        _reports[filterName] = reportPath
+    fun addReport(reportType: String, filterName: String, reportPath: Path) {
+        _reports.getOrPut(reportType) { mutableMapOf() }[filterName] = reportPath
     }
+
+    fun getReports(reportType: String = DEFAULT_REPORT_TYPE): Map<String, Path> = _reports.getOrDefault(reportType, emptyMap())
 
     private fun writeConfig(config: Config) = ConfigFactory.save(config, basePath)
 

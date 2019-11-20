@@ -74,6 +74,6 @@ class MultipleEvaluationsTests : EvaluationTests() {
         TestCase.assertTrue(
                 "Sessions files were generated",
                 resultWorkspace.sessionsStorage.getSessionFiles().isEmpty())
-        checkReport(resultWorkspace, config, reportName, filterName)
+        checkReports(resultWorkspace, config, reportName, filterName)
     }
 }

@@ -12,10 +12,10 @@ import java.util.*
 class PlainTextReportGenerator(outputDir: String, filterName: String): ReportGenerator {
     companion object {
         private const val globalReportName: String = "report.txt"
-        private const val reportType: String = "plain"
     }
 
-    private val filterDir = Paths.get(outputDir, reportType, filterName)
+    override val type: String = "plain"
+    private val filterDir = Paths.get(outputDir, type, filterName)
 
     init {
         Files.createDirectories(filterDir)
