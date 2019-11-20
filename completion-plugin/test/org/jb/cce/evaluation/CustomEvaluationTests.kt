@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test
 
 class CustomEvaluationTests : EvaluationTests() {
     private lateinit var workspace: EvaluationWorkspace
+    override val outputName: String = "custom"
 
     @Test
     fun `interpret actions with smart completion`() = doTest("smart-completion.txt") {

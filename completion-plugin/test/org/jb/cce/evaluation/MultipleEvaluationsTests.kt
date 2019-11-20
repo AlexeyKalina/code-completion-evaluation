@@ -15,6 +15,7 @@ import org.jb.cce.uast.TypeProperty
 import org.junit.jupiter.api.Test
 
 class MultipleEvaluationsTests : EvaluationTests() {
+    override val outputName: String = "multiple-evaluations"
 
     @Test
     fun `compare basic and smart completion`() {

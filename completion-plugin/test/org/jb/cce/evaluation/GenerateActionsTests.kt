@@ -7,6 +7,8 @@ import org.jb.cce.uast.Language
 import org.junit.jupiter.api.Test
 
 class GenerateActionsTests : EvaluationTests() {
+    override val outputName: String = "generate-actions"
+
     @Test
     fun `generate actions with default config`() = doTest {}
 

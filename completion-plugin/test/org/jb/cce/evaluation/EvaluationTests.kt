@@ -22,7 +22,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 @DisplayName("Test evaluation process with different configurations")
-open class EvaluationTests : ExecutionTestCase()  {
+abstract class EvaluationTests : ExecutionTestCase()  {
     companion object {
         private const val PROJECT_NAME = "test-project"
         private const val TEST_REPORT_TYPE = "plain"
@@ -32,6 +32,8 @@ open class EvaluationTests : ExecutionTestCase()  {
 
     @TempDir
     lateinit var tempDir: Path
+
+    abstract val outputName: String
 
     override fun initOutputChecker(): OutputChecker = OutputChecker(tempDir.toString(), tempDir.toString())
 
@@ -73,7 +75,7 @@ open class EvaluationTests : ExecutionTestCase()  {
         check(DEFAULT_REPORT_TYPE)
         val reportPath = workspace.getReports(TEST_REPORT_TYPE)[filterName]
         val reportText = FileReader(reportPath.toString()).use { it.readText() }
-        val testOutput = Paths.get(projectPath, "out", reportName).toFile()
+        val testOutput = Paths.get(projectPath, "out", outputName, reportName).toFile()
         if (testOutput.exists()) {
             val testOutputText = VfsUtil.findFileByIoFile(testOutput, false)!!.text()
             TestCase.assertEquals(

@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test
 import java.io.File
 
 class FullEvaluationTests : EvaluationTests() {
+    override val outputName: String = "full"
+
     @Test
     fun `evaluate with default config`() = doTest("default-config.txt") {}
 
