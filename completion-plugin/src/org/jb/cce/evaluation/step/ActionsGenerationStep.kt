@@ -40,7 +40,7 @@ class ActionsGenerationStep(
 
         val errors = mutableListOf<FileErrorInfo>()
         var totalSessions = 0
-        for ((i, file) in files.withIndex()) {
+        for ((i, file) in files.sortedBy { it.name }.withIndex()) {
             if (indicator.isCanceled()) {
                 LOG.info("Generating actions is canceled by user. Done: $i/${files.size}. With error: ${errors.size}")
                 break

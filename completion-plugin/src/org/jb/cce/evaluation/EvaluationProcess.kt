@@ -19,7 +19,7 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
         start(workspace)
     }
 
-    private fun start(workspace: EvaluationWorkspace) {
+    fun start(workspace: EvaluationWorkspace): EvaluationWorkspace {
         val stats = mutableMapOf<String, Long>()
         var currentWorkspace = workspace
         var hasError = false
@@ -34,6 +34,7 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
             if (hasError) break
         }
         currentWorkspace.dumpStatistics(stats)
+        return currentWorkspace
     }
 
     class Builder {
@@ -44,8 +45,9 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
 
         fun build(factory: StepFactory): EvaluationProcess {
             val steps = mutableListOf<EvaluationStep>()
+            val isTestingEnvironment = ApplicationManager.getApplication().isUnitTestMode
 
-            if (shouldGenerateActions || shouldInterpretActions) {
+            if (!isTestingEnvironment && (shouldGenerateActions || shouldInterpretActions)) {
                 val setupSdkStep = factory.setupSdkStep()
                 if (setupSdkStep != null) {
                     steps.add(setupSdkStep)
@@ -83,7 +85,9 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
                 steps.add(factory.generateReportStep())
             }
 
-            steps.add(factory.finishEvaluationStep())
+            if (!isTestingEnvironment) {
+                steps.add(factory.finishEvaluationStep())
+            }
 
             return EvaluationProcess(steps)
         }

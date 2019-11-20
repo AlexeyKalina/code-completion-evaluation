@@ -16,7 +16,7 @@ class OpenBrowserDialog(private val reportNames: List<String>) : DialogWrapper(t
         if (reportNames.size == 1) {
             reportNamesForOpening.add(reportNames.first())
             return panel {
-                row { label("Do you want to open a folder with reports?") }
+                row { label("Do you want to open report in the browser?") }
             }
         } else {
             return panel {

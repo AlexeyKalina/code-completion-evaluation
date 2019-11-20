@@ -1,5 +1,6 @@
 package org.jb.cce.interpretator
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import org.jb.cce.InterpretationHandler
 import org.jb.cce.actions.Action
@@ -33,7 +34,7 @@ class InterpretationHandlerImpl(private val indicator: Progress, private val ses
 
     override fun onErrorOccurred(error: Throwable, sessionsSkipped: Int) {
         completed += sessionsSkipped
-        LOG.error(error)
+        if (!ApplicationManager.getApplication().isUnitTestMode) LOG.error("Actions interpretation error", error)
     }
 
     override fun isCancelled(): Boolean {

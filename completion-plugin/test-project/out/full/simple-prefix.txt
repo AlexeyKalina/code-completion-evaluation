@@ -1,0 +1,6 @@
+BASIC Found1: 0.966
+BASIC Found5: 0.966
+BASIC Recall: 0.966
+BASIC eSaved: 0.966
+BASIC MeanRank: 0.000
+BASIC Sessions: 176.000
