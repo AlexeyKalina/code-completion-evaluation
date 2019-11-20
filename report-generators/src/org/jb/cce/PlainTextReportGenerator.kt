@@ -26,8 +26,10 @@ class PlainTextReportGenerator(outputDir: String, filterName: String): ReportGen
 
     override fun generateGlobalReport(globalMetrics: List<MetricInfo>): Path {
         val reportPath = Paths.get(filterDir.toString(), globalReportName)
-        FileWriter(reportPath.toString()).use {
-            it.write(globalMetrics.joinToString("\n") { "${it.evaluationType} ${it.name}: ${"%.3f".format(Locale.US, it.value)}" })
+        FileWriter(reportPath.toString()).use { writer ->
+            writer.write(globalMetrics
+                    .filter { !it.name.contains("latency", ignoreCase = true) }
+                    .joinToString("\n") { "${it.evaluationType} ${it.name}: ${"%.3f".format(Locale.US, it.value)}" })
         }
         return reportPath
     }

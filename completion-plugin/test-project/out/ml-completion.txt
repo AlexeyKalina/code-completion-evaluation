@@ -2,7 +2,5 @@ ML Found1: 0.833
 ML Found5: 0.833
 ML Recall: 0.833
 ML eSaved: 0.833
-ML MeanLatency: 0.000
-ML MaxLatency: 0.000
 ML MeanRank: 0.000
 ML Sessions: 6.000

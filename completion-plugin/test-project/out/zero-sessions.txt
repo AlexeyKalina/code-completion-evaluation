@@ -2,7 +2,5 @@ BASIC Found1: NaN
 BASIC Found5: NaN
 BASIC Recall: NaN
 BASIC eSaved: NaN
-BASIC MeanLatency: NaN
-BASIC MaxLatency: NaN
 BASIC MeanRank: NaN
 BASIC Sessions: 0.000

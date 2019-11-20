@@ -2,7 +2,5 @@ BASIC Found1: 0.667
 BASIC Found5: 0.667
 BASIC Recall: 0.667
 BASIC eSaved: 0.667
-BASIC MeanLatency: 0.000
-BASIC MaxLatency: 0.000
 BASIC MeanRank: 0.000
 BASIC Sessions: 6.000
