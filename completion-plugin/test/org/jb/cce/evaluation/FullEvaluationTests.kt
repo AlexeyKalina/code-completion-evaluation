@@ -12,10 +12,23 @@ import org.jb.cce.filter.impl.*
 import org.jb.cce.uast.Language
 import org.jb.cce.uast.TypeProperty
 import org.junit.jupiter.api.Test
+import java.io.File
 
 class FullEvaluationTests : EvaluationTests() {
     @Test
     fun `evaluate with default config`() = doTest("default-config.txt") {}
+
+    @Test
+    fun `evaluate with root in package1`() = doTest("default-config-package1.txt",
+            roots = mutableListOf("src${File.separator}package1")) {}
+
+    @Test
+    fun `evaluate with root in package2`() = doTest("default-config-package2.txt",
+            roots = mutableListOf("src${File.separator}package2")) {}
+
+    @Test
+    fun `evaluate with root in package1 and package2`() = doTest("default-config-package1-package2.txt",
+            roots = mutableListOf("src${File.separator}package1", "src${File.separator}package2")) {}
 
     @Test
     fun `evaluate with smart completion`() = doTest("smart-completion.txt") {
@@ -87,6 +100,12 @@ class FullEvaluationTests : EvaluationTests() {
     }
 
     @Test
+    fun `evaluate on specific package on another root`() = doTest("zero-sessions.txt",
+            roots = mutableListOf("src${File.separator}package1")) {
+        filters[PackageRegexFilterConfiguration.id] = PackageRegexFilter("package2")
+    }
+
+    @Test
     fun `evaluate with sessions filter`() = doTest("sessions-filter.txt", "Only methods") {
         mergeFilters(listOf(SessionsFilter(
                 "Only methods",
@@ -110,8 +129,11 @@ class FullEvaluationTests : EvaluationTests() {
         completeTokenProbability = 1.0
     }
 
-    private fun doTest(reportName: String, filterName: String = SessionsFilter.ACCEPT_ALL.name, init: Config.Builder.() -> Unit) {
-        val roots = mutableListOf("src")
+    private fun doTest(
+            reportName: String,
+            filterName: String = SessionsFilter.ACCEPT_ALL.name,
+            roots: MutableList<String> = mutableListOf("src"),
+            init: Config.Builder.() -> Unit) {
         val config = Config.build(tempDir.toString(), Language.JAVA.displayName) {
             evaluationRoots = roots
             init()
