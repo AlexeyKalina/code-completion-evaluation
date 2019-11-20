@@ -29,6 +29,9 @@ class BackgroundStepFactory(
     override fun highlightTokensInIdeStep(): EvaluationStep =
             HighlightingTokensInIdeStep(project, isHeadless)
 
+    override fun setupStatsCollectorStep(): EvaluationStep? =
+            if (config.interpret.saveLogs) SetupStatsCollectorStep(project) else null
+
     override fun setupSdkStep(): EvaluationStep? {
         return when (Language.resolve(config.language)) {
             Language.JAVA -> SetupJDKStep(project)

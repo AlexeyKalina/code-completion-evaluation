@@ -1,6 +1,5 @@
 package org.jb.cce.evaluation
 
-import com.intellij.openapi.application.PathManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.registry.Registry
@@ -9,6 +8,7 @@ import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.InterpretFilter
 import org.jb.cce.Interpreter
 import org.jb.cce.actions.CompletionType
+import org.jb.cce.evaluation.step.SetupStatsCollectorStep
 import org.jb.cce.exceptions.ExceptionsUtil
 import org.jb.cce.info.FileErrorInfo
 import org.jb.cce.info.FileSessionsInfo
@@ -18,7 +18,6 @@ import org.jb.cce.interpretator.InterpretationHandlerImpl
 import org.jb.cce.util.FilesHelper
 import org.jb.cce.util.Progress
 import org.jb.cce.util.text
-import java.nio.file.Paths
 import java.util.*
 import kotlin.system.measureTimeMillis
 
@@ -45,8 +44,6 @@ class ActionsInterpretationHandler(
         val mlCompletionFlag = isMLCompletionEnabled()
         LOG.info("Start interpreting actions")
         setMLCompletion(config.completionType == CompletionType.ML)
-        if (config.saveLogs)
-            workspace2.logsStorage.watch(statsCollectorLogsDirectory(), language, config.trainTestSplit)
         val files = workspace1.actionsStorage.getActionFiles()
         for (file in files) {
             val fileActions = workspace1.actionsStorage.getActions(file)
@@ -60,14 +57,10 @@ class ActionsInterpretationHandler(
             }
             if (handler.isCancelled()) break
         }
-        if (config.saveLogs) workspace2.logsStorage.stopWatching()
+        if (config.saveLogs) workspace2.logsStorage.save(SetupStatsCollectorStep.statsCollectorLogsDirectory(), language, config.trainTestSplit)
         workspace2.sessionsStorage.saveEvaluationInfo()
         LOG.info("Interpreting actions completed")
         setMLCompletion(mlCompletionFlag)
-    }
-
-    private fun statsCollectorLogsDirectory(): String {
-        return Paths.get(PathManager.getSystemPath(), "completion-stats-data").toString()
     }
 
     private fun isMLCompletionEnabled(): Boolean {

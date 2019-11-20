@@ -47,4 +47,5 @@
     <depends optional="true">com.intellij.modules.java</depends>
     <depends optional="true">PythonCore</depends>
     <depends optional="true">com.jetbrains.sh</depends>
+    <depends optional="true">com.intellij.stats.completion</depends>
 </idea-plugin>

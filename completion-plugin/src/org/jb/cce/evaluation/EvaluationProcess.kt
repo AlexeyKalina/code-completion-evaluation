@@ -56,6 +56,13 @@ class EvaluationProcess private constructor(private val steps: List<EvaluationSt
                 }
             }
 
+            if (shouldInterpretActions) {
+                val setupStatsCollectorStep = factory.setupStatsCollectorStep()
+                if (setupStatsCollectorStep != null) {
+                    steps.add(setupStatsCollectorStep)
+                }
+            }
+
             if (shouldGenerateActions) {
                 steps.add(factory.generateActionsStep())
             }
