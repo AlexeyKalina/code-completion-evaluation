@@ -1,7 +1,5 @@
 package org.jb.cce.evaluation
 
-import com.intellij.openapi.project.rootManager
-import com.jetbrains.python.statistics.modules
 import junit.framework.TestCase
 import org.jb.cce.Config
 import org.jb.cce.EvaluationWorkspace
@@ -113,8 +111,9 @@ class FullEvaluationTests : EvaluationTests() {
     }
 
     private fun doTest(reportName: String, filterName: String = SessionsFilter.ACCEPT_ALL.name, init: Config.Builder.() -> Unit) {
+        val roots = mutableListOf("src")
         val config = Config.build(tempDir.toString(), Language.JAVA.displayName) {
-            evaluationRoots = project.modules.flatMap { it.rootManager.sourceRoots.map { it.path } }.toMutableList()
+            evaluationRoots = roots
             init()
         }
         val workspace = EvaluationWorkspace.create(config)
@@ -132,11 +131,11 @@ class FullEvaluationTests : EvaluationTests() {
         TestCase.assertEquals(
                 "Actions files count don't match source files count",
                 workspace.actionsStorage.getActionFiles().size,
-                sourceFilesCount())
+                sourceFilesCount(roots))
         TestCase.assertEquals(
                 "Sessions files count don't match source files count",
                 workspace.sessionsStorage.getSessionFiles().size,
-                sourceFilesCount())
+                sourceFilesCount(roots))
         checkReports(workspace, config, reportName, filterName)
     }
 }

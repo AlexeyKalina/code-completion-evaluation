@@ -1,7 +1,5 @@
 package org.jb.cce.evaluation
 
-import com.intellij.openapi.project.rootManager
-import com.jetbrains.python.statistics.modules
 import junit.framework.TestCase
 import org.jb.cce.Config
 import org.jb.cce.EvaluationWorkspace
@@ -13,8 +11,9 @@ class GenerateActionsTests : EvaluationTests() {
     fun `generate actions with default config`() = doTest {}
 
     private fun doTest(init: Config.Builder.() -> Unit) {
+        val roots = mutableListOf("src")
         val config = Config.build(tempDir.toString(), Language.JAVA.displayName) {
-            evaluationRoots = project.modules.flatMap { it.rootManager.sourceRoots.map { it.path } }.toMutableList()
+            evaluationRoots = roots
             init()
         }
         val workspace = EvaluationWorkspace.create(config)
@@ -28,7 +27,7 @@ class GenerateActionsTests : EvaluationTests() {
         TestCase.assertEquals(
                 "Actions files count don't match source files count",
                 workspace.actionsStorage.getActionFiles().size,
-                sourceFilesCount())
+                sourceFilesCount(roots))
         TestCase.assertTrue(
                 "Sessions files were generated",
                 workspace.sessionsStorage.getSessionFiles().isEmpty())

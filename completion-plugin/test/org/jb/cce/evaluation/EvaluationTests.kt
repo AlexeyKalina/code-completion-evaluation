@@ -2,8 +2,8 @@ package org.jb.cce.evaluation
 
 import com.intellij.debugger.impl.OutputChecker
 import com.intellij.execution.ExecutionTestCase
-import com.intellij.openapi.project.rootManager
 import com.intellij.openapi.vfs.VfsUtil
+import com.jetbrains.python.sdk.baseDir
 import com.jetbrains.python.statistics.modules
 import junit.framework.TestCase
 import org.jb.cce.Config
@@ -12,7 +12,9 @@ import org.jb.cce.SessionsFilter
 import org.jb.cce.uast.Language
 import org.jb.cce.util.FilesHelper
 import org.jb.cce.util.text
-import org.junit.jupiter.api.*
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.io.FileReader
@@ -37,6 +39,8 @@ open class EvaluationTests : ExecutionTestCase()  {
 
     override fun getName(): String = PROJECT_NAME
 
+    override fun getProjectDirOrFile(): Path = tempDir
+
     @BeforeEach
     override fun setUp() {
         File(projectPath).copyRecursively(tempDir.toFile())
@@ -46,8 +50,11 @@ open class EvaluationTests : ExecutionTestCase()  {
     @AfterEach
     override fun tearDown() = super.tearDown()
 
-    protected fun sourceFilesCount() =
-            FilesHelper.getFiles(project, project.modules[0].rootManager.sourceRoots.toList()).getValue(Language.JAVA.displayName).size
+    protected fun sourceFilesCount(relativePaths: List<String>): Int {
+        val projectRoot = project.modules[0].baseDir!!
+        val paths = relativePaths.mapNotNull { projectRoot.findFileByRelativePath(it) }
+        return FilesHelper.getFiles(project, paths).getValue(Language.JAVA.displayName).size
+    }
 
     protected fun waitAfterWorkspaceCreated() = Thread.sleep(1_000)
 

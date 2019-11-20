@@ -55,8 +55,9 @@ class CustomEvaluationTests : EvaluationTests() {
 
     @Test
     fun `generate file error on interpretation fail`() {
+        val roots = mutableListOf("src")
         val config = Config.build(tempDir.toString(), Language.JAVA.displayName) {
-            evaluationRoots = project.modules.flatMap { it.rootManager.sourceRoots.map { it.path } }.toMutableList()
+            evaluationRoots = roots
         }
         val factory = BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true))
         factory.completionInvoker = ExceptionThrowingCompletionInvoker(factory.completionInvoker)
@@ -72,13 +73,14 @@ class CustomEvaluationTests : EvaluationTests() {
         TestCase.assertEquals(
                 "Error files count don't match source files count",
                 resultWorkspace.errorsStorage.getErrors().size,
-                sourceFilesCount())
+                sourceFilesCount(roots))
         checkReports(resultWorkspace, config, "zero-sessions.txt")
     }
 
     private fun doTest(reportName: String, filterName: String = SessionsFilter.ACCEPT_ALL.name, init: Config.Builder.() -> Unit) {
+        val roots = mutableListOf("src")
         val config = Config.build(tempDir.toString(), Language.JAVA.displayName) {
-            evaluationRoots = project.modules.flatMap { it.rootManager.sourceRoots.map { it.path } }.toMutableList()
+            evaluationRoots = roots
             init()
         }
 
@@ -97,7 +99,7 @@ class CustomEvaluationTests : EvaluationTests() {
         TestCase.assertEquals(
                 "Sessions files count don't match source files count",
                 resultWorkspace.sessionsStorage.getSessionFiles().size,
-                sourceFilesCount())
+                sourceFilesCount(roots))
         checkReports(resultWorkspace, config, reportName, filterName)
     }
 
