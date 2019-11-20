@@ -12,8 +12,10 @@ import org.jb.cce.filter.impl.TypeFilter
 import org.jb.cce.filter.impl.TypeFilterConfiguration
 import org.jb.cce.uast.Language
 import org.jb.cce.uast.TypeProperty
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("Tests on creating report based on multiple evaluations")
 class MultipleEvaluationsTests : EvaluationTests() {
     override val outputName: String = "multiple-evaluations"
 

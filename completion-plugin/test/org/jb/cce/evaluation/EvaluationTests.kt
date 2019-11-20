@@ -21,7 +21,7 @@ import java.io.FileReader
 import java.nio.file.Path
 import java.nio.file.Paths
 
-@DisplayName("Test evaluation process with different configurations")
+@DisplayName("Tests on evaluation process with different configurations")
 abstract class EvaluationTests : ExecutionTestCase()  {
     companion object {
         private const val PROJECT_NAME = "test-project"

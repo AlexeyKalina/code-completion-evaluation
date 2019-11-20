@@ -12,8 +12,10 @@ import org.jb.cce.filter.impl.TypeFilterConfiguration
 import org.jb.cce.uast.Language
 import org.jb.cce.uast.TypeProperty
 import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("Tests on actions interpretation and report generation on existing workspace")
 class CustomEvaluationTests : EvaluationTests() {
     private lateinit var workspace: EvaluationWorkspace
     override val outputName: String = "custom"

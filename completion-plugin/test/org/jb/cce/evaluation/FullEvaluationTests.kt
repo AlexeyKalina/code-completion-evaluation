@@ -11,9 +11,11 @@ import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.impl.*
 import org.jb.cce.uast.Language
 import org.jb.cce.uast.TypeProperty
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 import java.io.File
 
+@DisplayName("Tests on full evaluation process")
 class FullEvaluationTests : EvaluationTests() {
     override val outputName: String = "full"
 

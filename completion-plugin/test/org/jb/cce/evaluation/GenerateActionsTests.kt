@@ -4,8 +4,10 @@ import junit.framework.TestCase
 import org.jb.cce.Config
 import org.jb.cce.EvaluationWorkspace
 import org.jb.cce.uast.Language
+import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Test
 
+@DisplayName("Tests on actions generation without further steps")
 class GenerateActionsTests : EvaluationTests() {
     override val outputName: String = "generate-actions"
 
