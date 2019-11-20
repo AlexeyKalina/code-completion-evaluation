@@ -145,7 +145,7 @@ class FullEvaluationTests : EvaluationTests() {
         val workspace = EvaluationWorkspace.create(config)
 
         val factory = BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true))
-        factory.completionInvoker = FirstSuggestionCompletionInvoker(factory.completionInvoker)
+        factory.customizeInvoker { FirstSuggestionCompletionInvoker(it) }
         val process = EvaluationProcess.build({
             shouldGenerateActions = true
             shouldInterpretActions = true

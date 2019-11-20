@@ -63,7 +63,7 @@ class CustomEvaluationTests : EvaluationTests() {
             evaluationRoots = roots
         }
         val factory = BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true))
-        factory.completionInvoker = ExceptionThrowingCompletionInvoker(factory.completionInvoker)
+        factory.customizeInvoker { ExceptionThrowingCompletionInvoker(it) }
         val process = EvaluationProcess.build({
             shouldInterpretActions = true
             shouldGenerateReports = true
@@ -88,7 +88,7 @@ class CustomEvaluationTests : EvaluationTests() {
         }
 
         val factory = BackgroundStepFactory(config, project, true, null, EvaluationRootInfo(true))
-        factory.completionInvoker = FirstSuggestionCompletionInvoker(factory.completionInvoker)
+        factory.customizeInvoker { FirstSuggestionCompletionInvoker(it) }
         val process = EvaluationProcess.build({
             shouldInterpretActions = true
             shouldGenerateReports = true

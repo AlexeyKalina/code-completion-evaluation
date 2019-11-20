@@ -17,7 +17,12 @@ class BackgroundStepFactory(
         private val evaluationRootInfo: EvaluationRootInfo
 ) : StepFactory {
 
-    var completionInvoker: CompletionInvoker = DelegationCompletionInvoker(CompletionInvokerImpl(project, config.interpret.completionType), project)
+    private var completionInvoker: CompletionInvoker =
+            DelegationCompletionInvoker(CompletionInvokerImpl(project, config.interpret.completionType), project)
+
+    fun customizeInvoker(customizer: (CompletionInvoker) -> CompletionInvoker) {
+        completionInvoker = customizer(completionInvoker)
+    }
 
     override fun generateActionsStep(): EvaluationStep =
             ActionsGenerationStep(config.actions, config.language, evaluationRootInfo, project, isHeadless)
