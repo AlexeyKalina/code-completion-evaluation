@@ -5,7 +5,6 @@ import org.jb.cce.FileTextUtil.getDiff
 import org.jb.cce.actions.*
 import org.jb.cce.exception.UnexpectedActionException
 import java.nio.file.Paths
-import kotlin.random.Random
 
 class Interpreter(private val invoker: CompletionInvoker,
                   private val handler: InterpretationHandler,

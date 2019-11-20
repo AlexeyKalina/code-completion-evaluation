@@ -23,7 +23,9 @@ class ActionsStorage(storageDir: String) {
         return count
     }
 
-    fun getActionFiles(): List<String> = keyValueStorage.getKeys()
+    fun getActionFiles(): List<String> = keyValueStorage.getKeys().sortedBy {
+        it.substringAfterLast('(').substringBefore(')').toInt()
+    }
 
     fun getActions(path: String): FileActions {
         return actionSerializer.deserialize(keyValueStorage.get(path))
