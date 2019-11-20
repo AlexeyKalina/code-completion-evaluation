@@ -9,6 +9,7 @@ import org.jb.cce.SessionsFilter
 import org.jb.cce.actions.CompletionContext
 import org.jb.cce.actions.CompletionPrefix
 import org.jb.cce.actions.CompletionType
+import org.jb.cce.filter.EvaluationFilter
 import org.jb.cce.filter.impl.*
 import org.jb.cce.uast.Language
 import org.jb.cce.uast.TypeProperty
@@ -56,11 +57,35 @@ class FullEvaluationTests : EvaluationTests() {
     }
 
     @Test
-    fun `evaluate with token filters`() = doTest("token-filters.txt") {
+    fun `evaluate on methods`() = doTest("token-filters-methods.txt") {
         filters[TypeFilterConfiguration.id] = TypeFilter(listOf(TypeProperty.METHOD_CALL))
-        filters[StaticFilterConfiguration.id] = StaticFilter(false)
-        filters[ArgumentFilterConfiguration.id] = ArgumentFilter(false)
-        filters[PackageRegexFilterConfiguration.id] = PackageRegexFilter(".*")
+        filters[StaticFilterConfiguration.id] = EvaluationFilter.ACCEPT_ALL
+        filters[ArgumentFilterConfiguration.id] = EvaluationFilter.ACCEPT_ALL
+        filters[PackageRegexFilterConfiguration.id] = EvaluationFilter.ACCEPT_ALL
+    }
+
+    @Test
+    fun `evaluate on static members`() = doTest("token-filters-static.txt") {
+        filters[TypeFilterConfiguration.id] = TypeFilter(listOf(TypeProperty.METHOD_CALL, TypeProperty.FIELD))
+        filters[StaticFilterConfiguration.id] = StaticFilter(true)
+        filters[ArgumentFilterConfiguration.id] = EvaluationFilter.ACCEPT_ALL
+        filters[PackageRegexFilterConfiguration.id] = EvaluationFilter.ACCEPT_ALL
+    }
+
+    @Test
+    fun `evaluate on variable arguments`() = doTest("token-filters-arguments.txt") {
+        filters[TypeFilterConfiguration.id] = TypeFilter(listOf(TypeProperty.VARIABLE))
+        filters[StaticFilterConfiguration.id] = EvaluationFilter.ACCEPT_ALL
+        filters[ArgumentFilterConfiguration.id] = ArgumentFilter(true)
+        filters[PackageRegexFilterConfiguration.id] = EvaluationFilter.ACCEPT_ALL
+    }
+
+    @Test
+    fun `evaluate on specific package`() = doTest("token-filters-package.txt") {
+        filters[TypeFilterConfiguration.id] = EvaluationFilter.ACCEPT_ALL
+        filters[StaticFilterConfiguration.id] = EvaluationFilter.ACCEPT_ALL
+        filters[ArgumentFilterConfiguration.id] = EvaluationFilter.ACCEPT_ALL
+        filters[PackageRegexFilterConfiguration.id] = PackageRegexFilter("package[12]")
     }
 
     @Test

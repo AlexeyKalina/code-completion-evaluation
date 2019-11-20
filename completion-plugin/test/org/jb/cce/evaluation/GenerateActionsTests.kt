@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test
 
 class GenerateActionsTests : EvaluationTests() {
     @Test
-    fun `generate actions with default config`() = doTest() {}
+    fun `generate actions with default config`() = doTest {}
 
     private fun doTest(init: Config.Builder.() -> Unit) {
         val config = Config.build(tempDir.toString(), Language.JAVA.displayName) {
