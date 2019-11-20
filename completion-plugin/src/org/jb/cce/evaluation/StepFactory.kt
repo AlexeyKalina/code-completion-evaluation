@@ -10,6 +10,7 @@ interface StepFactory {
     fun generateReportStep(): EvaluationStep
     fun finishEvaluationStep(): EvaluationStep
 
+    fun setupStatsCollectorStep(): EvaluationStep?
     fun setupSdkStep(): EvaluationStep?
     fun checkSdkConfiguredStep(): EvaluationStep
 }
